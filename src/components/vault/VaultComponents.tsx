@@ -1389,7 +1389,7 @@ export const PrimaryCTA: React.FC<PrimaryCTAProps> = ({ children, onClick, disab
       whileHover={{ scale: 1.015, backgroundColor: '#2563eb' }}
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.2 }}
-      className={`px-7 py-3 bg-blue-600 hover:bg-blue-500 text-slate-955 font-bold text-xs rounded-xl shadow-lg active:scale-98 transition-all cursor-pointer flex items-center gap-2 group select-none focus:outline-none disabled:opacity-50 disabled:pointer-events-none ${className || ''}`}
+      className={`px-7 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-98 transition-all cursor-pointer flex items-center gap-2 group select-none focus:outline-none disabled:opacity-50 disabled:pointer-events-none ${className || ''}`}
     >
       <span>{children}</span>
       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />

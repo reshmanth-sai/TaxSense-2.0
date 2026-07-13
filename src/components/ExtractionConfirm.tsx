@@ -610,7 +610,7 @@ export default function ExtractionConfirm({
           id="btn-confirm-extraction"
           onClick={handleApply}
           type="button"
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-405 text-slate-955 rounded-xl shadow-md shadow-emerald-500/10 transition-all active:scale-98 cursor-pointer"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-405 text-slate-950 rounded-xl shadow-md shadow-emerald-500/10 transition-all active:scale-98 cursor-pointer"
         >
           <CheckCircle2 className="h-4 w-4" />
           <span>Confirm & Start Chat Copilot</span>

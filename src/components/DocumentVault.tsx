@@ -587,7 +587,7 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
                       <button
                         type="submit"
                         disabled={!manualRawText.trim() || isPasteProcessing}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-slate-955 font-bold text-xs rounded-xl cursor-pointer shadow-lg active:scale-98 transition-all flex items-center gap-1.5"
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white font-bold text-xs rounded-xl cursor-pointer shadow-lg active:scale-98 transition-all flex items-center gap-1.5"
                       >
                         {isPasteProcessing ? (
                           <>
@@ -664,7 +664,7 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
                         <button
                           type="submit"
                           disabled={!manualRawText.trim() || isPasteProcessing}
-                          className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-slate-955 font-bold text-xs rounded-xl cursor-pointer shadow-lg active:scale-98 transition-all flex items-center gap-1.5"
+                          className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white font-bold text-xs rounded-xl cursor-pointer shadow-lg active:scale-98 transition-all flex items-center gap-1.5"
                         >
                           {isPasteProcessing ? (
                             <>

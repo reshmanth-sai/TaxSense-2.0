@@ -1192,7 +1192,7 @@ export default function App() {
                   }`}>
                     <div className={`flex items-center ${isExpanded ? 'gap-2.5 overflow-hidden' : 'justify-center w-full'}`}>
                       <div className="w-8 h-8 bg-emerald-600 rounded-lg text-slate-955 font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/10 select-none">
-                        <Calculator className="h-4.5 w-4.5 text-slate-955" />
+                        <Calculator className="h-4.5 w-4.5 text-slate-950" />
                       </div>
                       {isExpanded && (
                         <span className="font-black text-xs uppercase tracking-wider text-slate-100 transition-all duration-200 opacity-100 translate-x-0">
@@ -1368,7 +1368,7 @@ export default function App() {
                             (window as any)._migrationRedirectStep = activeStep;
                             setActiveStep(2);
                           }}
-                          className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-955 font-bold rounded-lg text-[8.5px] uppercase tracking-wider cursor-pointer transition-colors shadow-sm self-start"
+                          className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-950 font-bold rounded-lg text-[8.5px] uppercase tracking-wider cursor-pointer transition-colors shadow-sm self-start"
                         >
                           Sign In
                         </button>
@@ -2013,9 +2013,9 @@ export default function App() {
             {!isFloatingAIChatOpen && (
               <button
                 onClick={() => setIsFloatingAIChatOpen(true)}
-                className="fixed right-6 bottom-6 z-40 p-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-955 font-bold rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_22px_rgba(16,185,129,0.55)] cursor-pointer transition-all hover:scale-108 duration-300 active:scale-95 flex items-center justify-center group"
+                className="fixed right-6 bottom-6 z-40 p-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_22px_rgba(16,185,129,0.55)] cursor-pointer transition-all hover:scale-108 duration-300 active:scale-95 flex items-center justify-center group"
               >
-                <Sparkles className="w-5 h-5 text-slate-955 transition-transform group-hover:rotate-12 duration-300" />
+                <Sparkles className="w-5 h-5 text-slate-950 transition-transform group-hover:rotate-12 duration-300" />
               </button>
             )}
 
@@ -2151,7 +2151,7 @@ export default function App() {
                         setGuidedFilingStep(1);
                         setActiveStep(10); // Route directly to Timeline Archives (Stage 10)
                       }}
-                      className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-955 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 select-none active:scale-95 block z-10 relative"
+                      className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 select-none active:scale-95 block z-10 relative"
                     >
                       View Timeline history
                     </button>
