@@ -32,6 +32,8 @@ import LandingPage from './components/LandingPage';
 import { ExportService } from './services/ExportService';
 import { GoogleAuthService } from './services/GoogleAuthService';
 import { AuditPanel, RecommendationsPanel, FilingWorkspacePanel } from './components/vault/VaultComponents';
+import { Sidebar } from './components/sidebar/Sidebar';
+import { useSidebarStore } from './components/sidebar/useSidebarStore';
 
 import { 
   Lock, 
@@ -97,91 +99,7 @@ const ParamInfo: React.FC<{ text: string }> = ({ text }) => {
     </div>
   );
 };
-interface SidebarNavItemProps {
-  label: string;
-  icon: React.ComponentType<any>;
-  isActive: boolean;
-  isExpanded: boolean;
-  completed?: boolean;
-  badge?: string;
-  savings?: number;
-  onClick: () => void;
-  isPrimary?: boolean;
-}
 
-const SidebarNavItem: React.FC<SidebarNavItemProps> = React.memo(({
-  label,
-  icon: IconComp,
-  isActive,
-  isExpanded,
-  completed,
-  badge,
-  savings,
-  onClick,
-  isPrimary = false
-}) => {
-  return (
-    <div className="relative group/sidebar-item w-full">
-      <button
-        onClick={onClick}
-        aria-current={isActive ? "page" : undefined}
-        className={`w-full flex items-center justify-between ${
-          isExpanded ? 'px-3' : 'px-0 justify-center'
-        } py-2 rounded-xl text-xs transition-all duration-180 ease-out cursor-pointer group active:scale-98 relative border border-transparent ${
-          isActive 
-            ? 'bg-blue-600/10 text-white font-black shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02),0_0_12px_rgba(37,99,235,0.08)]' 
-            : `${isPrimary ? 'text-slate-205 font-bold' : 'text-slate-450 font-semibold'} hover:bg-white/[0.03] hover:text-slate-100 hover:-translate-y-[1px]`
-        }`}
-      >
-        {/* Left active line accent */}
-        {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-blue-500 rounded-r" />
-        )}
-
-        <div className={`flex items-center ${
-          isExpanded ? 'gap-3 overflow-hidden min-w-0 flex-1' : 'justify-center w-full'
-        }`}>
-          <IconComp className={`h-5 w-5 shrink-0 transition-colors duration-180 ${
-            isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-200'
-          }`} />
-          
-          {/* Label transition */}
-          {isExpanded && (
-            <span className="truncate transition-all duration-200 opacity-100 translate-x-0">
-              {label}
-            </span>
-          )}
-        </div>
-
-        {/* Badges transition */}
-        {isExpanded && (
-          <div className="flex items-center gap-1.5 shrink-0 pl-3">
-            {completed && <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />}
-            {badge && (
-              <span className="text-[8px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">
-                {badge}
-              </span>
-            )}
-            {savings !== undefined && savings > 0 && (
-              <span className="text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-450 px-2.5 py-0.5 rounded-full tracking-tighter select-all">
-                ₹{savings.toLocaleString('en-IN')}
-              </span>
-            )}
-          </div>
-        )}
-      </button>
-
-      {/* Floating tooltip when collapsed */}
-      {!isExpanded && (
-        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 flex items-center gap-2">
-          <span>{label}</span>
-          {badge && <span className="text-[8px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">{badge}</span>}
-          {savings !== undefined && savings > 0 && <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded font-black">₹{savings.toLocaleString('en-IN')}</span>}
-        </div>
-      )}
-    </div>
-  );
-});
 
 
 const dashboardVariants = {
@@ -218,24 +136,7 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState('guest@taxsense.in');
   const [authPassword, setAuthPassword] = useState('••••••••••••');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const persisted = localStorage.getItem('taxsense_sidebar_collapsed');
-      if (persisted !== null) {
-        return persisted === 'true';
-      }
-      return window.innerWidth < 1024;
-    }
-    return false;
-  });
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('taxsense_sidebar_collapsed', String(isSidebarCollapsed));
-    }
-  }, [isSidebarCollapsed]);
-
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const isSidebarCollapsed = useSidebarStore((state) => state.isCollapsed);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCopilotExpanded, setIsCopilotExpanded] = useState(false);
   const [activePreviewDoc, setActivePreviewDoc] = useState<any>(null);
@@ -533,7 +434,7 @@ export default function App() {
       // Toggle sidebar: Cmd/Ctrl + B
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
-        setIsSidebarCollapsed(prev => !prev);
+        useSidebarStore.getState().toggleCollapsed();
       }
       
       // Stage jumps: only when activeStep >= 3 and not typing in input
@@ -1157,322 +1058,29 @@ export default function App() {
           })()}
         </div>
 
-          {/* Stage 3-11: Workspace layout with Sidebar */}
-          {hydrated && activeStep >= 3 && (() => {
-          const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-          const isExpanded = !isSidebarCollapsed || isSidebarHovered;
-
-          return (
-            <div className="relative z-10 flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-transparent">
-              {/* Mobile Drawer Backdrop Overlay */}
-              {!isSidebarCollapsed && (
-                <div 
-                  onClick={() => setIsSidebarCollapsed(true)} 
-                  className="fixed inset-0 bg-slate-955/70 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300"
+              {hydrated && activeStep >= 3 && (() => {
+            return (
+              <div className="relative z-10 flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-transparent">
+                <Sidebar
+                  activeStep={activeStep}
+                  setActiveStep={setActiveStep}
+                  taxCalculationResult={taxCalculationResult}
+                  taxData={taxData}
+                  ingestionState={ingestionState}
+                  backgroundStatusMessage={backgroundStatusMessage}
+                  backgroundProgress={backgroundProgress}
+                  authMode={authMode}
+                  sessionTimeLeft={sessionTimeLeft}
+                  user={user}
+                  incomeProfile={incomeProfile}
+                  isSettingsOpen={isSettingsOpen}
+                  setIsSettingsOpen={setIsSettingsOpen}
+                  onLogout={() => {
+                    GoogleAuthService.revokeSession();
+                    clearSession();
+                    setActiveStep(2);
+                  }}
                 />
-              )}
-
-              {/* Collapsible Sidebar / Drawer (Animated via Framer Motion) */}
-              <motion.aside 
-                onMouseEnter={() => setIsSidebarHovered(true)}
-                onMouseLeave={() => setIsSidebarHovered(false)}
-                initial={{ width: 216 }}
-                animate={{ 
-                  width: isMobile ? (isExpanded ? 216 : 0) : (isExpanded ? 216 : 56),
-                  x: isMobile && !isExpanded ? -216 : 0
-                }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                style={{ background: 'linear-gradient(to bottom, #101722, #0B111A)' }}
-                className="border-r border-white/[0.04] backdrop-blur-md flex flex-col justify-between shrink-0 z-40 fixed inset-y-0 left-0 md:relative h-screen overflow-y-auto overflow-x-hidden"
-              >
-                <div className="flex flex-col">
-                  {/* Sidebar Header */}
-                  <div className={`py-4 border-b border-white/[0.04] flex items-center relative transition-all duration-200 ${
-                    isExpanded ? 'px-4 justify-between flex-row' : 'py-5 px-0 justify-center flex-col gap-2.5'
-                  }`}>
-                    <div className={`flex items-center ${isExpanded ? 'gap-2.5 overflow-hidden' : 'justify-center w-full'}`}>
-                      <div className="w-8 h-8 bg-emerald-600 rounded-lg text-slate-955 font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/10 select-none">
-                        <Calculator className="h-4.5 w-4.5 text-slate-950" />
-                      </div>
-                      {isExpanded && (
-                        <span className="font-black text-xs uppercase tracking-wider text-slate-100 transition-all duration-200 opacity-100 translate-x-0">
-                          TaxSense
-                        </span>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                      className="p-2 hover:bg-white/5 rounded-full text-slate-500 hover:text-slate-300 cursor-pointer transition-all duration-220 hidden md:flex items-center justify-center shrink-0"
-                      aria-expanded={isExpanded}
-                      aria-label={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
-                      title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
-                    >
-                      <ChevronLeft className={`w-4 h-4 transition-transform duration-220 ${isExpanded ? '' : 'rotate-180'}`} />
-                    </button>
-                  </div>
-
-                  {/* Sidebar Groupings & Navigation List */}
-                  <div className="p-3 space-y-4">
-                    {/* 1. MAIN Navigation Items */}
-                    <div className="space-y-1">
-                      {isExpanded && (
-                        <span className="text-[8px] text-slate-400/70 font-medium uppercase tracking-[0.15em] block px-3 mt-1 mb-1.5 select-none">
-                          Main
-                        </span>
-                      )}
-                      <SidebarNavItem
-                        label="Dashboard"
-                        icon={LayoutDashboard}
-                        isActive={activeStep === 11}
-                        isExpanded={isExpanded}
-                        onClick={() => setActiveStep(11)}
-                        isPrimary={true}
-                      />
-                      <SidebarNavItem
-                        label="Optimize"
-                        icon={Award}
-                        isActive={activeStep === 5}
-                        isExpanded={isExpanded}
-                        savings={taxCalculationResult.savings}
-                        onClick={() => setActiveStep(5)}
-                        isPrimary={true}
-                      />
-                      <SidebarNavItem
-                        label="Tax Return"
-                        icon={ListTodo}
-                        isActive={activeStep === 6}
-                        isExpanded={isExpanded}
-                        onClick={() => setActiveStep(6)}
-                        isPrimary={true}
-                      />
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-px bg-white/[0.015] mx-2" />
-
-                    {/* 2. TOOLS Navigation Items */}
-                    <div className="space-y-1">
-                      {isExpanded && (
-                        <span className="text-[8px] text-slate-400/70 font-medium uppercase tracking-[0.15em] block px-3 mt-1.5 mb-1.5 select-none">
-                          Tools
-                        </span>
-                      )}
-                      <SidebarNavItem
-                        label="Document Vault"
-                        icon={FileUp}
-                        isActive={activeStep === 3}
-                        isExpanded={isExpanded}
-                        completed={taxData.grossSalary !== 850000 || taxData.tdsDeducted !== 15000}
-                        onClick={() => setActiveStep(3)}
-                      />
-                      <SidebarNavItem
-                        label="AI Analysis"
-                        icon={BrainCircuit}
-                        isActive={activeStep === 4}
-                        isExpanded={isExpanded}
-                        badge="Gemini"
-                        onClick={() => setActiveStep(4)}
-                      />
-                      <SidebarNavItem
-                        label="History & Archive"
-                        icon={History}
-                        isActive={activeStep === 10}
-                        isExpanded={isExpanded}
-                        onClick={() => setActiveStep(10)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom user settings & profiles section */}
-                <div className="p-3 border-t border-white/[0.04] space-y-3.5">
-                  {/* AI Ingestion Status Alert Card */}
-                  {ingestionState !== 'IDLE' && (
-                    <div 
-                      title={`${backgroundStatusMessage} (${backgroundProgress}%)`}
-                      className={`p-3 bg-white/[0.01] border border-white/[0.015] rounded-xl transition-all ${
-                        isExpanded ? 'space-y-2' : 'flex justify-center items-center'
-                      }`}
-                    >
-                      {!isExpanded ? (
-                        <div className="relative">
-                          {ingestionState === 'COMPLETED' ? (
-                            <CheckCircle className="w-4 h-4 text-[#16E27A]" />
-                          ) : (
-                            <>
-                              <Cpu className="w-4 h-4 text-[#16E27A] animate-spin" />
-                              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#16E27A] rounded-full animate-ping" />
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-2 text-left w-full">
-                          <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-emerald-500/80">
-                            <span className="flex items-center gap-1.5">
-                              {ingestionState === 'COMPLETED' ? (
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-500/80 animate-pulse" />
-                              ) : (
-                                <Cpu className="w-3.5 h-3.5 text-emerald-455 animate-pulse" /> 
-                              )}
-                              Form 16 Verified
-                            </span>
-                            <span className="font-mono text-emerald-450/90">{ingestionState === 'COMPLETED' ? '100%' : `${backgroundProgress}%`}</span>
-                          </div>
-                          
-                          {/* Super thinned progress line */}
-                          <div className="h-[2px] w-full bg-slate-950/80 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-emerald-500/40 rounded-full transition-all duration-300" 
-                              style={{ width: `${ingestionState === 'COMPLETED' ? 100 : backgroundProgress}%` }} 
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Guest Sandbox Timer Card */}
-                  {authMode === 'GUEST' && (
-                    !isExpanded ? (
-                      <div className="relative group/sidebar-item w-full animate-pulse flex justify-center py-1 select-none">
-                        <button
-                          onClick={() => {
-                            (window as any)._migrationRedirectStep = activeStep;
-                            setActiveStep(2);
-                          }}
-                          className="w-8 h-8 flex items-center justify-center bg-white/[0.01] border border-white/[0.03] hover:bg-white/[0.05] rounded-xl text-slate-400 hover:text-slate-205 transition-all cursor-pointer"
-                        >
-                          <AlertCircle className="w-4 h-4 text-slate-500" />
-                        </button>
-                        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Guest Session - Click to Sign In
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-3 bg-white/[0.01] border border-white/[0.015] shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)] rounded-xl space-y-2.5 text-left relative overflow-hidden flex flex-col">
-                        <div className="space-y-1">
-                          <div className="text-[8.5px] font-bold text-slate-400/80 uppercase tracking-widest flex items-center gap-1.5 font-sans">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
-                            Guest Session
-                          </div>
-                          <div className="text-[8.5px] text-slate-500/80 font-semibold leading-normal">
-                            Temporary workspace
-                          </div>
-                          <div className="text-[8.5px] text-slate-500/60 font-semibold leading-none pt-0.5">
-                            Expires in <span className="font-mono text-slate-400 font-bold">{Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}</span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            (window as any)._migrationRedirectStep = activeStep;
-                            setActiveStep(2);
-                          }}
-                          className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-950 font-bold rounded-lg text-[8.5px] uppercase tracking-wider cursor-pointer transition-colors shadow-sm self-start"
-                        >
-                          Sign In
-                        </button>
-                      </div>
-                    )
-                  )}
-
-                  {/* 3. SYSTEM Navigation Items */}
-                  <div className="space-y-1">
-                    {isExpanded && (
-                      <span className="text-[8px] text-slate-400/70 font-medium uppercase tracking-[0.15em] block px-3 mb-1.5 select-none">
-                        System
-                      </span>
-                    )}
-
-                    {/* Settings Page Trigger Link (Tertiary navigation) */}
-                    <div className="relative group/sidebar-item w-full">
-                      <button
-                        onClick={() => setIsSettingsOpen(true)}
-                        className={`w-full flex items-center ${
-                          isExpanded ? 'gap-3 px-3' : 'justify-center px-0'
-                        } py-2 rounded-xl text-xs font-semibold text-slate-450 hover:bg-white/[0.03] hover:text-white transition-all duration-180 ease-out cursor-pointer hover:-translate-y-[1px]`}
-                      >
-                        <Settings className="w-5 h-5 text-slate-500 group-hover:text-slate-350 shrink-0 transition-colors duration-180" />
-                        {isExpanded && <span>Settings & Sandbox</span>}
-                      </button>
-                      {!isExpanded && (
-                        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Settings & Sandbox
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="h-px bg-white/[0.015] mx-2" />
-
-                  {/* User Account Switcher Profile Block */}
-                  <div className="relative group/sidebar-item w-full">
-                    {isExpanded ? (
-                      <div 
-                        onClick={() => {
-                          GoogleAuthService.revokeSession();
-                          clearSession();
-                          setActiveStep(2);
-                        }}
-                        className="flex items-center justify-between gap-3.5 px-4 py-3.5 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-white/[0.04] rounded-2xl relative select-none cursor-pointer transition-all duration-200 group/profile-row"
-                      >
-                        <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
-                          {/* Avatar */}
-                          <div className="w-8 h-8 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-300 font-bold flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-inner transition-transform group-hover/profile-row:scale-105 duration-200">
-                            {user?.photoURL ? (
-                              <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
-                            ) : (
-                              <User className="w-4 h-4 text-blue-300" />
-                            )}
-                          </div>
-                          <div className="flex flex-col text-left min-w-0 ml-1">
-                            <span className="text-[11px] font-bold text-slate-205 group-hover/profile-row:text-white transition-colors truncate leading-tight">
-                              {user?.name || incomeProfile?.employeeName || 'Guest User'}
-                            </span>
-                            <span className="text-[8.5px] text-slate-500 group-hover/profile-row:text-slate-400 transition-colors truncate mt-0.5 leading-none">
-                              {authMode === 'GUEST' ? 'Guest Mode' : (user?.email || 'PAN Profile')}
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            GoogleAuthService.revokeSession();
-                            clearSession();
-                            setActiveStep(2);
-                          }}
-                          title="Log Out Session"
-                          className="p-2 mr-1 rounded-full text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer transition-all duration-180 flex items-center justify-center shrink-0"
-                        >
-                          <LogOut className="w-4 h-4 transition-transform group-hover/profile-row:translate-x-0.5 duration-200" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => {
-                          GoogleAuthService.revokeSession();
-                          clearSession();
-                          setActiveStep(2);
-                        }}
-                        className="relative group/sidebar-item w-full flex justify-center py-1 cursor-pointer"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-300 font-bold flex items-center justify-center text-[11px] shrink-0 overflow-hidden hover:bg-blue-600/25 transition-colors duration-180">
-                          {user?.photoURL ? (
-                            <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-4 h-4 text-blue-300" />
-                          )}
-                        </div>
-                        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
-                          <div className="text-[10px] font-bold text-slate-202">{user?.name || incomeProfile?.employeeName || 'Guest User'}</div>
-                          <div className="text-[8px] text-slate-500 font-mono mt-0.5">{authMode === 'GUEST' ? 'Guest Mode' : (user?.email || 'PAN Profile')}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.aside>
 
             {/* Viewport Core Workspace Area */}
             <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -1524,7 +1132,7 @@ export default function App() {
                 {/* Mobile Header Bar */}
                 <div className="md:hidden flex items-center justify-between p-4 border-b border-white/[0.04] bg-[#040608]/80 backdrop-blur-md z-30 shrink-0 select-none">
                   <button 
-                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+                    onClick={() => useSidebarStore.getState().toggleCollapsed()} 
                     className="p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 focus:outline-none cursor-pointer"
                   >
                     <Menu className="w-5 h-5" />
