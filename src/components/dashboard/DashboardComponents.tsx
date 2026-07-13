@@ -83,14 +83,14 @@ export const DashboardCard: React.FC<ComponentProps & {
   const getVariantStyles = () => {
     switch (variant) {
       case 'secondary':
-        return 'bg-slate-950/20 border-slate-800/40 shadow-sm';
+        return 'bg-white/[0.01] border-white/[0.015] shadow-xs';
       case 'accent-purple':
-        return 'bg-gradient-to-b from-slate-900/50 to-slate-950/40 border-purple-500/20 shadow-[0_8px_32px_0_rgba(168,85,247,0.02)]';
+        return 'bg-gradient-to-b from-slate-900/40 to-slate-950/30 border-purple-500/15 shadow-[0_8px_32px_0_rgba(168,85,247,0.015)]';
       case 'accent-amber':
-        return 'bg-slate-900/40 border-amber-500/20 shadow-[0_8px_32px_0_rgba(245,158,11,0.02)]';
+        return 'bg-slate-900/30 border-amber-500/15 shadow-[0_8px_32px_0_rgba(245,158,11,0.015)]';
       case 'primary':
       default:
-        return 'bg-[#0f172a]/45 border-white/[0.06] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]';
+        return 'bg-slate-900/35 border-white/[0.04] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]';
     }
   };
 
@@ -281,51 +281,51 @@ export const RecommendationCard: React.FC<{
   onAction: () => void;
 }> = ({ title, description, savings, difficulty, time, documents, confidence, onAction }) => {
   return (
-    <div className="relative bg-[#0f172a]/30 border border-white/[0.05] shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] rounded-[24px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden group hover:scale-[1.01] hover:border-blue-500/30 transition-all duration-300">
+    <div className="relative bg-slate-900/30 border border-white/[0.03] shadow-[inset_0_1px_1px_rgba(255,255,255,0.015)] rounded-[20px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden group hover:scale-[1.01] hover:border-blue-500/20 hover:bg-slate-900/40 transition-all duration-300">
       {/* Spotlight Ambient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.01] via-transparent to-transparent pointer-events-none group-hover:from-emerald-500/[0.02]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/[0.01] via-transparent to-transparent pointer-events-none group-hover:from-blue-500/[0.02]" />
       
-      <div className="space-y-3 z-10 text-left flex-1">
+      <div className="space-y-3.5 z-10 text-left flex-1">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider font-mono">
+            <span className="text-[9px] text-emerald-450 font-bold uppercase tracking-wider font-mono">
               Next Highest Impact Action
             </span>
-            <StatusBadge type="success" text={`Save ${savings}`} />
+            <StatusBadge type="success" text={`Save ${savings}`} pulsing={true} />
           </div>
           <h4 className="text-[14px] font-semibold text-white tracking-tight font-sans">
             {title}
           </h4>
         </div>
-        <p className="text-[11.5px] text-slate-400 leading-[1.6] font-normal">
+        <p className="text-[11.5px] text-slate-450 leading-[1.6] font-normal">
           {description}
         </p>
         <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          <span className="text-[9.5px] bg-slate-950/40 text-slate-400 border border-slate-800/40 px-2 py-0.5 rounded-md font-medium">
+          <span className="text-[9.5px] bg-white/[0.01] text-slate-400 border border-white/[0.02] px-2.5 py-0.5 rounded-full font-medium">
             Time: {time}
           </span>
-          <span className="text-[9.5px] bg-slate-950/40 text-slate-400 border border-slate-800/40 px-2 py-0.5 rounded-md font-medium">
+          <span className="text-[9.5px] bg-white/[0.01] text-slate-400 border border-white/[0.02] px-2.5 py-0.5 rounded-full font-medium">
             Difficulty: {difficulty}
           </span>
-          <span className="text-[9.5px] bg-purple-500/10 text-purple-400 border border-purple-500/15 px-2 py-0.5 rounded-md font-bold">
+          <span className="text-[9.5px] bg-purple-500/10 text-purple-400 border border-purple-500/15 px-2.5 py-0.5 rounded-full font-bold">
             Confidence: {confidence}
           </span>
           {documents.length > 0 && (
-            <span className="text-[9.5px] bg-slate-950/40 text-slate-400 border border-slate-800/40 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
-              <FileText className="w-2.5 h-2.5" />
+            <span className="text-[9.5px] bg-white/[0.01] text-slate-400 border border-white/[0.02] px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1.5">
+              <FileText className="w-2.5 h-2.5 text-slate-500" />
               Requires: {documents.join(', ')}
             </span>
           )}
         </div>
       </div>
       <motion.button
-        whileHover={{ scale: 1.03 }}
+        whileHover={{ scale: 1.03, y: -0.5 }}
         whileTap={{ scale: 0.98 }}
         onClick={onAction}
-        className="px-4 py-2 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.1] hover:border-white/[0.15] text-white font-semibold text-xs rounded-full transition-all duration-200 cursor-pointer shrink-0 select-none flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+        className="px-4.5 py-2.5 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-white font-semibold text-xs rounded-full transition-all duration-200 cursor-pointer shrink-0 select-none flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
       >
         <span>Continue</span>
-        <ArrowRight className="w-3.5 h-3.5 text-slate-350" />
+        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
       </motion.button>
     </div>
   );
@@ -392,7 +392,7 @@ export const TimelineItem: React.FC<{
   return (
     <div className="relative text-xs space-y-0.5 group/node">
       {/* Node Bullet */}
-      <div className="absolute -left-[27px] top-0.5 w-6 h-6 rounded-full bg-slate-950 border border-white/[0.08] shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center relative z-10 group-hover/node:border-blue-500/20 transition-all duration-300">
+      <div className="absolute -left-[27px] top-0.5 w-6 h-6 rounded-full bg-slate-950 border border-white/[0.08] shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center z-10 group-hover/node:border-blue-500/20 transition-all duration-300">
         <IconComp className={`w-3 h-3 ${iconColor}`} />
       </div>
       <div className="pl-3">

@@ -184,6 +184,31 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = React.memo(({
 });
 
 
+const dashboardVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.05
+    }
+  }
+};
+
+const dashboardItemVariants = {
+  hidden: { opacity: 0, y: 15, scale: 0.98 },
+  show: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { 
+      type: "spring" as const, 
+      stiffness: 380, 
+      damping: 30 
+    } 
+  }
+};
+
 export default function App() {
   const hydrated = useTaxStoreHydrated();
   const [isFilingGuideOpen, setIsFilingGuideOpen] = useState(false);
@@ -1205,7 +1230,7 @@ export default function App() {
                         isPrimary={true}
                       />
                       <SidebarNavItem
-                        label="Recommendations"
+                        label="Optimize"
                         icon={Award}
                         isActive={activeStep === 5}
                         isExpanded={isExpanded}
@@ -1550,43 +1575,49 @@ export default function App() {
                     {activeStep === 11 && (
                       <motion.div
                         key="step-11"
-                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        variants={dashboardVariants}
+                        initial="hidden"
+                        animate="show"
+                        exit="hidden"
                         className="space-y-6 font-sans"
                       >
                         {/* Top Hero Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-[#0f172a]/45 border border-white/[0.06] rounded-[24px] p-6 backdrop-blur-md relative overflow-hidden shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]">
+                        <motion.div 
+                          variants={dashboardItemVariants}
+                          className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-slate-900/35 border border-white/[0.04] rounded-[24px] p-6 backdrop-blur-md relative overflow-hidden shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]"
+                        >
                           <div className="md:col-span-2 space-y-4 text-left z-10">
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                               <h1 className="text-xl font-bold tracking-tight text-white font-sans">
                                 Your return is 72% complete. ₹77,896 in tax savings optimized.
                               </h1>
                               <p className="text-[12px] text-slate-400 leading-normal font-normal">
                                 AI is continuously analyzing your documents for additional deductions.
                               </p>
-                              <p className="text-[11px] text-slate-350 leading-normal font-medium bg-blue-600/10 border border-blue-600/20 w-fit px-2.5 py-1 rounded-lg">
-                                Next Highest Impact Action: <span className="text-white font-bold">Claim Health Insurance under Section 80D</span>
-                              </p>
+                              
+                              {/* Sleek Premium Spotlight Chip */}
+                              <div className="flex items-center gap-2 px-3 py-1 bg-blue-600/10 border border-blue-500/20 text-[10px] text-blue-300 font-semibold rounded-full w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                                Next Action: <span className="text-white font-bold">Claim Health Insurance under Section 80D</span>
+                              </div>
                             </div>
                             
                             <div className="flex flex-wrap items-center gap-3 pt-1">
                               <button
                                 onClick={() => setActiveStep(6)}
-                                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-[11px] uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg shadow-blue-500/10 hover:-translate-y-0.5 active:translate-y-0 active:scale-98"
+                                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer shadow-lg shadow-blue-500/10 hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
                               >
                                 Resume Filing
                               </button>
                               <button
                                 onClick={() => setActiveStep(4)}
-                                className="px-4 py-2.5 bg-white/5 border border-slate-800 hover:bg-white/10 text-slate-200 hover:text-white font-bold rounded-xl text-[11px] uppercase tracking-wider transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-98"
+                                className="px-4 py-2.5 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.06] text-slate-200 hover:text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
                               >
                                 Explain My Savings
                               </button>
                               <button
                                 onClick={() => setActiveStep(5)}
-                                className="px-4 py-2.5 bg-white/5 border border-slate-800 hover:bg-white/10 text-slate-200 hover:text-white font-bold rounded-xl text-[11px] uppercase tracking-wider transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-98"
+                                className="px-4 py-2.5 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.06] text-slate-200 hover:text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
                               >
                                 Review Tax Return
                               </button>
@@ -1656,10 +1687,13 @@ export default function App() {
                               ]} 
                             />
                           </div>
-                        </div>
+                        </motion.div>
 
                         {/* Middle Columns: Left (Actions/insights) & Right (Timeline/Status) */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <motion.div 
+                          variants={dashboardItemVariants}
+                          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+                        >
                           
                           {/* Left Columns (Span 2) */}
                           <div className="lg:col-span-2 space-y-6">
@@ -1836,9 +1870,8 @@ export default function App() {
                                 </div>
                               </div>
                             </DashboardCard>
-
                           </div>
-                        </div>
+                        </motion.div>
                       </motion.div>
                     )}
 
