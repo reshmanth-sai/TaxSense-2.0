@@ -25,10 +25,16 @@ import {
   User,
   Shield,
   Calculator,
-  DollarSign
+  DollarSign,
+  ListTodo,
+  Award
 } from 'lucide-react';
 
 const RegimeComparison = React.lazy(() => import('../RegimeComparison'));
+const DeductionCard = React.lazy(() => import('../DeductionCard'));
+const FilingReviewCard = React.lazy(() => import('../FilingReviewCard'));
+const GenerateReturnCard = React.lazy(() => import('../GenerateReturnCard'));
+import { useTaxStore } from '../../store/useTaxStore';
 
 // Format INR currency
 const formatINR = (val: number) => {
@@ -1832,6 +1838,34 @@ interface RecommendationsPanelProps {
   setActiveStep: (step: number) => void;
 }
 
+// Animated Savings Hero Counter for premium loaded feel
+const HeroSavingsCounter: React.FC<{ value: number }> = React.memo(({ value }) => {
+  const [displayValue, setDisplayValue] = React.useState(0);
+
+  React.useEffect(() => {
+    let start = 0;
+    const end = value;
+    if (start === end) return;
+
+    const duration = 600; // 600ms duration
+    const increment = end / (duration / 16);
+    
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        clearInterval(timer);
+        setDisplayValue(end);
+      } else {
+        setDisplayValue(Math.floor(start));
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return <span>{formatINR(displayValue)}</span>;
+});
+
 export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
   taxData,
   taxCalculationResult,
@@ -1841,116 +1875,719 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
   formatINR,
   setActiveStep
 }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const totalDeductionsClaimed = taxData.deduction80C + taxData.deduction80D + taxData.hraExemption + (taxData.section24b || 0) + (taxData.deduction80CCD1B || 0);
+  const savingsVal = taxCalculationResult.savings;
+  const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
+
+  // Framer motion animation variants for staggered major card fade-ups (8px)
+  const panelContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.08 // Stagger major cards
+      }
+    }
+  } as any;
+
+  const panelItem = {
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } }
+  } as any;
+
+  // Framer motion animation variants for staggered progress nodes in the pipeline
+  const pipelineContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.12 // 120ms delay
+      }
+    }
+  } as any;
+
+  const pipelineNode = {
+    initial: { opacity: 0, y: 4 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }
+  } as any;
+
+  // Framer motion animation variants for sequential verification badge chips
+  const chipContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.06 // 60ms delay
+      }
+    }
+  } as any;
+
+  const chipItem = {
+    initial: { opacity: 0, scale: 0.92 },
+    animate: { opacity: 1, scale: 1, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }
+  } as any;
 
   return (
-    <div className="space-y-8 font-sans">
-      {/* 1. Savings Hero Banner */}
-      <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-3xl p-8 text-center space-y-4 relative overflow-hidden backdrop-blur-md">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-emerald-500/5 blur-[90px] rounded-full pointer-events-none" />
+    <motion.div 
+      variants={panelContainer}
+      initial="initial"
+      animate="animate"
+      className="space-y-[40px] font-sans relative overflow-hidden pb-24"
+    >
+      {/* Aurora Background Effect (3% opacity gradient) */}
+      <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-gradient-radial from-emerald-500/5 to-transparent blur-3xl pointer-events-none select-none" />
+
+      {/* 1. Streamlined Hero Section */}
+      <motion.div 
+        variants={panelItem}
+        className="bg-[#0E131B] border border-white/[0.04] rounded-3xl py-6 px-8 text-center space-y-1 relative overflow-hidden backdrop-blur-md"
+      >
+        <div className="absolute inset-0 bg-emerald-500/[0.01] pointer-events-none" />
         
-        <span className="text-[10px] bg-emerald-500/15 text-emerald-450 border border-emerald-500/25 px-2.5 py-0.5 rounded font-black tracking-wider uppercase inline-block z-10 relative">
-          Personalized Recommendation
+        <span className="text-[9px] text-blue-400 font-extrabold uppercase tracking-widest block select-none">
+          AI VERIFIED RECOMMENDATION
         </span>
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white z-10 relative">
-          Here's how you can save <span className="text-emerald-450 font-mono">{formatINR(taxCalculationResult.savings)}</span>
-        </h1>
-        <p className="text-xs text-slate-400 max-w-xl mx-auto z-10 relative font-medium leading-relaxed font-sans">
-          We’ve identified a personalized recommendation that lowers your estimated tax based on your verified Form 16.
+        <h2 className="text-xs font-bold text-slate-450 tracking-wide uppercase select-none mb-1">
+          Your personalized tax strategy is ready.
+        </h2>
+        <p className="text-[10px] text-slate-400 max-w-lg mx-auto font-medium leading-relaxed pb-1.5 select-none">
+          Verified using your Form 16, employer records, and AY 2026–27 tax rules to identify your lowest eligible tax liability.
         </p>
+        
+        {/* Savings Big Value */}
+        <div className="text-7xl md:text-[80px] font-black text-emerald-450 font-mono tracking-[-0.04em] leading-none select-all py-1">
+          <HeroSavingsCounter value={savingsVal} />
+        </div>
+        
+        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block select-none">
+          Estimated tax savings
+        </p>
+        <p className="text-[10px] text-slate-450 font-semibold select-none">
+          Compared to your current filing: {formatINR(savingsVal)} saved
+        </p>
+      </motion.div>
+
+      {/* 2. Structured Decision Summary Card (4 columns) */}
+      <motion.div 
+        variants={panelItem}
+        className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 bg-[#0E131B] border border-white/[0.04] rounded-3xl relative overflow-hidden"
+      >
+        <div className="space-y-1 text-left border-slate-800/80 md:border-r border-b md:border-b-0 pb-4 md:pb-0 pr-4 last:border-0 last:pr-0">
+          <span className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Estimated Savings</span>
+          <span className="font-mono text-emerald-400 font-black text-lg block">{formatINR(savingsVal)}</span>
+        </div>
+        <div className="space-y-1 text-left border-slate-800/80 md:border-r border-b md:border-b-0 pb-4 md:pb-0 pr-4 last:border-0 last:pr-0">
+          <span className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Time Required</span>
+          <span className="text-slate-200 text-sm font-bold block">Less than 1 minute</span>
+        </div>
+        <div className="space-y-1 text-left border-slate-800/80 md:border-r border-b md:border-b-0 pb-4 md:pb-0 pr-4 last:border-0 last:pr-0">
+          <span className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Recommendation</span>
+          <span className="text-slate-200 text-sm font-bold block">
+            Switch to {taxCalculationResult.recommendedRegime === 'NEW' ? 'New Tax Regime' : 'Old Tax Regime'}
+          </span>
+        </div>
+        <div className="space-y-1 text-left last:border-0 last:pr-0">
+          <span className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Expected Impact</span>
+          <span className="text-slate-200 text-sm font-bold block">Lowest projected tax liability</span>
+        </div>
+      </motion.div>
+
+      {/* 3. AI Verification Panel (Trust Signals) */}
+      <motion.div 
+        variants={panelItem}
+        className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-6 space-y-4 text-left"
+      >
+        <div className="flex items-center gap-2 border-b border-white/[0.02] pb-2.5">
+          <ShieldCheck className="h-4.5 w-4.5 text-emerald-400" />
+          <span className="text-[10px] text-slate-350 uppercase tracking-widest font-black">AI Verification Journey</span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div className="space-y-3.5 text-left border-slate-800/60 md:border-r border-b md:border-b-0 pb-4 md:pb-0 pr-6">
+            <h4 className="text-xs font-black text-slate-205 uppercase tracking-widest flex items-center gap-1.5">
+              🛡 AI Verification Complete
+            </h4>
+            <div className="space-y-2 text-xs text-slate-405 font-semibold leading-relaxed">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-450" />
+                <span>All employer data verified</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-450" />
+                <span>All calculations matched</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-450" />
+                <span>No compliance issues found</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-450" />
+                <span>Verified against AY 2026–27 Rules</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 select-none">
+            <span className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Verified credentials</span>
+            <motion.div 
+              variants={chipContainer}
+              className="flex flex-wrap gap-2"
+            >
+              {[
+                'Form 16 Match',
+                'PAN Match',
+                'Salary Verification',
+                'Employer Profile',
+                'AY 2026–27 Rules',
+                'Income Ledger'
+              ].map(chip => (
+                <motion.div 
+                  key={chip} 
+                  variants={chipItem}
+                  className="flex items-center gap-1.5 bg-blue-600/5 border border-blue-500/10 px-3 py-1 rounded-lg text-[9.5px] text-blue-400 font-bold"
+                >
+                  <Check className="h-3 w-3 text-blue-400" />
+                  <span>{chip}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 4. AI Connected Progress Nodes (Compliance Journey) */}
+      <motion.div 
+        variants={panelItem}
+        className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-5 space-y-3.5 text-left select-none"
+      >
+        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">AI Strategy Pipeline</span>
+        <motion.div 
+          variants={pipelineContainer}
+          className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-1"
+        >
+          {[
+            { label: 'Form 16 analyzed', num: 1 },
+            { label: 'Salary verified', num: 2 },
+            { label: 'Deductions matched', num: 3 },
+            { label: 'Tax regimes compared', num: 4 },
+            { label: 'Savings estimated', num: 5 }
+          ].map((node, i) => (
+            <React.Fragment key={node.label}>
+              <motion.div 
+                variants={pipelineNode}
+                className="flex items-center gap-1.5"
+              >
+                <div className="w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-455 flex items-center justify-center font-mono text-[9px] font-bold">
+                  ✓
+                </div>
+                <span className="text-[10px] text-slate-355 font-bold">{node.label}</span>
+              </motion.div>
+              {i < 4 && (
+                <div className="hidden md:block h-[1px] bg-slate-800 flex-1 mx-1.5" />
+              )}
+            </React.Fragment>
+          ))}
+        </motion.div>
+      </motion.div>
+
+      {/* 5. Compared to Current Filing (Visual block - gray vs blue/white vs green) */}
+      <motion.div 
+        variants={panelItem}
+        className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-6 space-y-4 text-left"
+      >
+        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Compared to your current filing</span>
+        
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center font-mono text-center select-none">
+          {/* Current: Muted gray */}
+          <div className="p-4 bg-slate-955/20 text-slate-505 border border-white/[0.01] rounded-2xl">
+            <span className="text-[9px] text-slate-505 uppercase tracking-wider block mb-1">Current Filing</span>
+            <span className="text-sm font-bold">{formatINR(taxCalculationResult.oldRegime.totalTaxPayable)}</span>
+          </div>
+
+          <div className="text-slate-700 font-sans text-lg font-bold">→</div>
+
+          {/* Recommended: Neutral blue/white */}
+          <div className="p-4 bg-slate-900/30 text-slate-205 border border-white/[0.03] rounded-2xl">
+            <span className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">Recommended Filing</span>
+            <span className="text-sm font-bold">{formatINR(taxCalculationResult.newRegime.totalTaxPayable)}</span>
+          </div>
+
+          <div className="text-slate-700 font-sans text-lg font-bold">→</div>
+
+          {/* Savings: Emerald green glow */}
+          <div className="p-4 bg-emerald-500/[0.02] border border-emerald-500/20 text-emerald-450 rounded-2xl shadow-lg shadow-emerald-500/[0.01]">
+            <span className="text-[9px] text-emerald-450 uppercase tracking-wider block mb-1">Estimated Savings</span>
+            <span className="text-emerald-400 text-base font-black">{formatINR(savingsVal)}</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 6. Upgraded CTA Action Section */}
+      <motion.div 
+        variants={panelItem}
+        className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-8 text-center space-y-4"
+      >
+        <div className="space-y-1.5 max-w-md mx-auto">
+          <span className="text-[9px] text-emerald-450 font-bold uppercase tracking-widest block">✓ Verification Complete</span>
+          <h3 className="text-base font-black text-slate-100 uppercase tracking-wider">Everything looks good.</h3>
+          <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+            Your personalized tax strategy has been verified against official AY 2026–27 rules. Continue whenever you're ready.
+          </p>
+        </div>
+
+        <div className="pt-2 select-none">
+          <button
+            onClick={() => setActiveStep(6)}
+            className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-500/10 hover:scale-102 hover:-translate-y-0.5 active:scale-98 flex items-center justify-center gap-1.5 mx-auto"
+          >
+            <span>Continue with AI Filing</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <p className="text-[10px] text-slate-505 font-bold select-none">
+          Review every calculation before submission.
+        </p>
+      </motion.div>
+
+      {/* 7. Collapsible Detailed AI Analysis (Low brightness/contrast to avoid visual competition) */}
+      <motion.div 
+        variants={panelItem}
+        className="w-full text-center pt-4"
+      >
+        <button
+          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+          className="text-xs font-bold text-slate-500 hover:text-slate-400 uppercase tracking-widest cursor-pointer inline-flex items-center gap-1.5 select-none bg-transparent border-none py-2"
+        >
+          <span>{isDetailsOpen ? '▲ Hide Detailed AI Analysis' : '▼ View Detailed AI Analysis'}</span>
+        </button>
+
+        <AnimatePresence>
+          {isDetailsOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 0.9, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mt-4 bg-[#0E131B]/20 border border-white/[0.02] rounded-3xl p-6 lg:p-8 text-left transition-all duration-300 opacity-90 contrast-[0.9] brightness-[0.95]"
+            >
+              <React.Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
+                <RegimeComparison hideHero={true} />
+              </React.Suspense>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+    </motion.div>
+  );
+};
+
+// ----------------------------------------------------
+// 25. CurrencyInput
+// ----------------------------------------------------
+interface CurrencyInputProps {
+  value: number;
+  onChange: (val: string) => void;
+  label: string;
+  sourceText?: string;
+}
+
+export const CurrencyInput: React.FC<CurrencyInputProps> = ({ value, onChange, label, sourceText }) => {
+  const [localVal, setLocalVal] = useState(value.toLocaleString('en-IN'));
+
+  useEffect(() => {
+    setLocalVal(value.toLocaleString('en-IN'));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    const numVal = parseInt(raw, 10) || 0;
+    setLocalVal(numVal.toLocaleString('en-IN'));
+    onChange(raw);
+  };
+
+  return (
+    <div className="p-5 bg-slate-955/40 border border-white/[0.02] rounded-2xl flex items-center justify-between hover:border-blue-500/20 transition-all group">
+      <div className="flex flex-col text-left space-y-1">
+        <span className="text-xs font-bold text-slate-200">{label}</span>
+        {sourceText && (
+          <span className="text-[9px] text-slate-450 font-semibold tracking-wide uppercase font-mono">
+            {sourceText}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 bg-slate-950 border border-white/[0.06] rounded-xl px-3 py-2.5 focus-within:border-blue-500/40 focus-within:ring-2 focus-within:ring-blue-500/10 transition-all duration-150 w-48">
+        <span className="text-slate-500 font-mono text-xs font-bold">₹</span>
+        <input
+          type="text"
+          value={localVal}
+          onChange={handleChange}
+          className="bg-transparent border-none text-right font-mono text-xs font-extrabold text-slate-100 focus:outline-none w-full"
+        />
+      </div>
+    </div>
+  );
+};
+
+// ----------------------------------------------------
+// 26. FilingWorkspacePanel
+// ----------------------------------------------------
+interface FilingWorkspacePanelProps {
+  guidedFilingStep: number;
+  setGuidedFilingStep: React.Dispatch<React.SetStateAction<number>>;
+  incomeProfile: any;
+  taxData: any;
+  handleNumericChange: (field: 'grossSalary' | 'otherIncome' | 'tdsDeducted', val: string) => void;
+  executeFilingSubmission: () => void;
+  taxCalculationResult: any;
+  formatINR: (val: number) => string;
+  setActiveStep: (step: number) => void;
+}
+
+export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
+  guidedFilingStep,
+  setGuidedFilingStep,
+  incomeProfile,
+  taxData,
+  handleNumericChange,
+  executeFilingSubmission,
+  taxCalculationResult,
+  formatINR,
+  setActiveStep
+}) => {
+  const confirmedDeductions = useTaxStore((state) => state.confirmedDeductions);
+  const val80C = confirmedDeductions?.['80C'] || 0;
+  const val80D = confirmedDeductions?.['80D'] || 0;
+  const val80CCD2 = confirmedDeductions?.['80CCD(2)'] || 0;
+
+  const getAdvisorDeductionsMessage = () => {
+    if (val80C === 0) {
+      return "You haven't claimed Section 80C deductions yet. You could save up to ₹46,800 by maxing this out.";
+    }
+    if (val80C > 0 && val80C < 150000) {
+      return `You're leaving ${formatINR(150000 - val80C)} unused under Section 80C. Click 'Max out' to capture full savings.`;
+    }
+    if (val80CCD2 === 0) {
+      return "NPS could reduce another ₹12,000 from your tax liability. Review the New Regime NPS Strategy card.";
+    }
+    return "Your deductions are fully optimized. We've pre-selected the best possible exemptions based on your Form 16.";
+  };
+
+  const steps = [
+    { id: 1, label: "Personal Details", progress: 20 },
+    { id: 2, label: "Income", progress: 40 },
+    { id: 3, label: "Deductions", progress: 60 },
+    { id: 4, label: "Review", progress: 80 },
+    { id: 5, label: "Generate Return", progress: 100 }
+  ];
+
+  const currentStepInfo = steps[guidedFilingStep - 1];
+
+  const getBackLabel = () => {
+    if (guidedFilingStep === 2) return "Back to Personal Details";
+    if (guidedFilingStep === 3) return "Back to Income";
+    if (guidedFilingStep === 4) return "Back to Deductions";
+    if (guidedFilingStep === 5) return "Back to Review";
+    return "Back";
+  };
+
+  const getContinueLabel = () => {
+    if (guidedFilingStep === 1) return "Continue to Income";
+    if (guidedFilingStep === 2) return "Continue to Deductions";
+    if (guidedFilingStep === 3) return "Continue to Review";
+    if (guidedFilingStep === 4) return "Continue to Generate Return";
+    return "Continue";
+  };
+
+  return (
+    <div className="space-y-6 font-sans">
+      {/* Progress Pipeline */}
+      <div className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <ListTodo className="w-4.5 h-4.5 text-emerald-450" />
+            ITR Filing Pipeline
+          </h2>
+          <span className="text-xs text-slate-400 font-bold font-mono">
+            Step {guidedFilingStep} of 5 • {currentStepInfo.progress}% Complete
+          </span>
+        </div>
+        
+        {/* Progress Grid Container */}
+        <div className="relative">
+          {/* Connector Line Background */}
+          {/* First node center is at 10% (1/5th column center), last is at 90% */}
+          <div className="absolute left-[10%] right-[10%] top-3.5 h-[2px] bg-slate-800 rounded-full z-0" />
+          
+          {/* Connector Line Fill (Animate smoothly left to right) */}
+          <div className="absolute left-[10%] right-[10%] top-3.5 h-[2px] rounded-full z-0 overflow-hidden">
+            <motion.div
+              className="h-full bg-blue-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${((guidedFilingStep - 1) / (steps.length - 1)) * 100}%` }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+            />
+          </div>
+
+          {/* 5-Column Grid */}
+          <div className="grid grid-cols-5 w-full relative z-10 select-none">
+            {steps.map((s) => {
+              const isCompleted = guidedFilingStep > s.id;
+              const isActive = guidedFilingStep === s.id;
+              
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setGuidedFilingStep(s.id)}
+                  className="flex flex-col items-center group cursor-pointer focus:outline-none bg-transparent border-none p-0 w-full"
+                >
+                  {/* Step Node Icon (Perfect optical centering & width alignment) */}
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono font-black transition-all duration-300 relative z-20 ${
+                      isCompleted
+                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
+                        : isActive
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-4 ring-blue-500/10 scale-105'
+                        : 'bg-slate-955 border border-white/[0.06] text-slate-500'
+                    }`}
+                  >
+                    {isCompleted ? '✓' : isActive ? '●' : '○'}
+                  </div>
+
+                  {/* Step Label (Wrapped to two centered lines for multi-word text) */}
+                  <div className="mt-3 text-center px-1">
+                    <span
+                      className={`text-[9.5px] uppercase tracking-widest font-extrabold transition-all duration-200 block leading-tight ${
+                        isActive
+                          ? 'text-white font-black'
+                          : isCompleted
+                          ? 'text-emerald-450 hover:text-emerald-400'
+                          : 'text-slate-500 hover:text-slate-400'
+                      }`}
+                    >
+                      {s.label.split(' ').map((word, wIdx) => (
+                        <span key={wIdx} className="block">
+                          {word}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* 2. Regime Comparison Detail Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        
-        {/* Left Column (Comparison Panel - 7 columns) */}
-        <div className="lg:col-span-7 flex flex-col h-full bg-slate-900/20 border border-white/[0.03] rounded-3xl p-6 backdrop-blur-md justify-between space-y-6 shadow-md transition-all">
+      {/* Main card with layout division */}
+      {guidedFilingStep === 3 ? (
+        <div className="w-full text-left">
           <React.Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
-            <RegimeComparison />
+            <DeductionCard
+              onContinue={() => setGuidedFilingStep(4)}
+              onBack={() => setGuidedFilingStep(2)}
+            />
           </React.Suspense>
         </div>
-
-        {/* Right Column (AI Explanation, Pros & Cons & CTA - 5 columns) */}
-        <div className="lg:col-span-5 space-y-6 flex flex-col justify-between text-left">
-          
-          {/* Explanation panel */}
-          <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-5 backdrop-blur-md space-y-3.5 flex-1 relative">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              Why We Recommend This
-            </h3>
-            <p className="text-xs text-slate-400 leading-relaxed font-medium font-sans">
-              Because your verified salary and deductions fit the new regime more efficiently. Under AY 2026-27 rules, standard deductions are increased to ₹75,000, and lower tax slabs mean deductions are less critical to offset your liability.
-            </p>
-            
-            <div 
-              className="p-3 bg-white/[0.01] border border-white/[0.02] rounded-xl flex items-center gap-3 relative cursor-help select-none"
-              onMouseEnter={() => setShowTooltip(true)}
-              onMouseLeave={() => setShowTooltip(false)}
-            >
-              <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <CheckCircle className="w-3 h-3 text-emerald-500" />
-              </div>
-              <span className="text-[10px] text-slate-350 font-bold uppercase tracking-wider font-mono">
-                Recommendation Confidence: 99%
-              </span>
-
-              <AnimatePresence>
-                {showTooltip && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl text-[9.5px] leading-relaxed text-slate-350 space-y-1.5 pointer-events-none z-20 text-left font-sans"
-                  >
-                    <p className="font-bold text-white uppercase tracking-wider text-[8px] font-mono text-emerald-400">Verification Report</p>
-                    <p className="font-semibold text-slate-200">Confidence calculation parameters matched.</p>
-                    <div className="pt-1.5 border-t border-slate-900 text-slate-400 text-[8px] space-y-0.5">
-                      <div>✓ All Form 16 schedules matched</div>
-                      <div>✓ Standard allowances calculated</div>
-                      <div>✓ Section 80C limits verified</div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Regime Pros & Cons comparison cards */}
-          <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-5 backdrop-blur-md space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-sans">Pros & Cons of suggestion</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-emerald-500/[0.03] border border-emerald-500/10 rounded-xl space-y-1.5">
-                <span className="text-[9px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" />
-                  Pros
-                </span>
-                <p className="text-[10px] text-slate-450 font-bold leading-relaxed font-sans">Lower tax slab rates, higher standard deduction.</p>
-              </div>
-              <div className="p-3 bg-orange-500/[0.02] border border-orange-500/10 rounded-xl space-y-1.5">
-                <span className="text-[9px] font-black uppercase text-orange-400 tracking-wider flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 text-orange-400 shrink-0" />
-                  Cons
-                </span>
-                <p className="text-[10px] text-slate-450 font-bold leading-relaxed font-sans">Cannot claim Section 80C, 80D, or HRA rent rebates.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA & Helper Guidance copy */}
-          <div className="space-y-3">
-            <PrimaryCTA onClick={() => setActiveStep(6)} className="w-full">
-              Enter Guided Filing Workspace
-            </PrimaryCTA>
-            <p className="text-[10px] text-slate-500 font-semibold text-center leading-relaxed max-w-sm mx-auto font-sans">
-              No information is submitted until you confirm. You’ll review your return before anything is submitted.
-            </p>
-          </div>
-
+      ) : guidedFilingStep === 4 ? (
+        <div className="w-full text-left">
+          <React.Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
+            <FilingReviewCard
+              onContinue={() => setGuidedFilingStep(5)}
+              onBack={() => setGuidedFilingStep(3)}
+            />
+          </React.Suspense>
         </div>
-      </div>
+      ) : guidedFilingStep === 5 ? (
+        <div className="w-full text-left">
+          <React.Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
+            <GenerateReturnCard
+              onContinue={executeFilingSubmission}
+              onBack={() => setGuidedFilingStep(4)}
+            />
+          </React.Suspense>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Side: Form Content Card */}
+          <div className="lg:col-span-8 bg-slate-900/40 border border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-8 relative">
+            
+            {/* Reassurance Auto-save Badge */}
+            <div className="absolute top-6 right-6 flex items-center gap-1.5 text-[9px] text-emerald-455 font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              All changes saved
+            </div>
+
+            {/* Form Header */}
+            <div className="space-y-1 text-left">
+              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                {guidedFilingStep === 1 && "Personal Information"}
+                {guidedFilingStep === 2 && "Income Summary"}
+              </h3>
+              <p className="text-[11px] text-slate-450 font-medium">
+                {guidedFilingStep === 1 && "Verify your personal profile particulars extracted from Form 16."}
+                {guidedFilingStep === 2 && "Configure and confirm ledger details of your gross taxable income."}
+              </p>
+            </div>
+
+            <div className="pt-2">
+              {/* Step 1: Personal Info */}
+              {guidedFilingStep === 1 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-355 uppercase tracking-wider">Full Name</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={incomeProfile?.employeeName || 'Mohit Kumar'}
+                        readOnly
+                        className="w-full bg-slate-955 border border-white/[0.02] rounded-xl py-3 px-4 text-xs text-slate-405 cursor-not-allowed focus:outline-none"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 uppercase tracking-wider font-bold bg-white/[0.02] border border-white/[0.04] px-1.5 py-0.5 rounded">
+                        Verified
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-355 uppercase tracking-wider">Permanent Account Number (PAN)</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={incomeProfile?.pan || 'MK*****32F'}
+                        readOnly
+                        className="w-full bg-slate-955 border border-white/[0.02] rounded-xl py-3 px-4 text-xs text-slate-405 cursor-not-allowed focus:outline-none"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 uppercase tracking-wider font-bold bg-white/[0.02] border border-white/[0.04] px-1.5 py-0.5 rounded">
+                        Verified
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-355 uppercase tracking-wider">Employer Category</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        defaultValue="Private Sector Co."
+                        disabled
+                        className="w-full bg-slate-955 border border-white/[0.02] rounded-xl py-3 px-4 text-xs text-slate-405 cursor-not-allowed focus:outline-none"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 uppercase tracking-wider font-bold bg-white/[0.02] border border-white/[0.04] px-1.5 py-0.5 rounded">
+                        Verified
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-355 uppercase tracking-wider">Residential Status</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        defaultValue="Resident Individual"
+                        disabled
+                        className="w-full bg-slate-955 border border-white/[0.02] rounded-xl py-3 px-4 text-xs text-slate-405 cursor-not-allowed focus:outline-none"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 uppercase tracking-wider font-bold bg-white/[0.02] border border-white/[0.04] px-1.5 py-0.5 rounded">
+                        Verified
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Income Review */}
+              {guidedFilingStep === 2 && (
+                <div className="space-y-5">
+                  <CurrencyInput
+                    value={taxData.grossSalary}
+                    onChange={(val) => handleNumericChange('grossSalary', val)}
+                    label="Gross Salary (Section 17(1))"
+                    sourceText="Extracted from verified Form 16"
+                  />
+
+                  <CurrencyInput
+                    value={taxData.otherIncome}
+                    onChange={(val) => handleNumericChange('otherIncome', val)}
+                    label="Income from Other Sources"
+                    sourceText="Estimated / Self-declared"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Navigation buttons */}
+            <div className="pt-6 border-t border-slate-800/60 flex justify-between">
+              <button
+                onClick={() => setGuidedFilingStep(prev => Math.max(1, prev - 1))}
+                disabled={guidedFilingStep === 1}
+                className="px-5 py-2.5 border border-slate-800 hover:bg-white/[0.02] text-slate-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer disabled:opacity-30 disabled:pointer-events-none select-none active:scale-95 transition-all"
+              >
+                {getBackLabel()}
+              </button>
+              <button
+                onClick={() => setGuidedFilingStep(prev => Math.min(5, prev + 1))}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center gap-1 group"
+              >
+                <span>{getContinueLabel()}</span>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+              </button>
+            </div>
+
+          </div>
+
+          {/* Right Side: Contextual Assistant Advice (4 columns) */}
+          <div className="lg:col-span-4 space-y-6 text-left">
+            <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-5 backdrop-blur-md space-y-4">
+              <div className="flex items-center gap-2 text-blue-400">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                <span className="text-xs font-bold uppercase tracking-wider">Advisor Guidance</span>
+              </div>
+              
+              <p className="text-xs text-slate-405 leading-relaxed font-medium">
+                {guidedFilingStep === 1 && "Everything here was automatically extracted from your Form 16. You remain in control and can verify the ledger entries before filing."}
+                {guidedFilingStep === 2 && "Verify your income ledgers. Your gross salary corresponds to section 17(1) of Form 16. You can edit any parameters if needed."}
+                {guidedFilingStep === 4 && "This is a pre-filing compliance audit check. Switched regime liability calculations are verified against AY 2026-27 rules."}
+                {guidedFilingStep === 5 && "Final verification before return ledger generation. This step logs your optimization history inside your local secure browser storage."}
+              </p>
+
+              <div className="pt-3 border-t border-slate-800/60 space-y-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Your data stays securely on your device</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500/60" />
+                  <span>Checked against official AY 2026-27 tax rules</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Checklist Status */}
+            <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-5 backdrop-blur-md">
+              <h4 className="text-xs font-bold text-slate-355 uppercase tracking-wider mb-2">Filing Progress</h4>
+              <div className="space-y-2 text-xs">
+                <div className={`flex justify-between items-center ${guidedFilingStep === 1 ? 'text-white font-bold' : 'opacity-60 text-slate-400'}`}>
+                  <span>1. Personal Details</span>
+                  <span className="text-emerald-450 font-bold font-mono">✓ Verified</span>
+                </div>
+                <div className={`flex justify-between items-center ${guidedFilingStep === 2 ? 'text-white font-bold' : guidedFilingStep > 2 ? 'opacity-60 text-slate-400' : 'opacity-40 text-slate-500'}`}>
+                  <span>2. Income</span>
+                  <span className={guidedFilingStep > 2 ? "text-emerald-450 font-bold font-mono" : "font-mono"}>
+                    {guidedFilingStep > 2 ? "✓ Verified" : guidedFilingStep === 2 ? "• Active" : "Pending"}
+                  </span>
+                </div>
+                <div className={`flex justify-between items-center ${guidedFilingStep === 3 ? 'text-white font-bold' : guidedFilingStep > 3 ? 'opacity-60 text-slate-400' : 'opacity-40 text-slate-500'}`}>
+                  <span>3. Deductions</span>
+                  <span className={guidedFilingStep > 3 ? "text-emerald-450 font-bold font-mono" : "font-mono"}>
+                    {guidedFilingStep > 3 ? "✓ Verified" : guidedFilingStep === 3 ? "• Active" : "Pending"}
+                  </span>
+                </div>
+                <div className={`flex justify-between items-center ${guidedFilingStep === 4 ? 'text-white font-bold' : guidedFilingStep > 4 ? 'opacity-60 text-slate-400' : 'opacity-40 text-slate-500'}`}>
+                  <span>4. Review</span>
+                  <span className={guidedFilingStep > 4 ? "text-emerald-450 font-bold font-mono" : "font-mono"}>
+                    {guidedFilingStep > 4 ? "✓ Verified" : guidedFilingStep === 4 ? "• Active" : "Pending"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

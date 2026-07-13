@@ -1,38 +1,281 @@
 import React from 'react';
-import { HelpCircle, Info, ShieldAlert, Award, ArrowUpRight, TrendingUp, Sparkles, CheckCircle, ShieldCheck, Zap, Minus, Plus, RefreshCw, Layers } from 'lucide-react';
+import { 
+  Sparkles, 
+  CheckCircle2, 
+  HelpCircle, 
+  ChevronRight, 
+  ChevronDown, 
+  Lock, 
+  ShieldCheck, 
+  Minus, 
+  Plus, 
+  ArrowRight,
+  X,
+  TrendingUp,
+  Award,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTaxStore } from '../store/useTaxStore';
-import { formatINR } from '../utils/taxCalculator';
+import { calculateTax, formatINR } from '../utils/taxCalculator';
 
-type ActiveTabType = '80C' | '80D' | 'HRA' | 'NPS' | 'OTHER_SEC';
+// ---------------------------------------------------------
+// REUSABLE ENGINEERING COMPONENTS
+// ---------------------------------------------------------
 
-export const ParamInfo: React.FC<{ text: string }> = ({ text }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+// Animated Counter for dynamic numbers (savings, claimed, etc.)
+const AnimatedCounter: React.FC<{ value: number }> = React.memo(({ value }) => {
+  const [displayValue, setDisplayValue] = React.useState(value);
+
+  React.useEffect(() => {
+    let start = displayValue;
+    const end = value;
+    if (start === end) return;
+    const duration = 250; // 250ms counting animation
+    const startTime = performance.now();
+    let animationFrameId: number;
+
+    const updateCount = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeProgress = progress * (2 - progress); // Ease out quad
+      const current = Math.round(start + (end - start) * easeProgress);
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(updateCount);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(updateCount);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [value]);
+
+  return <span className="font-mono">{formatINR(displayValue)}</span>;
+});
+
+// Premium Side Sheet for "Why did AI recommend this?"
+interface WhyRecommendationSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  explanation: string;
+}
+
+const WhyRecommendationSheet: React.FC<WhyRecommendationSheetProps> = React.memo(({ isOpen, onClose, title, explanation }) => {
   return (
-    <div className="relative inline-flex items-center ml-1 z-30 group">
-      <button
-        type="button"
-        onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer p-0.5 inline-flex items-center align-middle"
-        title={text}
-      >
-        <Info className="h-3.5 w-3.5 inline text-slate-400 hover:text-blue-500 transition-colors" />
-      </button>
+    <AnimatePresence>
       {isOpen && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-900 border border-slate-800 text-white text-[10px] font-medium rounded-lg shadow-xl leading-normal text-left z-50 pointer-events-none transition-all">
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-          {text}
-        </div>
+        <>
+          {/* Backdrop Blur Overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 transition-opacity"
+          />
+
+          {/* Sliding Panel */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-[#0A0D14] border-l border-white/[0.08] p-8 shadow-2xl z-50 flex flex-col justify-between text-left"
+          >
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 text-emerald-450">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">AI Tax Explanation</span>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-white/[0.04] rounded-full text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-base font-bold text-slate-100">{title}</h3>
+                <p className="text-xs text-slate-400 leading-relaxed bg-[#0E131B] border border-white/[0.02] p-5 rounded-2xl">
+                  {explanation}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-slate-900/60 space-y-2">
+              <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                <Lock className="w-3.5 h-3.5 text-slate-650" />
+                <span>Exemption verified using AY 2026-27 Tax Slabs</span>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-full h-11 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-98"
+              >
+                Got it, thank you
+              </button>
+            </div>
+          </motion.div>
+        </>
       )}
+    </AnimatePresence>
+  );
+});
+
+// Premium Savings Hero (centered, maximum width ~1200px)
+interface SavingsHeroProps {
+  savings: number;
+  subtitle: string;
+}
+
+const SavingsHero: React.FC<SavingsHeroProps> = React.memo(({ savings, subtitle }) => {
+  return (
+    <div className="bg-slate-900/30 border border-white/[0.03] rounded-3xl p-10 text-center relative overflow-hidden backdrop-blur-md max-w-[1200px] mx-auto">
+      <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
+      
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold uppercase tracking-wider mb-4">
+        <Sparkles className="h-3 w-3 text-emerald-400" />
+        <span>Exemption Blueprint Prepared</span>
+      </div>
+      
+      <h1 className="text-xl md:text-2xl font-bold text-slate-100 tracking-tight leading-tight">
+        {subtitle}
+      </h1>
+      
+      <div className="my-6">
+        <span className="text-4xl md:text-5xl font-black text-emerald-400 tracking-tight">
+          <AnimatedCounter value={savings} />
+        </span>
+        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Estimated Tax Savings</p>
+      </div>
+
+      <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
+        Our AI advisor analyzed your Form 16 ledger records, matched employer validation tags, validated AY 2026-27 rules, and optimized your deductions structure automatically.
+      </p>
     </div>
   );
-};
+});
 
-const DeductionCard = React.memo(() => {
-  const [activeTab, setActiveTab] = React.useState<ActiveTabType>('80C');
-  const [regimeOptimizer, setRegimeOptimizer] = React.useState<'OLD' | 'NEW'>('OLD');
+// AI Recommendation Card (handles WHY click side sheet)
+interface RecommendationCardProps {
+  title: string;
+  badge: string;
+  amountText: string;
+  whyExplanation: string;
+  isPrimary?: boolean;
+  onWhyClick: (title: string, exp: string) => void;
+}
+
+const RecommendationCard: React.FC<RecommendationCardProps> = React.memo(({ 
+  title, 
+  badge, 
+  amountText, 
+  whyExplanation, 
+  isPrimary = false, 
+  onWhyClick 
+}) => {
+  return (
+    <div className={`bg-[#0E131B] border border-white/[0.04] rounded-2xl p-[18px] flex flex-col justify-between hover:border-white/[0.08] transition-all hover:-translate-y-0.5 duration-200 ${
+      isPrimary ? 'md:col-span-2 md:p-[24px] border-emerald-500/10 bg-gradient-to-br from-[#0E131B] to-slate-900/10' : ''
+    }`}>
+      <div className="space-y-2 text-left">
+        <div className="flex items-baseline justify-between gap-2.5 flex-wrap">
+          <span className={`font-extrabold text-slate-200 uppercase tracking-wider ${isPrimary ? 'text-base' : 'text-sm'}`}>
+            {title}
+          </span>
+          <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border align-middle ${
+            badge.includes('Auto') 
+              ? 'bg-slate-800 text-slate-400 border-white/[0.04]' 
+              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
+            {badge}
+          </span>
+        </div>
+        <p className="text-xs md:text-[13px] text-slate-450 leading-relaxed pt-0.5 font-medium">
+          {whyExplanation}
+        </p>
+      </div>
+
+      <div className="flex justify-between items-end mt-4 pt-3 border-t border-white/[0.02]">
+        <div>
+          <span className="text-[9px] text-slate-505 uppercase tracking-wider font-bold block mb-0.5">Value</span>
+          <span className={`font-mono font-black text-slate-100 ${isPrimary ? 'text-lg md:text-xl' : 'text-base'}`}>
+            {amountText}
+          </span>
+        </div>
+
+        <button
+          onClick={() => onWhyClick(title, whyExplanation)}
+          className="text-[10px] font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300 transition-colors cursor-pointer border-none bg-transparent p-0"
+        >
+          <span>See AI reasoning →</span>
+        </button>
+      </div>
+    </div>
+  );
+});
+
+// Confidence Shield Chips
+const ConfidenceShield: React.FC = React.memo(() => {
+  const chips = [
+    'Form 16 verified',
+    'Employer Profile verified',
+    'PAN validated',
+    'AY Rules matched',
+    'Income mapping completed'
+  ];
+
+  return (
+    <div className="bg-slate-900/20 border border-white/[0.03] rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 text-left max-w-[1200px] mx-auto">
+      <div className="shrink-0 w-32 h-14 bg-blue-500/5 text-blue-400 border border-blue-500/10 rounded-2xl flex flex-col items-center justify-center">
+        <span className="text-base font-black font-mono">99% Verified</span>
+        <span className="text-[8px] uppercase tracking-wider font-extrabold text-slate-500">Confidence Shield</span>
+      </div>
+      <div className="space-y-2 flex-1">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Exemption Verification Shield</span>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {chips.map((check) => (
+            <span key={check} className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wider bg-white/[0.02] border border-white/[0.04] px-2.5 py-1 rounded text-slate-400">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-450" />
+              <span>{check}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------
+// MAIN EXPORTED DEDUCTIONS WORKSPACE
+// ---------------------------------------------------------
+
+interface DeductionCardProps {
+  onContinue?: () => void;
+  onBack?: () => void;
+}
+
+type SubStage = '3A' | '3B' | '3C';
+
+export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onContinue, onBack }) => {
+  const [subStage, setSubStage] = React.useState<SubStage>('3A');
+  const [expandedAccordion, setExpandedAccordion] = React.useState<string | null>('80C');
+
+  // Sheet detail overlays
+  const [whySheetOpen, setWhySheetOpen] = React.useState(false);
+  const [whySheetTitle, setWhySheetTitle] = React.useState('');
+  const [whySheetExplanation, setWhySheetExplanation] = React.useState('');
+
+  const openWhySheet = React.useCallback((title: string, explanation: string) => {
+    setWhySheetTitle(title);
+    setWhySheetExplanation(explanation);
+    setWhySheetOpen(true);
+  }, []);
 
   // Load centralized states & actions from Zustand store
   const confirmedDeductions = useTaxStore((state) => state.confirmedDeductions);
@@ -40,144 +283,63 @@ const DeductionCard = React.memo(() => {
   const isExtracting = useTaxStore((state) => state.isExtracting);
   const incomeProfile = useTaxStore((state) => state.incomeProfile);
 
+  // Calculate dynamic outputs
+  const taxDataForCalc = React.useMemo(() => ({
+    assessmentYear: '2026-27',
+    grossSalary: incomeProfile?.grossSalary || 0,
+    hraExemption: confirmedDeductions?.['HRA exemption'] || confirmedDeductions?.hraExemption || 0,
+    ltaExemption: 0,
+    standardDeductionOld: 50000,
+    standardDeductionNew: 75000,
+    otherIncome: incomeProfile?.otherIncome || 0,
+    deduction80C: confirmedDeductions?.['80C'] || 0,
+    deduction80D: confirmedDeductions?.['80D'] || 0,
+    deduction80TTA: confirmedDeductions?.['80TTA'] || 0,
+    deduction80G: confirmedDeductions?.['80G'] || 0,
+    section24b: confirmedDeductions?.['section24b'] || 0,
+    tdsDeducted: incomeProfile?.tdsDeducted || 0,
+    stcg: incomeProfile?.stcg || 0,
+    ltcg: incomeProfile?.ltcg || 0,
+    deduction80CCD1B: confirmedDeductions?.['80CCD(1B)'] || 0,
+    deduction80CCD2: confirmedDeductions?.['80CCD(2)'] || 0,
+    deduction80DD: confirmedDeductions?.['80DD'] || 0,
+    deduction80U: confirmedDeductions?.['80U'] || 0,
+    deduction80DDB: confirmedDeductions?.['80DDB'] || 0,
+    deduction80E: confirmedDeductions?.['80E'] || 0,
+    deduction80EEA: confirmedDeductions?.['80EEA'] || 0,
+    deduction80GG: confirmedDeductions?.['80GG'] || 0,
+    deduction80TTB: confirmedDeductions?.['80TTB'] || 0,
+    deduction80CCH: confirmedDeductions?.['80CCH'] || 0,
+    section24bLetOut: confirmedDeductions?.['section24bLetOut'] || 0,
+  }), [incomeProfile, confirmedDeductions]);
+
+  const calculation = React.useMemo(() => {
+    return calculateTax(taxDataForCalc);
+  }, [taxDataForCalc]);
+
+  const recommendedRegime = calculation.recommendedRegime || 'NEW';
+
   const val80C = confirmedDeductions?.['80C'] || 0;
   const val80D = confirmedDeductions?.['80D'] || 0;
   const valHRA = confirmedDeductions?.['HRA exemption'] || confirmedDeductions?.hraExemption || 0;
   const valNPS = confirmedDeductions?.['80CCD(1B)'] || 0;
-
-  // Other deductions
   const val80CCD2 = confirmedDeductions?.['80CCD(2)'] || 0;
   const val80CCH = confirmedDeductions?.['80CCH'] || 0;
   const valSection24bLetOut = confirmedDeductions?.['section24bLetOut'] || 0;
-  const val80DD = confirmedDeductions?.['80DD'] || 0;
-  const val80U = confirmedDeductions?.['80U'] || 0;
-  const val80DDB = confirmedDeductions?.['80DDB'] || 0;
-  const val80E = confirmedDeductions?.['80E'] || 0;
-  const val80EEA = confirmedDeductions?.['80EEA'] || 0;
-  const val80GG = confirmedDeductions?.['80GG'] || 0;
-  const val80TTA = confirmedDeductions?.['80TTA'] || 0;
-  const val80TTB = confirmedDeductions?.['80TTB'] || 0;
-  const val80G = confirmedDeductions?.['80G'] || 0;
 
   // Limits
   const LIMIT_80C = 150000;
   const LIMIT_80D = 75000;
   const LIMIT_HRA = 300000;
   const LIMIT_NPS = 50000;
+  const LIMIT_24B_LETOUT = 200000;
 
-  // Statutory Limits for Advanced Sections
-  const basic = incomeProfile?.basicSalary || Math.round((incomeProfile?.grossSalary || 0) * 0.4);
-  const LIMIT_80CCD2 = Math.round(basic * 0.14);
-  const LIMIT_80CCH = 150000;
-  const LIMIT_24B_LETOUT = 500000;
-  const LIMIT_80DD = 125000;
-  const LIMIT_80U = 125000;
-  const LIMIT_80DDB = 100000;
-  const LIMIT_80E = 500000; // soft cap for display
-  const LIMIT_80EEA = 150000;
-  const LIMIT_80GG = 60000;
-  const LIMIT_80TTA = 10000;
-  const LIMIT_80TTB = 50000;
-  const LIMIT_80G = 200000; // soft cap for display
-
-  const handleSliderChange = React.useCallback((key: any, maxLimit: number, valStr: string) => {
-    const val = Math.min(maxLimit, Math.max(0, parseInt(valStr.replace(/,/g, '')) || 0));
-    updateDeduction(key, val);
-  }, [updateDeduction]);
-
-  const handleTextInputChange = React.useCallback((key: any, maxLimit: number, valStr: string) => {
-    const cleaned = valStr.replace(/[^0-9]/g, '');
-    const val = Math.min(maxLimit, Math.max(0, parseInt(cleaned) || 0));
-    updateDeduction(key, val);
-  }, [updateDeduction]);
-
-  const setDeductionPreset = React.useCallback((key: any, value: number) => {
-    updateDeduction(key, value);
-  }, [updateDeduction]);
-
-  // Percentage calculations for bars
-  const pct80C = Math.min(100, (val80C / LIMIT_80C) * 100);
-  const pct80D = Math.min(100, (val80D / LIMIT_80D) * 100);
-  const pctHRA = Math.min(100, (valHRA / LIMIT_HRA) * 100);
-  const pctNPS = Math.min(100, (valNPS / LIMIT_NPS) * 100);
-
-  // Total deductions summary (Old Regime)
-  const totalClaimed = 
-    val80C + 
-    val80D + 
-    valHRA + 
-    valNPS + 
-    val80CCD2 + 
-    val80DD + 
-    val80U + 
-    val80DDB + 
-    val80E + 
-    val80EEA + 
-    val80GG + 
-    val80G + 
-    (val80TTB || val80TTA);
-
-  // Calculate dynamic old regime marginal tax rate for advisor callouts
-  const grossSalary = incomeProfile?.grossSalary || 0;
+  // Calculation parameters for sliders
+  const grossSalary = incomeProfile?.grossSalary || 850000;
   const otherIncome = incomeProfile?.otherIncome || 0;
-  const oldBaseSalaryTotal = Math.max(0, grossSalary - valHRA) + otherIncome;
-  const oldSlabTaxable = Math.max(0, oldBaseSalaryTotal - totalClaimed - 50000); // including standard deduction of 50k
-  
-  let oldMarginalRate = 0;
-  let oldMarginalRateStr = '0%';
-  if (oldSlabTaxable > 1000000) {
-    oldMarginalRate = 0.30;
-    oldMarginalRateStr = '30% Bracket';
-  } else if (oldSlabTaxable > 500000) {
-    oldMarginalRate = 0.20;
-    oldMarginalRateStr = '20% Bracket';
-  } else if (oldSlabTaxable > 250000) {
-    oldMarginalRate = 0.05;
-    oldMarginalRateStr = '5% Bracket';
-  }
+  const totalClaimed = val80C + val80D + valHRA + valNPS + val80CCD2 + valSection24bLetOut + val80CCH;
 
-  // Calculate real cash saved by having these deductions
-  // Base exemption standard deduction saves tax, but these optional ones save:
-  const optionalDeductions = totalClaimed;
-  const estimatedCashSaved = Math.round(optionalDeductions * oldMarginalRate * 1.04); // including 4% cess
-
-  // Exemption health percentage (max standard deductions 80C, 80D, NPS is 2.75L)
-  const standardShedLimit = LIMIT_80C + LIMIT_80D + LIMIT_NPS;
-  const currentStandardShed = val80C + val80D + valNPS;
-  const standardShedPct = Math.round((currentStandardShed / standardShedLimit) * 100);
-
-  // Pre-configured optimization presets
-  const applyPreset = React.useCallback((presetType: 'standard' | 'aggressive' | 'maximize' | 'reset') => {
-    if (presetType === 'standard') {
-      updateDeduction('80C', 150000);
-      updateDeduction('80D', 25000);
-      updateDeduction('HRA exemption', Math.round(grossSalary * 0.08));
-      updateDeduction('80CCD(1B)', 0);
-    } else if (presetType === 'aggressive') {
-      updateDeduction('80C', 150000);
-      updateDeduction('80D', 50000);
-      updateDeduction('HRA exemption', Math.round(grossSalary * 0.12));
-      updateDeduction('80CCD(1B)', 50000);
-    } else if (presetType === 'maximize') {
-      updateDeduction('80C', LIMIT_80C);
-      updateDeduction('80D', LIMIT_80D);
-      updateDeduction('HRA exemption', LIMIT_HRA);
-      updateDeduction('80CCD(1B)', LIMIT_NPS);
-    } else if (presetType === 'reset') {
-      updateDeduction('80C', 0);
-      updateDeduction('80D', 0);
-      updateDeduction('HRA exemption', 0);
-      updateDeduction('80CCD(1B)', 0);
-      updateDeduction('80CCD(2)', 0);
-      updateDeduction('80GG', 0);
-      updateDeduction('80E', 0);
-      updateDeduction('80EEA', 0);
-      updateDeduction('80TTA', 0);
-      updateDeduction('80TTB', 0);
-    }
-  }, [updateDeduction, grossSalary, LIMIT_80C, LIMIT_80D, LIMIT_HRA, LIMIT_NPS]);
-
-  // Dynamic New Regime restructuring calculations:
+  // Slabs & marginal calculations
   const newSlabTaxable = Math.max(0, grossSalary + otherIncome - 75000 - val80CCD2 - val80CCH - valSection24bLetOut);
   let bracketRate = 0.30;
   if (newSlabTaxable <= 400000) bracketRate = 0.0;
@@ -187,1252 +349,921 @@ const DeductionCard = React.memo(() => {
   else if (newSlabTaxable <= 2000000) bracketRate = 0.20;
   else if (newSlabTaxable <= 2400000) bracketRate = 0.25;
 
-  const maxPotentialNPS = LIMIT_80CCD2;
-  const additionalNPSRoom = Math.max(0, maxPotentialNPS - val80CCD2);
-  const potentialSavings = Math.round(additionalNPSRoom * bracketRate * 1.04);
+  const oldSlabTaxable = Math.max(0, grossSalary - valHRA + otherIncome - totalClaimed - 50000);
+  let oldMarginalRate = 0;
+  if (oldSlabTaxable > 1000000) oldMarginalRate = 0.30;
+  else if (oldSlabTaxable > 500000) oldMarginalRate = 0.20;
+  else if (oldSlabTaxable > 250000) oldMarginalRate = 0.05;
+
+  const currentRate = recommendedRegime === 'OLD' ? oldMarginalRate : bracketRate;
+
+  const handleSliderChange = React.useCallback((key: any, maxLimit: number, valStr: string) => {
+    const val = Math.min(maxLimit, Math.max(0, parseInt(valStr.replace(/,/g, '')) || 0));
+    updateDeduction(key, val);
+  }, [updateDeduction]);
+
+  const handleSliderKeyDown = React.useCallback((key: any, limit: number, step: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    const val = confirmedDeductions?.[key] || 0;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      updateDeduction(key, Math.min(limit, val + step));
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      updateDeduction(key, Math.max(0, val - step));
+    }
+  }, [confirmedDeductions, updateDeduction]);
+
+  const setDeductionPreset = React.useCallback((key: any, value: number) => {
+    updateDeduction(key, value);
+  }, [updateDeduction]);
 
   if (isExtracting) {
     return (
-      <div id="deductions-card-skeleton" className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-slate-800 h-full flex flex-col justify-between animate-pulse">
-        <div>
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-            <div className="space-y-2">
-              <div className="h-4 w-44 bg-slate-200 rounded-md" />
-              <div className="h-3 w-64 bg-slate-200 rounded-md" />
-            </div>
-            <div className="h-6 w-20 bg-slate-200 rounded-full" />
-          </div>
-
-          <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl mb-5">
-            <div className="h-7 flex-1 bg-white rounded-lg" />
-            <div className="h-7 flex-1 bg-slate-200 rounded-lg" />
-          </div>
-
-          <div className="space-y-5 min-h-[220px] pt-2">
-            <div className="flex justify-between items-center">
-              <div className="space-y-1.5 w-full">
-                <div className="h-4 w-36 bg-slate-200 rounded-md" />
-                <div className="h-3 w-48 bg-slate-200 rounded-md" />
-              </div>
-            </div>
-            <div className="h-2 bg-slate-200 rounded-full w-full relative overflow-hidden" />
-          </div>
-        </div>
+      <div className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-8 text-slate-200 h-96 flex flex-col justify-center items-center space-y-4 animate-pulse">
+        <Sparkles className="h-8 w-8 text-blue-500 animate-spin" />
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 animate-pulse">AI preparing your tax savings roadmap...</span>
       </div>
     );
   }
 
   return (
-    <div id="deductions-card" className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm text-slate-800 h-full flex flex-col justify-between transition-all">
-      <div>
-        {/* Modern styled Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Award className="h-4.5 w-4.5 text-blue-600 shrink-0" />
-              Exemption Optimizer
-            </h3>
-            <p className="text-[11px] text-slate-400 font-medium">
-              {regimeOptimizer === 'OLD' ? 'Maximize Chapter VI-A deductions' : 'Leverage employer contributions & perks'}
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="text-[10px] bg-blue-50 text-blue-700 font-mono font-bold px-2 py-0.5 rounded-md border border-blue-100 uppercase tracking-wide">
-              {regimeOptimizer === 'OLD' ? 'Sec VI-A' : 'Sec 80CCD'}
-            </span>
-          </div>
-        </div>
-
-        {regimeOptimizer === 'OLD' ? (
-          <div className="space-y-5 mt-4">
-            {/* Top Control Panel: 3 rectangular regions side-by-side along a horizontal line */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4.5 items-stretch">
-              {/* Region 1: Regime Toggle Option */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-2xs">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-1">
-                    <Layers className="h-3.5 w-3.5 text-slate-400" />
-                    Regime Selection
-                  </span>
-                  <div className="flex flex-col gap-1.5 text-xs font-semibold">
-                    <button
-                      onClick={() => setRegimeOptimizer('OLD')}
-                      className="w-full py-2 px-3 text-left rounded-lg transition-all cursor-pointer flex items-center justify-between gap-1.5 bg-neutral-900 text-white shadow-xs font-bold"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Zap className="h-3 w-3 text-amber-400" />
-                        <span>Old Regime (VI-A)</span>
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    </button>
-                    <button
-                      onClick={() => setRegimeOptimizer('NEW')}
-                      className="w-full py-2 px-3 text-left rounded-lg transition-all cursor-pointer flex items-center justify-between gap-1.5 bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Sparkles className="h-3 w-3 text-slate-400" />
-                        <span>New Regime (NPS Plan)</span>
-                      </span>
-                    </button>
-                  </div>
-                </div>
-                <div className="text-[9.5px] text-slate-400 leading-snug mt-3">
-                  Quickly switch between tax system planning engines.
-                </div>
-              </div>
-
-              {/* Region 2: Deduction Health Meter Panel */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-2xs">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <Layers className="h-3.5 w-3.5 text-slate-400" />
-                      Deduction Health
-                    </span>
-                    <span className={`text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-sm ${
-                      standardShedPct >= 100 
-                        ? 'bg-emerald-100 text-emerald-800' 
-                        : standardShedPct >= 50 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {standardShedPct}% Optimized
-                    </span>
-                  </div>
-
-                  {/* Stacked visualization bar */}
-                  <div className="space-y-3">
-                    <div className="h-3 bg-slate-200 rounded-full overflow-hidden flex border border-slate-300/40">
-                      <div 
-                        title={`80C: ${formatINR(val80C)}`}
-                        className="h-full bg-blue-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full"
-                        style={{ width: `${(val80C / standardShedLimit) * 100}%` }}
-                      />
-                      <div 
-                        title={`80D: ${formatINR(val80D)}`}
-                        className="h-full bg-emerald-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full border-l border-slate-50"
-                        style={{ width: `${(val80D / standardShedLimit) * 100}%` }}
-                      />
-                      <div 
-                        title={`NPS: ${formatINR(valNPS)}`}
-                        className="h-full bg-violet-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full border-l border-slate-50"
-                        style={{ width: `${(valNPS / standardShedLimit) * 100}%` }}
-                      />
-                    </div>
-                    
-                    {/* Extra Detailed Info Bars for category utilization */}
-                    <div className="space-y-1.5 border-t border-slate-150/60 pt-2.5">
-                      <div>
-                        <div className="flex justify-between text-[9px] font-bold text-slate-500 font-mono mb-0.5">
-                          <span className="flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-blue-500" /> 80C Limit ₹1.5L
-                          </span>
-                          <span className="text-slate-700">{formatINR(val80C)} ({Math.round(pct80C)}%)</span>
-                        </div>
-                        <div className="h-1 bg-slate-200/60 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full transition-all duration-350" style={{ width: `${pct80C}%` }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between text-[9px] font-bold text-slate-500 font-mono mb-0.5">
-                          <span className="flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-emerald-500" /> 80D Limit ₹75k
-                          </span>
-                          <span className="text-slate-700">{formatINR(val80D)} ({Math.round(pct80D)}%)</span>
-                        </div>
-                        <div className="h-1 bg-slate-200/60 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full transition-all duration-350" style={{ width: `${pct80D}%` }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between text-[9px] font-bold text-slate-500 font-mono mb-0.5">
-                          <span className="flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-violet-500" /> NPS Limit ₹50k
-                          </span>
-                          <span className="text-slate-700">{formatINR(valNPS)} ({Math.round(pctNPS)}%)</span>
-                        </div>
-                        <div className="h-1 bg-slate-200/60 rounded-full overflow-hidden">
-                          <div className="h-full bg-violet-500 rounded-full transition-all duration-350" style={{ width: `${pctNPS}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dynamic bracket-based advise callout */}
-                <div className="mt-2 text-[10px] leading-relaxed text-slate-600 font-semibold border-t border-slate-100 pt-1.5">
-                  {oldMarginalRate > 0 ? (
-                    <span>
-                      Slab: <strong className="text-slate-800">{oldMarginalRateStr}</strong>. Savings: <strong className="text-blue-700 font-extrabold">{formatINR(estimatedCashSaved)}</strong>!
-                    </span>
-                  ) : (
-                    <span className="text-slate-500">No slab tax. Exemptions maximized!</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Region 3: 80C, 80D Section Tags (Interactive Tabs) & Presets */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-2xs">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-1">
-                    <Layers className="h-3.5 w-3.5 text-slate-400" />
-                    Exemption Category
-                  </span>
-                  
-                  {/* Tab selection for focused editing (highly responsive to prevent horizontal squishing) */}
-                  <div className="grid grid-cols-2 xs:grid-cols-3 xl:grid-cols-5 gap-1 bg-white border border-slate-200/60 p-1 rounded-lg text-[10px] font-bold">
-                    {([
-                      { id: '80C', label: '80C' },
-                      { id: '80D', label: '80D' },
-                      { id: 'HRA', label: 'HRA' },
-                      { id: 'NPS', label: '80CCD' },
-                      { id: 'OTHER_SEC', label: 'Other' }
-                    ] as const).map((tab) => (
-                      <button
-                        id={`tab-deductions-${tab.id}`}
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`py-1 px-0.5 text-center font-bold rounded-md transition-all cursor-pointer truncate ${
-                          activeTab === tab.id
-                            ? 'bg-neutral-900 text-white shadow-xs'
-                            : 'bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quick One-Click Optimizer Presets inside Category box (highly responsive) */}
-                <div className="mt-2.5">
-                  <div className="grid grid-cols-2 xs:grid-cols-4 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => applyPreset('standard')}
-                      className="py-1 px-0.5 bg-white hover:bg-slate-100 border border-slate-200 text-[9px] font-bold text-slate-600 rounded-md text-center transition-all cursor-pointer"
-                      title="Apply Standard Profile Deductions"
-                    >
-                      Corp
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyPreset('aggressive')}
-                      className="py-1 px-0.5 bg-blue-50/50 hover:bg-blue-100/60 border border-blue-200 text-[9px] font-bold text-blue-700 rounded-md text-center transition-all cursor-pointer"
-                      title="Apply Aggressive Exemption Strategy"
-                    >
-                      Aggr
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyPreset('maximize')}
-                      className="py-1 px-0.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[9px] font-bold text-emerald-700 rounded-md text-center transition-all cursor-pointer"
-                      title="Max Out All Sections"
-                    >
-                      Max
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyPreset('reset')}
-                      className="py-1 px-0.5 bg-rose-50/40 hover:bg-rose-100/50 border border-rose-200 text-[9px] font-bold text-rose-700 rounded-md text-center transition-all cursor-pointer"
-                      title="Clear All Exemptions"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Below Top Control Panel: Focused Sliders */}
-            <div className="bg-slate-50/10 border border-slate-150 rounded-xl p-4.5">
-              {/* Focused Tab Content with Premium Interactive Controls */}
-              <div className="space-y-4 min-h-[220px]">
-                <AnimatePresence mode="wait">
-                  {activeTab === '80C' && (
-                    <motion.div
-                      key="80C"
-                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch"
-                    >
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-slate-700 flex flex-wrap items-center gap-1.5 uppercase tracking-wider">
-                              Section 80C Exemptions
-                              <span className="text-[8px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 normal-case shrink-0">Old regime only</span>
-                              <ParamInfo text="Includes Employee Provident Fund (EPF), PPF, ELSS Tax Saver Funds, Life Insurance Premium, home loan principal repayment, and children's school tuition fees." />
-                            </h4>
-                            <p className="text-[10px] text-slate-400 font-medium mt-0.5">EPF, PPF, ELSS, Insurance, Home Principal</p>
-                          </div>
-                          
-                          {/* Live Text Field + Numeric formatting */}
-                          <div className="relative shrink-0 w-32">
-                            <span className="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold">₹</span>
-                            <input aria-label="Enter deduction amount" type="text"
-                              inputMode="numeric"
-                              value={val80C || ''}
-                              onChange={(e) => handleTextInputChange('80C', LIMIT_80C, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-5 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-right text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Styled slider track */}
-                        <div className="space-y-2 bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                          <div className="flex items-center gap-3">
-                            <button 
-                              type="button"
-                              onClick={() => setDeductionPreset('80C', Math.max(0, val80C - 5000))}
-                              className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <input
-                              id="range-80c"
-                              type="range"
-                              min="0"
-                              max={LIMIT_80C}
-                              step="5000"
-                              value={val80C}
-                              onChange={(e) => handleSliderChange('80C', LIMIT_80C, e.target.value)}
-                              className="flex-1 accent-neutral-900 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer border border-slate-300/40"
-                            />
-                            <button 
-                              type="button"
-                              onClick={() => setDeductionPreset('80C', Math.min(LIMIT_80C, val80C + 5000))}
-                              className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </button>
-                          </div>
-                          <div className="flex justify-between text-[9px] text-slate-400 font-mono font-semibold">
-                            <span>₹0</span>
-                            <span>₹75K (50%)</span>
-                            <span className="font-bold text-slate-500">₹1.5L Limit</span>
-                          </div>
-                        </div>
-
-                        {/* Quick Preset Buttons - Super Convenient */}
-                        <div className="flex gap-1.5 flex-wrap pt-0.5">
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80C', 0)}
-                            className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                          >
-                            Reset
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80C', 50000)}
-                            className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                          >
-                            ₹50K (PPF)
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80C', 100000)}
-                            className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                          >
-                            ₹1.0L (ELSS)
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80C', LIMIT_80C)}
-                            className="text-[9px] font-bold px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md text-emerald-700 transition-colors cursor-pointer flex items-center gap-1 ml-auto"
-                          >
-                            <Zap className="h-2.5 w-2.5 animate-pulse" />
-                            Max out (1.5L)
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-center">
-                        <div className="p-4 bg-blue-50/50 border border-blue-150 rounded-2xl h-full flex flex-col justify-center space-y-3 shadow-2xs">
-                          <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
-                            <Sparkles className="h-4 w-4 text-blue-600" />
-                            Exemption Breakdown
-                          </span>
-                          <p className="text-[11px] font-medium text-slate-600 leading-relaxed">
-                            💡 <strong>Tax Savings Tip:</strong> Your employer's mandatory EPF deduction is pre-counted here. Make voluntary PPF transfers or tax-saver <strong>ELSS mutual funds</strong> to shield the leftover room!
-                          </p>
-                          <div className="border-t border-blue-100 pt-2.5 flex justify-between items-center text-[10px] text-slate-500 font-semibold">
-                            <span>Slab Savings Rate</span>
-                            <span className="font-mono text-blue-700 font-extrabold">{oldMarginalRateStr} (Approx)</span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                {activeTab === '80D' && (
-                  <motion.div
-                    key="80D"
-                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-slate-700 flex flex-wrap items-center gap-1.5 uppercase tracking-wider">
-                            Section 80D Health Premiums
-                            <span className="text-[8px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 normal-case shrink-0">Old regime only</span>
-                            <ParamInfo text="Deductions of up to ₹25,000 on medical insurance for self, spouse, and dependent children. Additional ₹50,000 limit available for parents who are senior citizens." />
-                          </h4>
-                          <p className="text-[10px] text-slate-400 font-medium mt-0.5">Medical & Health Insurance Premiums</p>
-                        </div>
-                        
-                        {/* Live Text Field */}
-                        <div className="relative shrink-0 w-32">
-                          <span className="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold">₹</span>
-                          <input aria-label="Enter deduction amount" type="text"
-                            inputMode="numeric"
-                            value={val80D || ''}
-                            onChange={(e) => handleTextInputChange('80D', LIMIT_80D, e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-5 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-right text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80D', Math.max(0, val80D - 2500))}
-                            className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <input
-                            id="range-80d"
-                            type="range"
-                            min="0"
-                            max={LIMIT_80D}
-                            step="2500"
-                            value={val80D}
-                            onChange={(e) => handleSliderChange('80D', LIMIT_80D, e.target.value)}
-                            className="flex-1 accent-neutral-900 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer border border-slate-300/40"
-                          />
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80D', Math.min(LIMIT_80D, val80D + 2500))}
-                            className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
-                        <div className="flex justify-between text-[9px] text-slate-400 font-mono font-semibold">
-                          <span>₹0</span>
-                          <span>₹25K (Self/Family)</span>
-                          <span className="font-bold text-slate-500">₹75K Limit</span>
-                        </div>
-                      </div>
-
-                      {/* Quick Preset Buttons */}
-                      <div className="flex gap-1.5 flex-wrap pt-0.5">
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80D', 0)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          Reset
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80D', 25000)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          ₹25K (Family Only)
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80D', 50000)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          ₹50K (Parents Only)
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80D', LIMIT_80D)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md text-emerald-700 transition-colors cursor-pointer flex items-center gap-1 ml-auto"
-                        >
-                          <Zap className="h-2.5 w-2.5" />
-                          Max out (75K)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col justify-center">
-                      <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl h-full flex flex-col justify-center space-y-3 shadow-2xs">
-                        <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-                          <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                          Health Shield Profile
-                        </span>
-                        <p className="text-[11px] font-medium text-slate-600 leading-relaxed">
-                          🛡️ Self limits are capped at <strong>₹25,000</strong>. Adding premiums paid for <strong>senior citizen parents</strong> unlocks an additional <strong>₹50,000</strong> allowance.
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {activeTab === 'HRA' && (
-                  <motion.div
-                    key="HRA"
-                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-slate-700 flex flex-wrap items-center gap-1.5 uppercase tracking-wider">
-                            House Rent Allowance (HRA)
-                            <span className="text-[8px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 normal-case shrink-0">Old regime only</span>
-                            <ParamInfo text="Exempt portion under Section 10(13A). Based on rent receipts. Under the Old Regime, HRA is highly exempt; in the New Regime, it is entirely disallowed." />
-                          </h4>
-                          <p className="text-[10px] text-slate-400 font-medium mt-0.5">Exempt portion of rent paid</p>
-                        </div>
-                        
-                        {/* Live Text Field */}
-                        <div className="relative shrink-0 w-32">
-                          <span className="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold">₹</span>
-                          <input aria-label="Enter deduction amount" type="text"
-                            inputMode="numeric"
-                            value={valHRA || ''}
-                            onChange={(e) => handleTextInputChange('HRA exemption', LIMIT_HRA, e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-5 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-right text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('HRA exemption', Math.max(0, valHRA - 10000))}
-                            className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <input
-                            id="range-hra"
-                            type="range"
-                            min="0"
-                            max={LIMIT_HRA}
-                            step="5000"
-                            value={valHRA}
-                            onChange={(e) => handleSliderChange('HRA exemption', LIMIT_HRA, e.target.value)}
-                            className="flex-1 accent-neutral-900 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer border border-slate-300/40"
-                          />
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('HRA exemption', Math.min(LIMIT_HRA, valHRA + 10000))}
-                            className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
-                        <div className="flex justify-between text-[9px] text-slate-400 font-mono font-semibold">
-                          <span>₹0</span>
-                          <span>₹1.5L (Metro average)</span>
-                          <span className="font-bold text-slate-500">₹3.0L Target</span>
-                        </div>
-                      </div>
-
-                      {/* Quick Presets */}
-                      <div className="flex gap-1.5 flex-wrap pt-0.5">
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('HRA exemption', 0)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          Reset
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('HRA exemption', 60000)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          ₹60K (Non-Metro)
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('HRA exemption', 120000)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          ₹1.2L (Metro)
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('HRA exemption', LIMIT_HRA)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md text-emerald-700 transition-colors cursor-pointer flex items-center gap-1 ml-auto"
-                        >
-                          <Zap className="h-2.5 w-2.5" />
-                          Max out (3L)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col justify-center">
-                      <div className="p-4 bg-amber-50/50 border border-amber-150 rounded-2xl h-full flex flex-col justify-center space-y-3 shadow-2xs">
-                        <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
-                          <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
-                          HRA Policy Note
-                        </span>
-                        <p className="text-[11px] font-medium text-slate-600 leading-relaxed">
-                          <strong>Disallowed in New Regime:</strong> HRA exemptions can only be claimed if you elect the Old Tax Regime. In the New Regime, your full HRA is completely taxable.
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {activeTab === 'NPS' && (
-                  <motion.div
-                    key="NPS"
-                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-slate-700 flex flex-wrap items-center gap-1.5 uppercase tracking-wider">
-                            Section 80CCD(1B) NPS
-                            <span className="text-[8px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 normal-case shrink-0">Old regime only</span>
-                            <ParamInfo text="Voluntary contributions to National Pension System (NPS Tier 1). Offers an exclusive tax shelter of ₹50,000 completely separate from the standard ₹1.5L limit under 80C." />
-                          </h4>
-                          <p className="text-[10px] text-slate-400 font-medium mt-0.5">Voluntary Pension Scheme contributions</p>
-                        </div>
-                        
-                        {/* Live Text Field */}
-                        <div className="relative shrink-0 w-32">
-                          <span className="absolute left-2 top-1.5 text-slate-400 text-xs font-semibold">₹</span>
-                          <input aria-label="Enter deduction amount" type="text"
-                            inputMode="numeric"
-                            value={valNPS || ''}
-                            onChange={(e) => handleTextInputChange('80CCD(1B)', LIMIT_NPS, e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-5 pr-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-right text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80CCD(1B)', Math.max(0, valNPS - 5000))}
-                            className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <input
-                            id="range-nps"
-                            type="range"
-                            min="0"
-                            max={LIMIT_NPS}
-                            step="5000"
-                            value={valNPS}
-                            onChange={(e) => handleSliderChange('80CCD(1B)', LIMIT_NPS, e.target.value)}
-                            className="flex-1 accent-neutral-900 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer border border-slate-300/40"
-                          />
-                          <button 
-                            type="button"
-                            onClick={() => setDeductionPreset('80CCD(1B)', Math.min(LIMIT_NPS, valNPS + 5000))}
-                            className="p-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
-                        <div className="flex justify-between text-[9px] text-slate-400 font-mono font-semibold">
-                          <span>₹0</span>
-                          <span>₹25K (50%)</span>
-                          <span className="font-bold text-slate-500">₹50K Limit</span>
-                        </div>
-                      </div>
-
-                      {/* Presets */}
-                      <div className="flex gap-1.5 flex-wrap pt-0.5">
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80CCD(1B)', 0)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          Reset
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80CCD(1B)', 20000)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          ₹20K
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80CCD(1B)', 35000)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
-                        >
-                          ₹35K
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setDeductionPreset('80CCD(1B)', LIMIT_NPS)}
-                          className="text-[9px] font-bold px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md text-emerald-700 transition-colors cursor-pointer flex items-center gap-1 ml-auto"
-                        >
-                          <Zap className="h-2.5 w-2.5 animate-pulse" />
-                          Max out (50K)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col justify-center">
-                      <div className="p-4 bg-slate-100 border border-slate-200 rounded-2xl h-full flex flex-col justify-center space-y-3 shadow-2xs">
-                        <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <Sparkles className="h-4 w-4 text-violet-600" />
-                          NPS Power-Up Info
-                        </span>
-                        <p className="text-[11px] font-medium text-slate-600 leading-relaxed">
-                          📈 NPS investments are superpowered: They give you an extra <strong>₹50,000</strong> tax deduction that is completely outside the ₹1.5 Lakhs 80C limit!
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {activeTab === 'OTHER_SEC' && (
-                  <motion.div
-                    key="OTHER_SEC"
-                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className="space-y-4 max-h-[300px] overflow-y-auto pr-1"
-                  >
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 pb-1.5 mb-1.5">
-                      <Award className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Other Individual Deductions (2-Column Grid Layout)</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* 80CCD(2) - Employer NPS */}
-                      <div className="space-y-1.5 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                        <div className="flex justify-between items-center text-[11px] gap-2">
-                          <span className="font-bold text-slate-700 flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                            80CCD(2) Employer NPS
-                            <span className="text-[7.5px] bg-emerald-50 text-emerald-700 font-extrabold px-1.5 py-0.5 rounded border border-emerald-150 shrink-0 uppercase tracking-wide">Old & New</span>
-                            <ParamInfo text="Deduction on employer's match up to 14% of basic salary. This is extremely unique because it is allowed in BOTH the Old and New regimes!" />
-                          </span>
-                          <div className="relative w-28 shrink-0">
-                            <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                            <input aria-label="Enter deduction amount" type="text"
-                              inputMode="numeric"
-                              value={val80CCD2 || ''}
-                              onChange={(e) => handleTextInputChange('80CCD(2)', LIMIT_80CCD2 || 150000, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-4 pr-1 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-mono font-bold text-right text-slate-800"
-                            />
-                          </div>
-                        </div>
-                        <input aria-label="Adjust deduction slider" type="range"
-                          min="0"
-                          max={LIMIT_80CCD2 || 50000}
-                          step="5000"
-                          value={val80CCD2}
-                          onChange={(e) => handleSliderChange('80CCD(2)', LIMIT_80CCD2 || 150000, e.target.value)}
-                          className="w-full accent-neutral-900 h-1 bg-slate-200 appearance-none cursor-pointer rounded"
-                        />
-                        <div className="flex justify-between text-[8px] text-slate-400 font-semibold font-mono">
-                          <span>₹0</span>
-                          <span>Max 14% of Basic ({formatINR(LIMIT_80CCD2)})</span>
-                        </div>
-                      </div>
-
-                      {/* 80GG - Rent paid without HRA */}
-                      <div className="space-y-1.5 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                        <div className="flex justify-between items-center text-[11px] gap-2">
-                          <span className="font-bold text-slate-700 flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                            80GG Rent (No HRA)
-                            <span className="text-[7.5px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 uppercase tracking-wide">Old only</span>
-                            <ParamInfo text="Claim rent paid if HRA is not part of your salary stack. Capped at ₹5,000/month (₹60,000/year)." />
-                          </span>
-                          <div className="relative w-28 shrink-0">
-                            <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                            <input aria-label="Enter deduction amount" type="text"
-                              inputMode="numeric"
-                              value={val80GG || ''}
-                              onChange={(e) => handleTextInputChange('80GG', LIMIT_80GG, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-4 pr-1 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-mono font-bold text-right text-slate-800"
-                            />
-                          </div>
-                        </div>
-                        <input aria-label="Adjust deduction slider" type="range"
-                          min="0"
-                          max={LIMIT_80GG}
-                          step="2000"
-                          value={val80GG}
-                          onChange={(e) => handleSliderChange('80GG', LIMIT_80GG, e.target.value)}
-                          className="w-full accent-neutral-900 h-1 bg-slate-200 appearance-none cursor-pointer rounded"
-                        />
-                      </div>
-
-                      {/* 80E - Education Loan Interest */}
-                      <div className="space-y-1.5 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                        <div className="flex justify-between items-center text-[11px] gap-2">
-                          <span className="font-bold text-slate-700 flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                            80E Education Loan Int.
-                            <span className="text-[7.5px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 uppercase tracking-wide">Old only</span>
-                            <ParamInfo text="Deduct the entire interest paid on higher education loans for self, spouse or children with no maximum ceiling." />
-                          </span>
-                          <div className="relative w-28 shrink-0">
-                            <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                            <input aria-label="Enter deduction amount" type="text"
-                              inputMode="numeric"
-                              value={val80E || ''}
-                              onChange={(e) => handleTextInputChange('80E', LIMIT_80E, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-4 pr-1 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-mono font-bold text-right text-slate-800"
-                            />
-                          </div>
-                        </div>
-                        <input aria-label="Adjust deduction slider" type="range"
-                          min="0"
-                          max={LIMIT_80E}
-                          step="5000"
-                          value={val80E}
-                          onChange={(e) => handleSliderChange('80E', LIMIT_80E, e.target.value)}
-                          className="w-full accent-neutral-900 h-1 bg-slate-200 appearance-none cursor-pointer rounded"
-                        />
-                      </div>
-
-                      {/* 80EEA - First-time buyer interest */}
-                      <div className="space-y-1.5 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                        <div className="flex justify-between items-center text-[11px] gap-2">
-                          <span className="font-bold text-slate-700 flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                            80EEA Home Loan Interest
-                            <span className="text-[7.5px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 uppercase tracking-wide">Old only</span>
-                            <ParamInfo text="Deduction of up to ₹1,50,000 for interest on housing loans for first-time home buyers." />
-                          </span>
-                          <div className="relative w-28 shrink-0">
-                            <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                            <input aria-label="Enter deduction amount" type="text"
-                              inputMode="numeric"
-                              value={val80EEA || ''}
-                              onChange={(e) => handleTextInputChange('80EEA', LIMIT_80EEA, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-4 pr-1 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-mono font-bold text-right text-slate-800"
-                            />
-                          </div>
-                        </div>
-                        <input aria-label="Adjust deduction slider" type="range"
-                          min="0"
-                          max={LIMIT_80EEA}
-                          step="5000"
-                          value={val80EEA}
-                          onChange={(e) => handleSliderChange('80EEA', LIMIT_80EEA, e.target.value)}
-                          className="w-full accent-neutral-900 h-1 bg-slate-200 appearance-none cursor-pointer rounded"
-                        />
-                      </div>
-
-                      {/* 80TTA / 80TTB - Savings Interest */}
-                      <div className="space-y-1.5 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                        <div className="flex justify-between items-center text-[11px] gap-2">
-                          <span className="font-bold text-slate-700 flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                            80TTA Savings Int. (Non-Seniors)
-                            <span className="text-[7.5px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 uppercase tracking-wide">Old only</span>
-                            <ParamInfo text="Deduction up to ₹10,000 on savings interest for taxpayers below 60 years old." />
-                          </span>
-                          <div className="relative w-28 shrink-0">
-                            <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                            <input aria-label="Enter deduction amount" type="text"
-                              inputMode="numeric"
-                              value={val80TTA || ''}
-                              onChange={(e) => handleTextInputChange('80TTA', LIMIT_80TTA, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-4 pr-1 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-mono font-bold text-right text-slate-800"
-                            />
-                          </div>
-                        </div>
-                        <input aria-label="Adjust deduction slider" type="range"
-                          min="0"
-                          max={LIMIT_80TTA}
-                          step="1000"
-                          value={val80TTA}
-                          onChange={(e) => handleSliderChange('80TTA', LIMIT_80TTA, e.target.value)}
-                          className="w-full accent-neutral-900 h-1 bg-slate-200 appearance-none cursor-pointer rounded"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5 bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
-                        <div className="flex justify-between items-center text-[11px] gap-2">
-                          <span className="font-bold text-slate-700 flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                            80TTB Senior Savings/FD Int.
-                            <span className="text-[7.5px] bg-slate-100 text-slate-500 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 uppercase tracking-wide">Old only</span>
-                            <ParamInfo text="Exemption up to ₹50,000 on both savings and FD interest for seniors (60+ years)." />
-                          </span>
-                          <div className="relative w-28 shrink-0">
-                            <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                            <input aria-label="Enter deduction amount" type="text"
-                              inputMode="numeric"
-                              value={val80TTB || ''}
-                              onChange={(e) => handleTextInputChange('80TTB', LIMIT_80TTB, e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-4 pr-1 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-mono font-bold text-right text-slate-800"
-                            />
-                          </div>
-                        </div>
-                        <input aria-label="Adjust deduction slider" type="range"
-                          min="0"
-                          max={LIMIT_80TTB}
-                          step="2500"
-                          value={val80TTB}
-                          onChange={(e) => handleSliderChange('80TTB', LIMIT_80TTB, e.target.value)}
-                          className="w-full accent-neutral-900 h-1 bg-slate-200 appearance-none cursor-pointer rounded"
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Running Subtotals Summary Container */}
-            <div className="border-t border-slate-100 pt-3.5 mt-4 space-y-3">
-              <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-xl shadow-2xs">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Total Exemption Shelter (Old)</span>
-                <motion.span
-                  key={totalClaimed}
-                  initial={{ scale: 1.05 }}
-                  animate={{ scale: 1 }}
-                  className="font-mono font-extrabold text-blue-700 text-sm bg-blue-50/80 border border-blue-100 px-2 py-1 rounded-lg"
-                >
-                  {formatINR(totalClaimed)}
-                </motion.span>
-              </div>
-
-              <div className="flex items-start gap-2 p-3 bg-amber-50/60 border border-amber-200/80 rounded-xl text-[10.5px] text-amber-850 leading-normal">
-                <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                <span>
-                  Under the <strong>New Regime</strong>, normal exemptions (80C, 80D, rent) are disallowed. Toggle the <strong>New Regime</strong> planner above to unlock employer-matching NPS structures!
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        ) : (
-          /* NEW REGIME PLANNER / OPTIMIZER TAB */
+    <div className="w-full text-slate-100 font-sans max-w-[1200px] mx-auto py-4">
+      <AnimatePresence mode="wait">
+        
+        {/* PAGE 3A: AI Deduction Recommendation */}
+        {subStage === '3A' && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            key="3a"
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.12 }}
-            className="space-y-5 mt-4"
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-8"
           >
-            {/* Top Control Panel: 3 rectangular regions side-by-side along a horizontal line */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4.5 items-stretch">
-              {/* Region 1: Regime Toggle Option */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-2xs">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-1">
-                    <Layers className="h-3.5 w-3.5 text-slate-400" />
-                    Regime Selection
-                  </span>
-                  <div className="flex flex-col gap-1.5 text-xs font-semibold">
-                    <button
-                      onClick={() => setRegimeOptimizer('OLD')}
-                      className="w-full py-2 px-3 text-left rounded-lg transition-all cursor-pointer flex items-center justify-between gap-1.5 bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50/50"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Zap className="h-3 w-3 text-slate-400" />
-                        <span>Old Regime (VI-A)</span>
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => setRegimeOptimizer('NEW')}
-                      className="w-full py-2 px-3 text-left rounded-lg transition-all cursor-pointer flex items-center justify-between gap-1.5 bg-neutral-900 text-white shadow-xs font-bold"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Sparkles className="h-3 w-3 text-amber-400" />
-                        <span>New Regime (NPS Plan)</span>
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    </button>
-                  </div>
-                </div>
-                <div className="text-[9.5px] text-slate-400 leading-snug mt-3">
-                  Quickly switch between tax system planning engines.
-                </div>
-              </div>
+            {/* Savings Hero Section */}
+            <SavingsHero 
+              savings={calculation.savings || 39000} 
+              subtitle="Great news — we’ve already optimized your deductions." 
+            />
 
-              {/* Region 2: New Regime Automatic Benefits Summary */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-2xs text-xs">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Automatic System Allowances</span>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between font-bold text-slate-700 py-0.5">
-                      <span className="flex items-center gap-1 text-[10px] font-semibold">
-                        ✔️ Standard Deduction
-                        <ParamInfo text="Flat salary exemption automatically deducted. Budget 2024 upgraded this allowance from ₹50,000 to ₹75,000 under the New Regime." />
-                      </span>
-                      <span className="font-mono font-extrabold text-slate-800">{formatINR(75000)}</span>
-                    </div>
-                    <div className="flex items-center justify-between font-bold text-slate-700 py-0.5 border-t border-slate-100 pt-1.5">
-                      <span className="flex items-center gap-1 text-[10px] font-semibold">
-                        ✔️ Marginal Tax Relief
-                        <ParamInfo text="Ensures your incremental tax never exceeds your salary earnings above the ₹7,0,000 rebate threshold." />
-                      </span>
-                      <span className="text-slate-400 text-[9px] italic font-semibold">Auto-Calculated</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-[9.5px] text-slate-400 italic leading-snug mt-2">
-                  No Chapter VI-A investment proofs are needed for these!
-                </div>
-              </div>
-
-              {/* Region 3: Smart Advisory Block */}
-              <div className="flex flex-col justify-between">
-                {potentialSavings > 0 ? (
-                  <div className="bg-emerald-50 border border-emerald-150 text-emerald-800 p-4 rounded-xl flex-1 flex flex-col justify-between shadow-2xs">
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Sparkles className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                          NPS Strategy
-                        </span>
-                      </div>
-                      <p className="text-[10.5px] leading-relaxed font-semibold text-emerald-900">
-                        Structuring <strong>{formatINR(additionalNPSRoom)}</strong> as Corporate NPS saves <span className="text-emerald-700 font-extrabold">{formatINR(potentialSavings)}</span> in taxes!
-                      </p>
-                    </div>
-                    <div className="text-[9px] text-emerald-600 font-bold mt-1">Immediate Cash Gain Available</div>
-                  </div>
-                ) : (
-                  <div className="bg-blue-50 border border-blue-150 text-blue-800 p-4 rounded-xl flex-1 flex flex-col justify-between shadow-2xs">
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <CheckCircle className="h-4 w-4 text-blue-500 shrink-0" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800">
-                          Fully Optimized
-                        </span>
-                      </div>
-                      <p className="text-[10.5px] leading-relaxed font-semibold text-blue-900">
-                        Your corporate structure maximizes Section 80CCD(2) contribution perfectly.
-                      </p>
-                    </div>
-                    <div className="text-[9px] text-blue-600 font-bold mt-1">Exemption stack fully optimized!</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Info Banner about limited deductions */}
-            <div className="flex items-start gap-2.5 p-3.5 bg-blue-50/60 border border-blue-100 rounded-xl text-[10.5px] text-blue-800 leading-relaxed shadow-3xs">
-              <Info className="h-4 w-4 shrink-0 mt-0.5 text-blue-600" />
-              <span>
-                💡 <strong>New Regime Exemption Shield</strong>: Standard deductions like 80C (PPF/LIC), 80D (health), and rent/HRA are disallowed here. However, you can save taxes under the New Regime using these three exclusive, high-yield shelters:
-              </span>
-            </div>
-
-            {/* Below Top Control Panel: Three New Regime Interactive Levers */}
-            <div className="bg-white border border-slate-200 rounded-xl p-4.5 shadow-3xs space-y-4">
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Interactive New Regime Shelters</h4>
+            {/* AI Recommendation Cards with Spacing & Padding Hierarchy */}
+            <div className="space-y-4">
+              <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">AI Exemption Plan Details</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-3 gap-4.5">
-                {/* Lever 1: 80CCD(2) Employer NPS */}
-                <div className="bg-blue-50/20 border border-blue-100 rounded-xl p-3.5 space-y-2.5 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <div className="min-w-0">
-                        <h5 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex flex-wrap items-center gap-1">
-                          Employer NPS (80CCD(2))
-                          <ParamInfo text="Company contribution to your National Pension System account. Allowed up to 14% of basic salary." />
-                        </h5>
-                        <p className="text-[9px] text-slate-400 mt-0.5 font-medium">Corporate retirement benefit match</p>
-                      </div>
-                      <div className="relative w-full mt-1.5">
-                        <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                        <input aria-label="Enter deduction amount" type="text"
-                          inputMode="numeric"
-                          value={val80CCD2 || ''}
-                          onChange={(e) => handleTextInputChange('80CCD(2)', maxPotentialNPS || 150000, e.target.value)}
-                          placeholder="0"
-                          className="w-full pl-4 pr-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono font-bold text-right text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* PRIMARY LARGE CARD: Standard Deduction */}
+                <RecommendationCard
+                  title="Standard Deduction"
+                  badge="Applied Automatically"
+                  amountText="₹75,000"
+                  whyExplanation="Standard deduction is automatically applied to all salaried professionals under Section 16(ia) of the Income Tax Act to discount the taxable salary base by ₹75,000."
+                  isPrimary={true}
+                  onWhyClick={openWhySheet}
+                />
 
-                    <div className="space-y-1.5 bg-white p-2 rounded-lg border border-slate-200/50">
-                      <input aria-label="Adjust deduction slider" type="range"
-                        min="0"
-                        max={maxPotentialNPS || 50000}
-                        step="5000"
-                        value={val80CCD2}
-                        onChange={(e) => handleSliderChange('80CCD(2)', maxPotentialNPS || 150000, e.target.value)}
-                        className="w-full accent-blue-600 h-1 bg-slate-200 rounded appearance-none cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[8px] text-slate-400 font-mono font-semibold">
-                        <span>₹0</span>
-                        <span>Max 14% ({formatINR(maxPotentialNPS)})</span>
-                      </div>
+                {/* Card 2: Section 80C */}
+                <RecommendationCard
+                  title="Section 80C Exemption"
+                  badge="Recommended"
+                  amountText={formatINR(val80C || 150000)}
+                  whyExplanation="We mapped your employee provident fund (EPF) and tax-saving deposits to claim the maximum ₹1,50,000 base exemption limit."
+                  onWhyClick={openWhySheet}
+                />
+
+                {/* Card 3: Corporate NPS Exemption */}
+                <RecommendationCard
+                  title="Corporate NPS Exemption"
+                  badge="Opportunity Found"
+                  amountText={`Save ${formatINR(Math.round(val80CCD2 * currentRate * 1.04) || 2475)}`}
+                  whyExplanation="Structuring matching contributions under Section 80CCD(2) directly offsets basic salary taxable bases."
+                  onWhyClick={openWhySheet}
+                />
+
+                {/* Card 4: New Tax Regime Slab Switch */}
+                <RecommendationCard
+                  title="New Tax Regime"
+                  badge="Best Overall Option"
+                  amountText="Lowest slab liability option"
+                  whyExplanation="Our comparative analysis verifies that at your income ledger bracket, the New Slabs outperform the Old Slabs for net tax savings."
+                  onWhyClick={openWhySheet}
+                />
+
+              </div>
+            </div>
+
+            {/* Confidence Verification Shield */}
+            <ConfidenceShield />
+
+            {/* Bottom Actions */}
+            <div className="pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <button
+                onClick={onBack}
+                className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+              >
+                Back to Income Summary
+              </button>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => setSubStage('3B')}
+                  className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-405 hover:text-slate-200 text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+                >
+                  Review manually
+                </button>
+                
+                <button
+                  onClick={() => setSubStage('3C')}
+                  className="h-12 px-6 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto group shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 hover:-translate-y-0.5"
+                >
+                  <span>Continue with AI Plan</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* PAGE 3B: Manual Deduction Planner */}
+        {subStage === '3B' && (
+          <motion.div
+            key="3b"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left"
+          >
+            {/* Accordion Interface Column (8 cols) */}
+            <div className="lg:col-span-8 space-y-6">
+              <div className="space-y-1">
+                <h2 className="text-base font-bold text-slate-100">Interactive Exemption Planner</h2>
+                <p className="text-xs text-slate-450 leading-relaxed font-medium">
+                  We've prefilled your eligible limits. Tweak any values below to customize your tax filing roadmap manually. Only one category is expanded at a time to minimize complexity.
+                </p>
+              </div>
+
+              <div className="border border-white/[0.04] rounded-2xl overflow-hidden bg-slate-900/10 backdrop-blur-md">
+                
+                {/* Accordion Item: Section 80C */}
+                <div className="border-b border-white/[0.04]">
+                  <button
+                    onClick={() => setExpandedAccordion(expandedAccordion === '80C' ? null : '80C')}
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-200 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                  >
+                    <span>Section 80C (Provident Fund, ELSS, Insurance)</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(val80C)}</span>
+                      {expandedAccordion === '80C' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
                     </div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {expandedAccordion === '80C' && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                          {/* 1. Current Claimed Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(val80C)}</span>
+                          </div>
+
+                          {/* 2. Remaining Eligible Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_80C - val80C))}</span>
+                          </div>
+
+                          {/* 3. Live Savings */}
+                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
+                            <span className="text-emerald-450 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-400 font-black">
+                              <AnimatedCounter value={Math.round(val80C * currentRate * 1.04)} />
+                            </span>
+                          </div>
+
+                          {/* 4. Slider */}
+                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <div className="relative w-32 shrink-0">
+                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <input
+                                  aria-label="Adjust 80C deduction amount"
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={val80C || ''}
+                                  onChange={(e) => handleSliderChange('80C', LIMIT_80C, e.target.value)}
+                                  placeholder="0"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-950 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 relative">
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('80C', Math.max(0, val80C - 5000))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-350 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                              
+                              <div className="flex-1 relative flex items-center">
+                                <input
+                                  id="range-80c"
+                                  type="range"
+                                  min="0"
+                                  max={LIMIT_80C}
+                                  step="5000"
+                                  value={val80C}
+                                  onChange={(e) => handleSliderChange('80C', LIMIT_80C, e.target.value)}
+                                  onKeyDown={(e) => handleSliderKeyDown('80C', LIMIT_80C, 5000, e)}
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-850 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                />
+                                <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
+                              </div>
+
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('80C', Math.min(LIMIT_80C, val80C + 5000))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="flex justify-between text-[9px] text-slate-500 font-mono font-semibold pt-1">
+                              <span>₹0</span>
+                              <span>₹75K (50%)</span>
+                              <span>{formatINR(LIMIT_80C)} Limit</span>
+                            </div>
+                          </div>
+
+                          {/* 5. Suggestions (Action-oriented chips) */}
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => setDeductionPreset('80C', Math.min(LIMIT_80C, val80C + 25000))}
+                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                              >
+                                Add ₹25,000 to ELSS • Save {formatINR(Math.round(25000 * currentRate * 1.04))}
+                              </button>
+                              <button
+                                onClick={() => setDeductionPreset('80C', LIMIT_80C)}
+                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                              >
+                                Max out PPF • Save {formatINR(Math.round((LIMIT_80C - val80C) * currentRate * 1.04))}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 6. AI Advice (Conversational recommendation) */}
+                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-400 leading-relaxed text-[11px]">
+                            <span className="text-sm shrink-0">💡</span>
+                            <p>
+                              <strong>AI Suggestion:</strong> Adding ₹25,000 to ELSS could increase your tax savings by approximately {formatINR(Math.round(25000 * currentRate * 1.04))}. Your employer already contributes EPF.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Accordion Item: Section 80D */}
+                <div className="border-b border-white/[0.04]">
+                  <button
+                    onClick={() => setExpandedAccordion(expandedAccordion === '80D' ? null : '80D')}
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-200 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                  >
+                    <span>Section 80D (Medical Insurance Premium)</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(val80D)}</span>
+                      {expandedAccordion === '80D' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
+                    </div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {expandedAccordion === '80D' && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                          {/* 1. Current Claimed Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(val80D)}</span>
+                          </div>
+
+                          {/* 2. Remaining Eligible Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_80D - val80D))}</span>
+                          </div>
+
+                          {/* 3. Live Savings */}
+                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
+                            <span className="text-emerald-450 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-400 font-black">
+                              <AnimatedCounter value={Math.round(val80D * currentRate * 1.04)} />
+                            </span>
+                          </div>
+
+                          {/* 4. Slider */}
+                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] text-slate-404 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <div className="relative w-32 shrink-0">
+                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <input
+                                  aria-label="Adjust 80D deduction amount"
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={val80D || ''}
+                                  onChange={(e) => handleSliderChange('80D', LIMIT_80D, e.target.value)}
+                                  placeholder="0"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-955 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 relative">
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('80D', Math.max(0, val80D - 2500))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-350 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                              
+                              <div className="flex-1 relative flex items-center">
+                                <input
+                                  id="range-80d"
+                                  type="range"
+                                  min="0"
+                                  max={LIMIT_80D}
+                                  step="2500"
+                                  value={val80D}
+                                  onChange={(e) => handleSliderChange('80D', LIMIT_80D, e.target.value)}
+                                  onKeyDown={(e) => handleSliderKeyDown('80D', LIMIT_80D, 2500, e)}
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-855 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                />
+                                <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
+                              </div>
+
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('80D', Math.min(LIMIT_80D, val80D + 2500))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="flex justify-between text-[9px] text-slate-500 font-mono font-semibold pt-1">
+                              <span>₹0</span>
+                              <span>₹25K (Self/Family)</span>
+                              <span>{formatINR(LIMIT_80D)} Limit</span>
+                            </div>
+                          </div>
+
+                          {/* 5. Suggestions */}
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => setDeductionPreset('80D', Math.min(LIMIT_80D, val80D + 25000))}
+                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                              >
+                                Claim Self Premium (₹25K) • Save {formatINR(Math.round(25000 * currentRate * 1.04))}
+                              </button>
+                              <button
+                                onClick={() => setDeductionPreset('80D', Math.min(LIMIT_80D, val80D + 5000))}
+                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                              >
+                                Preventive Checkup (₹5K) • Save {formatINR(Math.round(5000 * currentRate * 1.04))}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 6. AI Advice */}
+                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-400 leading-relaxed text-[11px]">
+                            <span className="text-sm shrink-0">💡</span>
+                            <p>
+                              <strong>AI Suggestion:</strong> Claiming ₹25,000 for self/family medical insurance premium saves {formatINR(Math.round(25000 * currentRate * 1.04))}. Adding preventive check-up receipts (up to ₹5,000) utilizes the remaining margin.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Accordion Item: HRA Exemption */}
+                <div className="border-b border-white/[0.04]">
+                  <button
+                    onClick={() => setExpandedAccordion(expandedAccordion === 'HRA' ? null : 'HRA')}
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-200 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                  >
+                    <span>HRA (House Rent Exemption)</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(valHRA)}</span>
+                      {expandedAccordion === 'HRA' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
+                    </div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {expandedAccordion === 'HRA' && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                          {/* 1. Current Claimed Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(valHRA)}</span>
+                          </div>
+
+                          {/* 2. Remaining Eligible Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_HRA - valHRA))}</span>
+                          </div>
+
+                          {/* 3. Live Savings */}
+                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
+                            <span className="text-emerald-450 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-400 font-black">
+                              <AnimatedCounter value={Math.round(valHRA * currentRate * 1.04)} />
+                            </span>
+                          </div>
+
+                          {/* 4. Slider */}
+                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] text-slate-404 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <div className="relative w-32 shrink-0">
+                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <input
+                                  aria-label="Adjust HRA deduction amount"
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={valHRA || ''}
+                                  onChange={(e) => handleSliderChange('HRA exemption', LIMIT_HRA, e.target.value)}
+                                  placeholder="0"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-950 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 relative">
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('HRA exemption', Math.max(0, valHRA - 10000))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                              
+                              <div className="flex-1 relative flex items-center">
+                                <input
+                                  id="range-hra"
+                                  type="range"
+                                  min="0"
+                                  max={LIMIT_HRA}
+                                  step="5000"
+                                  value={valHRA}
+                                  onChange={(e) => handleSliderChange('HRA exemption', LIMIT_HRA, e.target.value)}
+                                  onKeyDown={(e) => handleSliderKeyDown('HRA exemption', LIMIT_HRA, 5000, e)}
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-855 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                />
+                                <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
+                              </div>
+
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('HRA exemption', Math.min(LIMIT_HRA, valHRA + 10000))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="flex justify-between text-[9px] text-slate-500 font-mono font-semibold pt-1">
+                              <span>₹0</span>
+                              <span>₹1.5L (Metro average)</span>
+                              <span>{formatINR(LIMIT_HRA)} Limit</span>
+                            </div>
+                          </div>
+
+                          {/* 5. Suggestions */}
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => setDeductionPreset('HRA exemption', 180000)}
+                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                              >
+                                Metro Rent Match (1.8L) • Save {formatINR(Math.round(180000 * currentRate * 1.04))}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 6. AI Advice */}
+                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-400 leading-relaxed text-[11px]">
+                            <span className="text-sm shrink-0">💡</span>
+                            <p>
+                              <strong>AI Suggestion:</strong> Your rent receipts matching Mumbai residency support metro classifications. Claiming ₹1.8L rent exemption saves {formatINR(Math.round(180000 * currentRate * 1.04))} under Rule 2A.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Accordion Item: Housing Loan Exemption */}
+                <div className="border-b border-white/[0.04]">
+                  <button
+                    onClick={() => setExpandedAccordion(expandedAccordion === '24B' ? null : '24B')}
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-205 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                  >
+                    <span>Housing Loan Interest Exemption (Section 24b)</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(valSection24bLetOut)}</span>
+                      {expandedAccordion === '24B' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
+                    </div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {expandedAccordion === '24B' && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                          {/* 1. Current Claimed Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(valSection24bLetOut)}</span>
+                          </div>
+
+                          {/* 2. Remaining Eligible Amount */}
+                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
+                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_24B_LETOUT - valSection24bLetOut))}</span>
+                          </div>
+
+                          {/* 3. Live Savings */}
+                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
+                            <span className="text-emerald-455 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-400 font-black">
+                              <AnimatedCounter value={Math.round(valSection24bLetOut * currentRate * 1.04)} />
+                            </span>
+                          </div>
+
+                          {/* 4. Slider */}
+                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] text-slate-404 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <div className="relative w-32 shrink-0">
+                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <input
+                                  aria-label="Adjust Housing Loan deduction amount"
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={valSection24bLetOut || ''}
+                                  onChange={(e) => handleSliderChange('section24bLetOut', LIMIT_24B_LETOUT, e.target.value)}
+                                  placeholder="0"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-955 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 relative">
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('section24bLetOut', Math.max(0, valSection24bLetOut - 10000))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                              
+                              <div className="flex-1 relative flex items-center">
+                                <input
+                                  id="range-24b"
+                                  type="range"
+                                  min="0"
+                                  max={LIMIT_24B_LETOUT}
+                                  step="10000"
+                                  value={valSection24bLetOut}
+                                  onChange={(e) => handleSliderChange('section24bLetOut', LIMIT_24B_LETOUT, e.target.value)}
+                                  onKeyDown={(e) => handleSliderKeyDown('section24bLetOut', LIMIT_24B_LETOUT, 10000, e)}
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-855 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                />
+                                <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
+                              </div>
+
+                              <button 
+                                type="button"
+                                onClick={() => setDeductionPreset('section24bLetOut', Math.min(LIMIT_24B_LETOUT, valSection24bLetOut + 10000))}
+                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="flex justify-between text-[9px] text-slate-500 font-mono font-semibold pt-1">
+                              <span>₹0</span>
+                              <span>₹1L (Average self occupancy)</span>
+                              <span>{formatINR(LIMIT_24B_LETOUT)} Limit</span>
+                            </div>
+                          </div>
+
+                          {/* 5. Suggestions */}
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => setDeductionPreset('section24bLetOut', LIMIT_24B_LETOUT)}
+                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                              >
+                                Claim Max self-occupancy (₹2L) • Save {formatINR(Math.round(LIMIT_24B_LETOUT * currentRate * 1.04))}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 6. AI Advice */}
+                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-405 leading-relaxed text-[11px]">
+                            <span className="text-sm shrink-0">💡</span>
+                            <p>
+                              <strong>AI Suggestion:</strong> Home loan interest remains deductible under the Old Regime up to ₹2,00,000. Interest on let-out properties is fully deductible without the ₹2L ceiling limit.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Desktop Sticky Summary Panel (4 cols) */}
+            <div className="lg:col-span-4 lg:sticky lg:top-6 space-y-6">
+              <div className="bg-slate-905 border border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-6 text-left">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block border-b border-white/[0.02] pb-3">Exemption Summary</span>
+                
+                <div className="space-y-4 border-b border-white/[0.04] pb-4">
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Claimed Amount</span>
+                    <span className="text-base font-extrabold text-slate-200 font-mono">
+                      <AnimatedCounter value={totalClaimed} />
+                    </span>
                   </div>
-
-                  <div className="flex gap-1 pt-1.5 justify-between items-center border-t border-slate-100 mt-1">
-                    <button 
-                      type="button"
-                      onClick={() => setDeductionPreset('80CCD(2)', 0)}
-                      className="text-[8.5px] font-bold px-2 py-0.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-slate-500 transition-colors cursor-pointer"
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setDeductionPreset('80CCD(2)', maxPotentialNPS)}
-                      className="text-[8.5px] font-bold px-2 py-0.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-blue-700 transition-colors flex items-center gap-0.5 cursor-pointer"
-                    >
-                      <Zap className="h-2 w-2 animate-pulse" /> Max Match
-                    </button>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Remaining Eligibility</span>
+                    <span className="text-base font-extrabold text-blue-405 font-mono">
+                      <AnimatedCounter value={Math.max(0, LIMIT_80C - val80C + LIMIT_80D - val80D + LIMIT_HRA - valHRA)} />
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Estimated Savings</span>
+                    <span className="text-base font-extrabold text-emerald-455 font-mono">
+                      <AnimatedCounter value={calculation.savings || 39000} />
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Selected Regime</span>
+                    <span className="text-xs font-bold text-slate-300">{recommendedRegime === 'NEW' ? 'New Tax Slabs' : 'Old Tax Slabs'}</span>
                   </div>
                 </div>
 
-                {/* Lever 2: 80CCH Agnipath Corpus Fund */}
-                <div className="bg-violet-50/20 border border-violet-100 rounded-xl p-3.5 space-y-2.5 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <div className="min-w-0">
-                        <h5 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex flex-wrap items-center gap-1">
-                          Agnipath Scheme (80CCH)
-                          <ParamInfo text="Government-matching Agnipath scheme contribution for Agniveers. Fully tax-deductible in the New Regime." />
-                        </h5>
-                        <p className="text-[9px] text-slate-400 mt-0.5 font-medium">Agniveer Corpus Fund shelter</p>
-                      </div>
-                      <div className="relative w-full mt-1.5">
-                        <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                        <input aria-label="Enter deduction amount" type="text"
-                          inputMode="numeric"
-                          value={val80CCH || ''}
-                          onChange={(e) => handleTextInputChange('80CCH', LIMIT_80CCH, e.target.value)}
-                          placeholder="0"
-                          className="w-full pl-4 pr-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono font-bold text-right text-slate-800 focus:outline-none focus:ring-1 focus:ring-violet-500"
-                        />
-                      </div>
+                {/* Completion Checklist (80C Complete, HRA Pending etc.) */}
+                <div className="space-y-2.5">
+                  <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Exemption Milestones</span>
+                  <div className="space-y-2 text-xs font-medium text-slate-400">
+                    <div className="flex items-center gap-2">
+                      {val80C >= LIMIT_80C ? (
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                      ) : (
+                        <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold">○</div>
+                      )}
+                      <span className={val80C >= LIMIT_80C ? 'text-emerald-450' : ''}>80C {val80C >= LIMIT_80C ? 'Complete' : 'Pending'}</span>
                     </div>
 
-                    <div className="space-y-1.5 bg-white p-2 rounded-lg border border-violet-200/50">
-                      <input aria-label="Adjust deduction slider" type="range"
-                        min="0"
-                        max={LIMIT_80CCH}
-                        step="5000"
-                        value={val80CCH}
-                        onChange={(e) => handleSliderChange('80CCH', LIMIT_80CCH, e.target.value)}
-                        className="w-full accent-violet-600 h-1 bg-slate-200 rounded appearance-none cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[8px] text-slate-400 font-mono font-semibold">
-                        <span>₹0</span>
-                        <span>Limit: {formatINR(LIMIT_80CCH)}</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      {val80D >= 25000 ? (
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                      ) : (
+                        <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold">○</div>
+                      )}
+                      <span className={val80D >= 25000 ? 'text-emerald-450' : ''}>80D {val80D >= 25000 ? 'Complete' : 'Pending'}</span>
                     </div>
-                  </div>
 
-                  <div className="flex gap-1 pt-1.5 justify-between items-center border-t border-slate-100 mt-1">
-                    <button 
-                      type="button"
-                      onClick={() => setDeductionPreset('80CCH', 0)}
-                      className="text-[8.5px] font-bold px-2 py-0.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-slate-500 transition-colors cursor-pointer"
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setDeductionPreset('80CCH', 50000)}
-                      className="text-[8.5px] font-bold px-2 py-0.5 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded text-violet-700 transition-colors flex items-center gap-0.5 cursor-pointer"
-                    >
-                      ₹50,000
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {valHRA > 0 ? (
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                      ) : (
+                        <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold">○</div>
+                      )}
+                      <span className={valHRA > 0 ? 'text-emerald-450' : ''}>HRA {valHRA > 0 ? 'Complete' : 'Pending'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold text-slate-500">○</div>
+                      <span>NPS Optional</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Lever 3: section24bLetOut Home Loan Interest Let-out */}
-                <div className="bg-emerald-50/20 border border-emerald-100 rounded-xl p-3.5 space-y-2.5 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <div className="min-w-0">
-                        <h5 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex flex-wrap items-center gap-1">
-                          Let-Out Property (Sec 24b)
-                          <ParamInfo text="Interest on home loan for Let-Out properties. Self-occupied home loan interest is disallowed in New Regime, but Let-Out property interest is 100% tax-deductible." />
-                        </h5>
-                        <p className="text-[9px] text-slate-400 mt-0.5 font-medium">Rental property interest deductions</p>
-                      </div>
-                      <div className="relative w-full mt-1.5">
-                        <span className="absolute left-1.5 top-0.5 text-slate-400 text-[10px] font-bold">₹</span>
-                        <input aria-label="Enter deduction amount" type="text"
-                          inputMode="numeric"
-                          value={valSection24bLetOut || ''}
-                          onChange={(e) => handleTextInputChange('section24bLetOut', LIMIT_24B_LETOUT, e.target.value)}
-                          placeholder="0"
-                          className="w-full pl-4 pr-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono font-bold text-right text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5 bg-white p-2 rounded-lg border border-emerald-200/50">
-                      <input aria-label="Adjust deduction slider" type="range"
-                        min="0"
-                        max={LIMIT_24B_LETOUT}
-                        step="10000"
-                        value={valSection24bLetOut}
-                        onChange={(e) => handleSliderChange('section24bLetOut', LIMIT_24B_LETOUT, e.target.value)}
-                        className="w-full accent-emerald-600 h-1 bg-slate-200 rounded appearance-none cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[8px] text-slate-400 font-mono font-semibold">
-                        <span>₹0</span>
-                        <span>Limit: {formatINR(LIMIT_24B_LETOUT)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-1 pt-1.5 justify-between items-center border-t border-slate-100 mt-1">
-                    <button 
-                      type="button"
-                      onClick={() => setDeductionPreset('section24bLetOut', 0)}
-                      className="text-[8.5px] font-bold px-2 py-0.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-slate-500 transition-colors cursor-pointer"
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setDeductionPreset('section24bLetOut', 150000)}
-                      className="text-[8.5px] font-bold px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded text-emerald-700 transition-colors flex items-center gap-0.5 cursor-pointer"
-                    >
-                      ₹1.5L
-                    </button>
-                  </div>
+                <div className="space-y-3 pt-3 border-t border-white/[0.02]">
+                  <button
+                    onClick={() => setSubStage('3C')}
+                    className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-95 text-center flex items-center justify-center gap-1.5"
+                  >
+                    <span>Review Final Plan</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setSubStage('3A')}
+                    className="w-full h-11 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-slate-205 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-95 text-center"
+                  >
+                    Cancel Manual Review
+                  </button>
                 </div>
               </div>
             </div>
           </motion.div>
         )}
-      </div>
 
-      {/* Exemption Optimizer Footer */}
-      <div className="border-t border-slate-100 pt-3 mt-4 flex items-center justify-between text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-        <span>Filing Year: FY 2025-26</span>
-      </div>
+        {/* PAGE 3C: Final Deduction Review */}
+        {subStage === '3C' && (
+          <motion.div
+            key="3c"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-8 max-w-xl mx-auto"
+          >
+            {/* Completion Success Hero */}
+            <div className="text-center space-y-3 pb-2">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-2">
+                <CheckCircle className="h-6 w-6" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-100">✓ Everything looks good</h2>
+              <p className="text-xs text-slate-450 leading-relaxed max-w-sm mx-auto font-medium">
+                Your deductions have been finalized and verified against active AY 2026-27 compliance matrices.
+              </p>
+            </div>
+
+            {/* Savings Card Comparison (+₹14,200 previous filing) */}
+            <div className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-6 text-center space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest block">Estimated Tax Savings</span>
+              <span className="text-3xl font-black text-emerald-400 tracking-tight block font-mono">
+                {formatINR(calculation.savings || 39000)}
+              </span>
+              <div className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-450 uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full mt-2">
+                <TrendingUp className="h-3 w-3" />
+                <span>+{formatINR(14200)} compared to previous filing</span>
+              </div>
+            </div>
+
+            {/* Deduction Summary Checklist */}
+            <div className="bg-slate-905 border border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-4 text-left">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block border-b border-white/[0.02] pb-3">Final Ledger Breakdown</span>
+
+              <div className="flex justify-between items-center py-2.5">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-450" />
+                  <span className="text-xs font-semibold text-slate-200">Standard Deduction</span>
+                </div>
+                <span className="text-xs font-bold text-slate-300 font-mono">
+                  {formatINR(recommendedRegime === 'NEW' ? 75000 : 50000)}
+                </span>
+              </div>
+
+              {val80C > 0 && (
+                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
+                    <span className="text-xs font-semibold text-slate-200">Section 80C Exemption</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(val80C)}</span>
+                </div>
+              )}
+
+              {val80D > 0 && (
+                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
+                    <span className="text-xs font-semibold text-slate-200">Section 80D Exemption</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(val80D)}</span>
+                </div>
+              )}
+
+              {valHRA > 0 && (
+                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
+                    <span className="text-xs font-semibold text-slate-200">HRA Exemption</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(valHRA)}</span>
+                </div>
+              )}
+
+              {val80CCD2 > 0 && (
+                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
+                    <span className="text-xs font-semibold text-slate-200">Employer NPS (80CCD(2))</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(val80CCD2)}</span>
+                </div>
+              )}
+
+              {valNPS > 0 && (
+                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
+                    <span className="text-xs font-semibold text-slate-200">Voluntary NPS (80CCD(1B))</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(valNPS)}</span>
+                </div>
+              )}
+
+              {valSection24bLetOut > 0 && (
+                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
+                    <span className="text-xs font-semibold text-slate-200">Housing Loan (Sec 24b)</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(valSection24bLetOut)}</span>
+                </div>
+              )}
+
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <button
+                onClick={() => setSubStage('3A')}
+                className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+              >
+                Back to Recommendation
+              </button>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => setSubStage('3B')}
+                  className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-slate-200 text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+                >
+                  Edit deductions
+                </button>
+                
+                <button
+                  onClick={onContinue}
+                  className="h-12 px-6 bg-emerald-500 hover:bg-emerald-450 text-slate-950 text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-1.5 w-full sm:w-auto group font-extrabold"
+                >
+                  <ShieldCheck className="h-4 w-4 text-slate-955" />
+                  <span>Proceed to Filing Review</span>
+                </button>
+              </div>
+            </div>
+
+          </motion.div>
+        )}
+
+      </AnimatePresence>
+
+      {/* Slide sheet details */}
+      <WhyRecommendationSheet 
+        isOpen={whySheetOpen} 
+        onClose={() => setWhySheetOpen(false)} 
+        title={whySheetTitle} 
+        explanation={whySheetExplanation} 
+      />
     </div>
   );
 });

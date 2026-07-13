@@ -11,6 +11,7 @@ const ExportControl = lazy(() => import('./components/ExportControl'));
 const FilingGuide = lazy(() => import('./components/FilingGuide'));
 const DocumentVault = lazy(() => import('./components/DocumentVault'));
 const AICopilot = lazy(() => import('./components/copilot/AICopilot').then(m => ({ default: m.AICopilot })));
+const HistoryArchive = lazy(() => import('./components/HistoryArchive'));
 import { useTaxStore, useTaxStoreHydrated, UserProfile } from './store/useTaxStore';
 import { 
   DashboardCard, 
@@ -30,7 +31,7 @@ import {
 import LandingPage from './components/LandingPage';
 import { ExportService } from './services/ExportService';
 import { GoogleAuthService } from './services/GoogleAuthService';
-import { AuditPanel, RecommendationsPanel } from './components/vault/VaultComponents';
+import { AuditPanel, RecommendationsPanel, FilingWorkspacePanel } from './components/vault/VaultComponents';
 
 import { 
   Lock, 
@@ -96,6 +97,90 @@ const ParamInfo: React.FC<{ text: string }> = ({ text }) => {
     </div>
   );
 };
+interface SidebarNavItemProps {
+  label: string;
+  icon: React.ComponentType<any>;
+  isActive: boolean;
+  isExpanded: boolean;
+  completed?: boolean;
+  badge?: string;
+  savings?: number;
+  onClick: () => void;
+  isPrimary?: boolean;
+}
+
+const SidebarNavItem: React.FC<SidebarNavItemProps> = React.memo(({
+  label,
+  icon: IconComp,
+  isActive,
+  isExpanded,
+  completed,
+  badge,
+  savings,
+  onClick,
+  isPrimary = false
+}) => {
+  return (
+    <div className="relative group/sidebar-item w-full">
+      <button
+        onClick={onClick}
+        aria-current={isActive ? "page" : undefined}
+        className={`w-full flex items-center justify-between ${
+          isExpanded ? 'px-3' : 'px-0 justify-center'
+        } py-2 rounded-xl text-xs transition-all duration-180 ease-out cursor-pointer group active:scale-98 relative border border-transparent ${
+          isActive 
+            ? 'bg-blue-600/10 text-white font-black shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02),0_0_12px_rgba(37,99,235,0.08)]' 
+            : `${isPrimary ? 'text-slate-205 font-bold' : 'text-slate-450 font-semibold'} hover:bg-white/[0.03] hover:text-slate-100 hover:-translate-y-[1px]`
+        }`}
+      >
+        {/* Left active line accent */}
+        {isActive && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-blue-500 rounded-r" />
+        )}
+
+        <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+          <IconComp className={`h-5 w-5 shrink-0 transition-colors duration-180 ${
+            isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-200'
+          }`} />
+          
+          {/* Label transition */}
+          <span className={`truncate transition-all duration-200 ${
+            isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1.5 pointer-events-none'
+          }`}>
+            {label}
+          </span>
+        </div>
+
+        {/* Badges transition */}
+        {isExpanded && (
+          <div className="flex items-center gap-1.5 shrink-0 pl-3">
+            {completed && <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />}
+            {badge && (
+              <span className="text-[8px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">
+                {badge}
+              </span>
+            )}
+            {savings !== undefined && savings > 0 && (
+              <span className="text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-450 px-2.5 py-0.5 rounded-full tracking-tighter select-all">
+                ₹{savings.toLocaleString('en-IN')}
+              </span>
+            )}
+          </div>
+        )}
+      </button>
+
+      {/* Floating tooltip when collapsed */}
+      {!isExpanded && (
+        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 flex items-center gap-2">
+          <span>{label}</span>
+          {badge && <span className="text-[8px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">{badge}</span>}
+          {savings !== undefined && savings > 0 && <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded font-black">₹{savings.toLocaleString('en-IN')}</span>}
+        </div>
+      )}
+    </div>
+  );
+});
+
 
 export default function App() {
   const hydrated = useTaxStoreHydrated();
@@ -106,7 +191,24 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState('guest@taxsense.in');
   const [authPassword, setAuthPassword] = useState('••••••••••••');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const persisted = localStorage.getItem('taxsense_sidebar_collapsed');
+      if (persisted !== null) {
+        return persisted === 'true';
+      }
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('taxsense_sidebar_collapsed', String(isSidebarCollapsed));
+    }
+  }, [isSidebarCollapsed]);
+
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCopilotExpanded, setIsCopilotExpanded] = useState(false);
   const [activePreviewDoc, setActivePreviewDoc] = useState<any>(null);
@@ -573,9 +675,22 @@ export default function App() {
     return `Good Evening, ${shortName}`;
   };
 
-  // Show the landing page immediately to avoid initial loading block/spinner
-  if (currentStep === 'HOME' || !hydrated) {
-    return <LandingPage onStart={() => { if (hydrated) { setActiveStep(2); } }} />;
+  // Prevent any unhydrated flash or flicker by deferring until state is resolved
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-[#060708] flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center">
+            <Calculator className="h-5 w-5 text-emerald-400 animate-pulse" />
+          </div>
+          <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-widest">Encrypting Connection...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentStep === 'HOME') {
+    return <LandingPage onStart={() => { setActiveStep(2); }} />;
   }
 
   return (
@@ -584,7 +699,7 @@ export default function App() {
       {/* Layer 5: Pinned fixed cinematic noise texture across the viewport (GPU-accelerated) */}
       <div 
         className="cinematic-noise" 
-        style={{ transform: 'translate3d(0, 0, 0)', opacity: 0.012 }}
+        style={{ transform: 'translate3d(0, 0, 0)', opacity: 0.025 }}
       />
 
       {/* BACKGROUND FLOATING EFFECTS: Ambient Glows */}
@@ -1015,261 +1130,322 @@ export default function App() {
           })()}
         </div>
 
-        {/* Stage 3-11: Workspace layout with Sidebar */}
-        {activeStep >= 3 && (
-          <div className="relative z-10 flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-transparent">
-            {/* Mobile Drawer Backdrop Overlay */}
-            {!isSidebarCollapsed && (
-              <div 
-                onClick={() => setIsSidebarCollapsed(true)} 
-                className="fixed inset-0 bg-slate-955/70 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300"
-              />
-            )}
+          {/* Stage 3-11: Workspace layout with Sidebar */}
+          {hydrated && activeStep >= 3 && (() => {
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+          const isExpanded = !isSidebarCollapsed || isSidebarHovered;
 
-            {/* Collapsible Sidebar / Drawer */}
-            <aside className={`border-r border-white/[0.04] dark:border-slate-800/40 bg-[#040608]/95 dark:bg-slate-900/95 md:bg-[#040608]/40 md:dark:bg-slate-900/35 backdrop-blur-md flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out z-40 fixed inset-y-0 left-0 md:relative ${
-              isSidebarCollapsed 
-                ? '-translate-x-full md:translate-x-0 md:w-[72px]' 
-                : 'translate-x-0 md:w-60'
-            }`}>
-              <div className="flex flex-col">
-                <div className={`py-5 border-b border-white/[0.04] dark:border-slate-900/50 flex items-center relative ${
-                  isSidebarCollapsed ? 'px-0 justify-center' : 'px-4 justify-between'
-                }`}>
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-8 h-8 bg-emerald-600 rounded-lg text-slate-950 font-bold shrink-0 flex items-center justify-center">
-                      <Calculator className="h-4.5 w-4.5 text-slate-950" />
+          return (
+            <div className="relative z-10 flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-transparent">
+              {/* Mobile Drawer Backdrop Overlay */}
+              {!isSidebarCollapsed && (
+                <div 
+                  onClick={() => setIsSidebarCollapsed(true)} 
+                  className="fixed inset-0 bg-slate-955/70 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300"
+                />
+              )}
+
+              {/* Collapsible Sidebar / Drawer (Animated via Framer Motion) */}
+              <motion.aside 
+                onMouseEnter={() => setIsSidebarHovered(true)}
+                onMouseLeave={() => setIsSidebarHovered(false)}
+                initial={{ width: 216 }}
+                animate={{ 
+                  width: isMobile ? (isExpanded ? 216 : 0) : (isExpanded ? 216 : 56),
+                  x: isMobile && !isExpanded ? -216 : 0
+                }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                style={{ background: 'linear-gradient(to bottom, #101722, #0B111A)' }}
+                className="border-r border-white/[0.04] backdrop-blur-md flex flex-col justify-between shrink-0 z-40 fixed inset-y-0 left-0 md:relative h-screen overflow-y-auto overflow-x-hidden"
+              >
+                <div className="flex flex-col">
+                  {/* Sidebar Header */}
+                  <div className={`py-4 border-b border-white/[0.04] flex items-center relative transition-all duration-200 ${
+                    isExpanded ? 'px-4 justify-between flex-row' : 'py-5 px-0 justify-center flex-col gap-2.5'
+                  }`}>
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      <div className="w-8 h-8 bg-emerald-600 rounded-lg text-slate-955 font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/10 select-none">
+                        <Calculator className="h-4.5 w-4.5 text-slate-955" />
+                      </div>
+                      <span className={`font-black text-xs uppercase tracking-wider text-slate-100 transition-all duration-200 ${
+                        isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3 pointer-events-none'
+                      }`}>
+                        TaxSense
+                      </span>
                     </div>
-                    {!isSidebarCollapsed && (
-                      <span className="font-black text-xs uppercase tracking-wider text-slate-100">TaxSense</span>
-                    )}
+
+                    <button
+                      onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                      className="p-2 hover:bg-white/5 rounded-full text-slate-500 hover:text-slate-300 cursor-pointer transition-all duration-220 hidden md:flex items-center justify-center shrink-0"
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+                      title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+                    >
+                      <ChevronLeft className={`w-4 h-4 transition-transform duration-220 ${isExpanded ? '' : 'rotate-180'}`} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                    className="absolute -right-3 top-6 p-1 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-full text-slate-400 hover:text-slate-200 cursor-pointer hidden md:block z-50 shadow-lg"
-                  >
-                    {isSidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-                  </button>
+
+                  {/* Sidebar Groupings & Navigation List */}
+                  <div className="p-3 space-y-4">
+                    {/* 1. MAIN Navigation Items */}
+                    <div className="space-y-1">
+                      {isExpanded && (
+                        <span className="text-[8px] text-slate-400/70 font-medium uppercase tracking-[0.15em] block px-3 mt-1 mb-1.5 select-none">
+                          Main
+                        </span>
+                      )}
+                      <SidebarNavItem
+                        label="Dashboard"
+                        icon={LayoutDashboard}
+                        isActive={activeStep === 11}
+                        isExpanded={isExpanded}
+                        onClick={() => setActiveStep(11)}
+                        isPrimary={true}
+                      />
+                      <SidebarNavItem
+                        label="Recommendations"
+                        icon={Award}
+                        isActive={activeStep === 5}
+                        isExpanded={isExpanded}
+                        savings={taxCalculationResult.savings}
+                        onClick={() => setActiveStep(5)}
+                        isPrimary={true}
+                      />
+                      <SidebarNavItem
+                        label="Tax Return"
+                        icon={ListTodo}
+                        isActive={activeStep === 6}
+                        isExpanded={isExpanded}
+                        onClick={() => setActiveStep(6)}
+                        isPrimary={true}
+                      />
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-px bg-white/[0.015] mx-2" />
+
+                    {/* 2. TOOLS Navigation Items */}
+                    <div className="space-y-1">
+                      {isExpanded && (
+                        <span className="text-[8px] text-slate-400/70 font-medium uppercase tracking-[0.15em] block px-3 mt-1.5 mb-1.5 select-none">
+                          Tools
+                        </span>
+                      )}
+                      <SidebarNavItem
+                        label="Document Vault"
+                        icon={FileUp}
+                        isActive={activeStep === 3}
+                        isExpanded={isExpanded}
+                        completed={taxData.grossSalary !== 850000 || taxData.tdsDeducted !== 15000}
+                        onClick={() => setActiveStep(3)}
+                      />
+                      <SidebarNavItem
+                        label="AI Analysis"
+                        icon={BrainCircuit}
+                        isActive={activeStep === 4}
+                        isExpanded={isExpanded}
+                        badge="Gemini"
+                        onClick={() => setActiveStep(4)}
+                      />
+                      <SidebarNavItem
+                        label="History & Archive"
+                        icon={History}
+                        isActive={activeStep === 10}
+                        isExpanded={isExpanded}
+                        onClick={() => setActiveStep(10)}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <nav className="p-3 space-y-1">
-                  {[
-                    { label: 'Dashboard', step: 11, icon: LayoutDashboard },
-                    { 
-                      label: 'Document Vault', 
-                      step: 3, 
-                      icon: FileUp, 
-                      completed: taxData.grossSalary !== 850000 || taxData.tdsDeducted !== 15000 
-                    },
-                    { 
-                      label: 'AI Analysis', 
-                      step: 4, 
-                      icon: BrainCircuit, 
-                      badge: 'Gemini' 
-                    },
-                    { 
-                      label: 'Recommendations', 
-                      step: 5, 
-                      icon: Award, 
-                      savings: taxCalculationResult.savings > 0 
-                    },
-                    { label: 'Tax Return', step: 6, icon: ListTodo },
-                    { label: 'History & Archive', step: 10, icon: History },
-                  ].map((item) => {
-                    const isActive = activeStep === item.step;
-                    const IconComp = item.icon;
-                    return (
-                      <div key={item.label} className="relative group/sidebar-item w-full">
-                        <button
-                          onClick={() => {
-                            setActiveStep(item.step);
-                          }}
-                          className={`w-full flex items-center ${
-                            isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-3'
-                          } py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer group active:scale-98 ${
-                            isActive 
-                              ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20 shadow-[0_0_12px_rgba(37,99,235,0.05)]' 
-                              : 'text-slate-400/80 hover:bg-white/[0.03] hover:text-[#F6F7F8] border border-transparent'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4 overflow-hidden">
-                            <IconComp className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-200'}`} />
-                            {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
-                          </div>
-                          {!isSidebarCollapsed && (
-                            <div className="flex items-center gap-1.5">
-                              {item.completed && <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
-                              {item.badge && <span className="text-[8px] bg-purple-500/10 text-purple-400 px-1 py-0.5 rounded font-black tracking-wider uppercase shrink-0">{item.badge}</span>}
-                              {item.savings && <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-1 py-0.5 rounded font-black shrink-0">₹{taxCalculationResult.savings}</span>}
-                            </div>
+                {/* Bottom user settings & profiles section */}
+                <div className="p-3 border-t border-white/[0.04] space-y-3.5">
+                  {/* AI Ingestion Status Alert Card */}
+                  {ingestionState !== 'IDLE' && (
+                    <div 
+                      title={`${backgroundStatusMessage} (${backgroundProgress}%)`}
+                      className={`p-3 bg-white/[0.01] border border-white/[0.015] rounded-xl transition-all ${
+                        isExpanded ? 'space-y-2' : 'flex justify-center items-center'
+                      }`}
+                    >
+                      {!isExpanded ? (
+                        <div className="relative">
+                          {ingestionState === 'COMPLETED' ? (
+                            <CheckCircle className="w-4 h-4 text-[#16E27A]" />
+                          ) : (
+                            <>
+                              <Cpu className="w-4 h-4 text-[#16E27A] animate-spin" />
+                              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#16E27A] rounded-full animate-ping" />
+                            </>
                           )}
-                        </button>
-                        
-                        {isSidebarCollapsed && (
-                          <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-950/95 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 flex items-center gap-2">
-                            <span>{item.label}</span>
-                            {item.badge && <span className="text-[8px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">{item.badge}</span>}
-                            {item.savings && <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded font-black">₹{taxCalculationResult.savings}</span>}
+                        </div>
+                      ) : (
+                        <div className="space-y-2 text-left w-full">
+                          <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-emerald-500/80">
+                            <span className="flex items-center gap-1.5">
+                              {ingestionState === 'COMPLETED' ? (
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-500/80 animate-pulse" />
+                              ) : (
+                                <Cpu className="w-3.5 h-3.5 text-emerald-455 animate-pulse" /> 
+                              )}
+                              Form 16 Verified
+                            </span>
+                            <span className="font-mono text-emerald-450/90">{ingestionState === 'COMPLETED' ? '100%' : `${backgroundProgress}%`}</span>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </nav>
-              </div>
-
-              {/* Bottom user settings sidebar profile row */}
-              <div className="p-3 border-t border-white/[0.04] dark:border-slate-900/50 space-y-2">
-                {/* Background Ingestion Status indicator */}
-                {ingestionState !== 'IDLE' && (
-                  <div 
-                     title={`${backgroundStatusMessage} (${backgroundProgress}%)`}
-                     className={`p-2 bg-[#16E27A]/10 border border-[#16E27A]/20 rounded-xl space-y-1 ${
-                       isSidebarCollapsed ? 'flex justify-center items-center' : ''
-                     }`}
-                  >
-                    {isSidebarCollapsed ? (
-                      <div className="relative">
-                        {ingestionState === 'COMPLETED' ? (
-                          <CheckCircle className="w-4.5 h-4.5 text-[#16E27A]" />
-                        ) : (
-                          <>
-                            <Cpu className="w-4.5 h-4.5 text-[#16E27A] animate-spin" />
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#16E27A] rounded-full animate-ping" />
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-1 text-left">
-                        <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-[#16E27A]">
-                          <span className="flex items-center gap-1">
-                            {ingestionState === 'COMPLETED' ? (
-                              <CheckCircle className="w-3.5 h-3.5 text-emerald-450" />
-                            ) : (
-                              <Cpu className="w-3.5 h-3.5 text-emerald-450 animate-pulse" /> 
-                            )}
-                            AI Ingestion
-                          </span>
-                          <span>{ingestionState === 'COMPLETED' ? 'Completed' : `${backgroundProgress}%`}</span>
-                        </div>
-                        <div className="h-1 w-full bg-slate-950 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-emerald-500 rounded-full transition-all duration-300" 
-                            style={{ width: `${ingestionState === 'COMPLETED' ? 100 : backgroundProgress}%` }} 
-                          />
-                        </div>
-                        <p className="text-[8px] text-slate-400 leading-none truncate font-medium">
-                          {ingestionState === 'COMPLETED' ? 'Form 16 successfully verified.' : backgroundStatusMessage}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                 {authMode === 'GUEST' && (
-                  isSidebarCollapsed ? (
-                    <div className="relative group/sidebar-item w-full animate-pulse">
-                      <button
-                        onClick={() => {
-                          (window as any)._migrationRedirectStep = activeStep;
-                          setActiveStep(2);
-                        }}
-                        className="w-full flex items-center justify-center p-2.5 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.08] rounded-xl text-slate-200 transition-all cursor-pointer"
-                      >
-                        <AlertCircle className="w-4.5 h-4.5 text-slate-400" />
-                      </button>
-                      <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
-                        Guest Session - Click to Sign In
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-white/[0.02] border border-white/[0.06] shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] rounded-2xl space-y-2 text-left relative overflow-hidden">
-                      <div className="text-[9px] font-bold text-slate-350 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Guest Session
-                      </div>
-                      <div className="text-[9px] text-slate-500 leading-relaxed font-semibold">
-                        Temporary sandbox. Session expires in <strong className="font-mono text-slate-300 font-bold">{Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}</strong> due to inactivity.
-                      </div>
-                      <button
-                        onClick={() => {
-                          (window as any)._migrationRedirectStep = activeStep;
-                          setActiveStep(2);
-                        }}
-                        className="w-full text-center py-1.5 bg-white hover:bg-slate-100 text-slate-955 font-bold rounded-lg text-[9px] uppercase tracking-wider cursor-pointer transition-colors shadow-sm"
-                      >
-                        Sign In to Save
-                      </button>
-                    </div>
-                  )
-                )}
-
-                <div className="relative group/sidebar-item w-full">
-                  <button
-                    onClick={() => setIsSettingsOpen(true)}
-                    className={`w-full flex items-center ${
-                      isSidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
-                    } py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-white/[0.03] hover:text-white transition-all cursor-pointer`}
-                  >
-                    <Settings className="w-4.5 h-4.5 text-slate-400 shrink-0" />
-                    {!isSidebarCollapsed && <span>Settings & Sandbox</span>}
-                  </button>
-                  {isSidebarCollapsed && (
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
-                      Settings & Sandbox
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative group/sidebar-item w-full">
-                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-2 px-3 py-2`}>
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <div className="w-6 h-6 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-300 font-bold flex items-center justify-center text-[10px] shrink-0 overflow-hidden">
-                        {user?.photoURL ? (
-                          <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          (() => {
-                            const name = user?.name || incomeProfile?.employeeName || 'Guest User';
-                            const parts = name.trim().split(/\s+/);
-                            if (parts.length >= 2) {
-                              return (parts[0][0] + parts[1][0]).toUpperCase();
-                            }
-                            return parts[0].slice(0, 2).toUpperCase();
-                          })()
-                        )}
-                      </div>
-                      {!isSidebarCollapsed && (
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[10px] font-bold text-slate-200 truncate">{user?.name || incomeProfile?.employeeName || 'Guest User'}</span>
-                          <span className="text-[8px] text-slate-500 truncate">
-                            {authMode === 'GUEST' ? 'Guest Mode' : (user?.email || `PAN: ${incomeProfile?.pan || 'MK*****32F'}`)}
-                          </span>
+                          
+                          {/* Super thinned progress line */}
+                          <div className="h-[2px] w-full bg-slate-950/80 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-emerald-500/40 rounded-full transition-all duration-300" 
+                              style={{ width: `${ingestionState === 'COMPLETED' ? 100 : backgroundProgress}%` }} 
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
-                    {!isSidebarCollapsed && (
+                  )}
+
+                  {/* Guest Sandbox Timer Card */}
+                  {authMode === 'GUEST' && (
+                    !isExpanded ? (
+                      <div className="relative group/sidebar-item w-full animate-pulse flex justify-center py-1 select-none">
+                        <button
+                          onClick={() => {
+                            (window as any)._migrationRedirectStep = activeStep;
+                            setActiveStep(2);
+                          }}
+                          className="w-8 h-8 flex items-center justify-center bg-white/[0.01] border border-white/[0.03] hover:bg-white/[0.05] rounded-xl text-slate-400 hover:text-slate-205 transition-all cursor-pointer"
+                        >
+                          <AlertCircle className="w-4 h-4 text-slate-500" />
+                        </button>
+                        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Guest Session - Click to Sign In
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-white/[0.01] border border-white/[0.015] shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)] rounded-xl space-y-2.5 text-left relative overflow-hidden flex flex-col">
+                        <div className="space-y-1">
+                          <div className="text-[8.5px] font-bold text-slate-400/80 uppercase tracking-widest flex items-center gap-1.5 font-sans">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+                            Guest Session
+                          </div>
+                          <div className="text-[8.5px] text-slate-500/80 font-semibold leading-normal">
+                            Temporary workspace
+                          </div>
+                          <div className="text-[8.5px] text-slate-500/60 font-semibold leading-none pt-0.5">
+                            Expires in <span className="font-mono text-slate-400 font-bold">{Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            (window as any)._migrationRedirectStep = activeStep;
+                            setActiveStep(2);
+                          }}
+                          className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-955 font-bold rounded-lg text-[8.5px] uppercase tracking-wider cursor-pointer transition-colors shadow-sm self-start"
+                        >
+                          Sign In
+                        </button>
+                      </div>
+                    )
+                  )}
+
+                  {/* 3. SYSTEM Navigation Items */}
+                  <div className="space-y-1">
+                    {isExpanded && (
+                      <span className="text-[8px] text-slate-400/70 font-medium uppercase tracking-[0.15em] block px-3 mb-1.5 select-none">
+                        System
+                      </span>
+                    )}
+
+                    {/* Settings Page Trigger Link (Tertiary navigation) */}
+                    <div className="relative group/sidebar-item w-full">
                       <button
+                        onClick={() => setIsSettingsOpen(true)}
+                        className={`w-full flex items-center ${
+                          isExpanded ? 'gap-3 px-3' : 'justify-center px-0'
+                        } py-2 rounded-xl text-xs font-semibold text-slate-450 hover:bg-white/[0.03] hover:text-white transition-all duration-180 ease-out cursor-pointer hover:-translate-y-[1px]`}
+                      >
+                        <Settings className="w-5 h-5 text-slate-500 group-hover:text-slate-350 shrink-0 transition-colors duration-180" />
+                        {isExpanded && <span>Settings & Sandbox</span>}
+                      </button>
+                      {!isExpanded && (
+                        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Settings & Sandbox
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="h-px bg-white/[0.015] mx-2" />
+
+                  {/* User Account Switcher Profile Block */}
+                  <div className="relative group/sidebar-item w-full">
+                    {isExpanded ? (
+                      <div 
                         onClick={() => {
                           GoogleAuthService.revokeSession();
                           clearSession();
                           setActiveStep(2);
                         }}
-                        title="Log Out Session"
-                        className="p-1 hover:bg-red-500/10 rounded text-slate-500 hover:text-red-400 cursor-pointer"
+                        className="flex items-center justify-between gap-3.5 px-4 py-3.5 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-white/[0.04] rounded-2xl relative select-none cursor-pointer transition-all duration-200 group/profile-row"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
-                      </button>
+                        <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+                          {/* Avatar */}
+                          <div className="w-8 h-8 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-300 font-bold flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-inner transition-transform group-hover/profile-row:scale-105 duration-200">
+                            {user?.photoURL ? (
+                              <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-4 h-4 text-blue-300" />
+                            )}
+                          </div>
+                          <div className="flex flex-col text-left min-w-0 ml-1">
+                            <span className="text-[11px] font-bold text-slate-205 group-hover/profile-row:text-white transition-colors truncate leading-tight">
+                              {user?.name || incomeProfile?.employeeName || 'Guest User'}
+                            </span>
+                            <span className="text-[8.5px] text-slate-500 group-hover/profile-row:text-slate-400 transition-colors truncate mt-0.5 leading-none">
+                              {authMode === 'GUEST' ? 'Guest Mode' : (user?.email || 'PAN Profile')}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            GoogleAuthService.revokeSession();
+                            clearSession();
+                            setActiveStep(2);
+                          }}
+                          title="Log Out Session"
+                          className="p-2 mr-1 rounded-full text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer transition-all duration-180 flex items-center justify-center shrink-0"
+                        >
+                          <LogOut className="w-4 h-4 transition-transform group-hover/profile-row:translate-x-0.5 duration-200" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => {
+                          GoogleAuthService.revokeSession();
+                          clearSession();
+                          setActiveStep(2);
+                        }}
+                        className="relative group/sidebar-item w-full flex justify-center py-1 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-300 font-bold flex items-center justify-center text-[11px] shrink-0 overflow-hidden hover:bg-blue-600/25 transition-colors duration-180">
+                          {user?.photoURL ? (
+                            <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-4 h-4 text-blue-300" />
+                          )}
+                        </div>
+                        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="text-[10px] font-bold text-slate-202">{user?.name || incomeProfile?.employeeName || 'Guest User'}</div>
+                          <div className="text-[8px] text-slate-500 font-mono mt-0.5">{authMode === 'GUEST' ? 'Guest Mode' : (user?.email || 'PAN Profile')}</div>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  {isSidebarCollapsed && (
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-955 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/sidebar-item:opacity-100 group-hover/sidebar-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
-                      <div className="text-[10px] font-bold text-slate-200">{user?.name || incomeProfile?.employeeName || 'Guest User'}</div>
-                      <div className="text-[8px] text-slate-500 font-mono mt-0.5">{authMode === 'GUEST' ? 'Guest Mode' : (user?.email || 'PAN Profile')}</div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            </aside>
+              </motion.aside>
 
             {/* Viewport Core Workspace Area */}
             <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -1760,301 +1936,27 @@ export default function App() {
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         className="space-y-6 font-sans"
                       >
-                        {/* filing progress tracker */}
-                        <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-5 backdrop-blur-md space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                              <ListTodo className="w-5 h-5 text-emerald-450" />
-                              ITR Filing Pipeline
-                            </h2>
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Step {guidedFilingStep} of 5</span>
-                          </div>
-                          
-                          {/* Stepper bar */}
-                          <div className="flex items-center gap-2">
-                            {[1, 2, 3, 4, 5].map((stepIdx) => (
-                              <button
-                                key={stepIdx}
-                                onClick={() => setGuidedFilingStep(stepIdx)}
-                                className={`h-1.5 flex-1 rounded-full transition-all cursor-pointer ${
-                                  guidedFilingStep >= stepIdx ? 'bg-emerald-500' : 'bg-slate-800'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          
-                          <div className="flex justify-between text-[8px] text-slate-500 font-black uppercase tracking-wider">
-                            <span>1. Personal</span>
-                            <span>2. Income</span>
-                            <span>3. Deductions</span>
-                            <span>4. Verification</span>
-                            <span>5. Generate</span>
-                          </div>
-                        </div>
-
-                        {/* Main step container */}
-                        <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-6">
-                          
-                          {/* Step 1: Personal Info */}
-                          {guidedFilingStep === 1 && (
-                            <div className="space-y-5">
-                              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Review Personal Details</h3>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
-                                  <input type="text" value={incomeProfile?.employeeName || 'Mohit Kumar'} readOnly className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-slate-400 focus:outline-none" />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Permanent Account Number (PAN)</label>
-                                  <input type="text" value={incomeProfile?.pan || 'MK*****32F'} readOnly className="w-full bg-slate-955 border border-slate-850 rounded-xl py-2 px-3 text-xs text-slate-400 focus:outline-none" />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Employer Category</label>
-                                  <input type="text" defaultValue="Private Sector Co." disabled className="w-full bg-slate-955 border border-slate-850 rounded-xl py-2 px-3 text-xs text-slate-400 focus:outline-none" />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Residential Status</label>
-                                  <input type="text" defaultValue="Resident Individual" disabled className="w-full bg-slate-955 border border-slate-850 rounded-xl py-2 px-3 text-xs text-slate-400 focus:outline-none" />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Step 2: Income Review */}
-                          {guidedFilingStep === 2 && (
-                            <div className="space-y-5">
-                              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Income Ledgers Summary</h3>
-                              
-                              <div className="space-y-4">
-                                <div className="p-5 bg-slate-955/40 border border-white/[0.02] rounded-xl flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <FileText className="w-5 h-5 text-slate-500 animate-pulse" />
-                                    <div>
-                                      <span className="block text-xs font-bold text-slate-200">Gross Salary (Section 17(1))</span>
-                                      <span className="text-[9px] text-slate-500">Auto parsed from Form 16</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-slate-500 font-mono text-sm font-bold">₹</span>
-                                    <input 
-                                      type="text" 
-                                      value={taxData.grossSalary}
-                                      onChange={(e) => handleNumericChange('grossSalary', e.target.value)}
-                                      className="bg-slate-950 border border-white/[0.06] focus:border-emerald-500/40 rounded-xl py-2 px-3 w-40 text-right font-mono text-sm font-extrabold text-slate-100 focus:outline-none transition-colors"
-                                    />
-                                  </div>
-                                </div>
-
-                                <div className="p-5 bg-slate-955/40 border border-white/[0.02] rounded-xl flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <FileText className="w-5 h-5 text-slate-500" />
-                                    <div>
-                                      <span className="block text-xs font-bold text-slate-200">Income from Other Sources</span>
-                                      <span className="text-[9px] text-slate-500">Savings account interest, etc.</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-slate-500 font-mono text-sm font-bold">₹</span>
-                                    <input 
-                                      type="text" 
-                                      value={taxData.otherIncome}
-                                      onChange={(e) => handleNumericChange('otherIncome', e.target.value)}
-                                      className="bg-slate-950 border border-white/[0.06] focus:border-emerald-500/40 rounded-xl py-2 px-3 w-40 text-right font-mono text-sm font-extrabold text-slate-100 focus:outline-none transition-colors"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Step 3: Deductions Claims */}
-                          {guidedFilingStep === 3 && (
-                            <div className="space-y-6">
-                              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sync Deductions Claims</h3>
-                              <Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
-                                <DeductionCard />
-                              </Suspense>
-                            </div>
-                          )}
-
-                          {/* Step 4: Verification & Slabs */}
-                          {guidedFilingStep === 4 && (
-                            <div className="space-y-6">
-                              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Verifications and Slabs Audit</h3>
-                              <Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
-                                <RegimeComparison />
-                              </Suspense>
-                            </div>
-                          )}
-
-                          {/* Step 5: Generate Return */}
-                          {guidedFilingStep === 5 && (
-                            <div className="space-y-5 text-center py-6">
-                              <div className="w-14 h-14 bg-emerald-500/10 text-emerald-450 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce">
-                                <Award className="w-8 h-8 text-emerald-400" />
-                              </div>
-                              
-                              <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">Verify Return & Submit</h3>
-                              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                Slabs audits verified compliance with Section 139(1) of the Income Tax Act. Ready to submit to the sandbox?
-                              </p>
-
-                              <button
-                                onClick={executeFilingSubmission}
-                                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-955 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center gap-1.5 mx-auto"
-                              >
-                                <ShieldCheck className="w-4 h-4 text-slate-955" />
-                                <span>Generate and Log return</span>
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Bottom Navigation buttons inside guided filing */}
-                          <div className="pt-4 border-t border-slate-800/60 flex justify-between">
-                            <button
-                              onClick={() => setGuidedFilingStep(prev => Math.max(1, prev - 1))}
-                              disabled={guidedFilingStep === 1}
-                              className="px-4 py-2 border border-slate-800 hover:bg-white/[0.02] text-slate-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer disabled:opacity-30 disabled:pointer-events-none select-none active:scale-95"
-                            >
-                              Back
-                            </button>
-                            {guidedFilingStep < 5 ? (
-                              <button
-                                onClick={() => setGuidedFilingStep(prev => Math.min(5, prev + 1))}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95"
-                              >
-                                Continue
-                              </button>
-                            ) : (
-                              <div />
-                            )}
-                          </div>
-
-                        </div>
+                        <FilingWorkspacePanel
+                          guidedFilingStep={guidedFilingStep}
+                          setGuidedFilingStep={setGuidedFilingStep}
+                          incomeProfile={incomeProfile}
+                          taxData={taxData}
+                          handleNumericChange={handleNumericChange}
+                          executeFilingSubmission={executeFilingSubmission}
+                          taxCalculationResult={taxCalculationResult}
+                          formatINR={formatINR}
+                          setActiveStep={setActiveStep}
+                        />
                       </motion.div>
                     )}
 
                     {/* Stage 10: Timeline History & Archives */}
                     {activeStep === 10 && (
-                      <motion.div
-                        key="step-10"
-                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="space-y-6 font-sans"
-                      >
-                        <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-5 backdrop-blur-md">
-                          <h2 className="text-base font-bold text-slate-100 mb-1 flex items-center gap-2">
-                            <History className="w-5 h-5 text-emerald-450" />
-                            Stage 10: Filing History & Archives
-                          </h2>
-                          <p className="text-xs text-slate-400">
-                            Access secure, local archive ledger logs. Search and filter across previous assessment years.
-                          </p>
-                        </div>
-
-                        {/* AI Summary Banner */}
-                        <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-455 leading-relaxed shadow-xs">
-                          <Sparkles className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                          <div>
-                            <span className="font-bold block text-slate-200">AI Archive Diagnostic</span>
-                            <span>
-                              {filingHistory.length === 0 
-                                ? "No previous filings detected in the sandbox cache." 
-                                : `Across your logged filings, your average Gross Salary is ${formatINR(
-                                    Math.round(filingHistory.reduce((acc, item) => acc + item.grossSalary, 0) / filingHistory.length)
-                                  )}. Slabs audit verifies compliance with Section 139(1) for all logged assessment cycles.`}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-900/40 border border-white/[0.04] rounded-3xl p-6 space-y-6 backdrop-blur-md">
-                          {/* Search & Filter Header Row */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Timeline Ledger</h3>
-                            
-                            <div className="flex flex-wrap items-center gap-3">
-                              <input
-                                type="text"
-                                placeholder="Search by ID or date..."
-                                value={historySearch}
-                                onChange={(e) => setHistorySearch(e.target.value)}
-                                className="bg-slate-950 border border-slate-800 rounded-lg py-1 px-3 text-xs text-slate-200 font-medium focus:outline-none focus:border-blue-500 focus:bg-slate-900 w-44"
-                              />
-                              <select
-                                value={historyFilter}
-                                onChange={(e) => setHistoryFilter(e.target.value)}
-                                className="bg-slate-955 border border-slate-800 rounded-lg py-1 px-2.5 text-xs text-slate-400 font-bold focus:outline-none cursor-pointer"
-                              >
-                                <option value="ALL">All regimes</option>
-                                <option value="NEW">New regime</option>
-                                <option value="OLD">Old regime</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          {/* Notion Inspired Timeline View */}
-                          <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-800 before:border-dashed">
-                            {filingHistory
-                              .filter(item => {
-                                const matchesSearch = item.id.toLowerCase().includes(historySearch.toLowerCase()) || item.date.toLowerCase().includes(historySearch.toLowerCase());
-                                const matchesFilter = historyFilter === 'ALL' || item.recommendedRegime === historyFilter;
-                                return matchesSearch && matchesFilter;
-                              })
-                              .map((item, i) => (
-                                <div key={item.id} className="relative text-xs space-y-2">
-                                  {/* Marker circle */}
-                                  <div className="absolute -left-[20px] top-1 w-3 h-3 rounded-full bg-emerald-500 border border-slate-950 ring-4 ring-emerald-500/15" />
-                                  
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-extrabold text-slate-100 text-xs font-mono">{item.id}</span>
-                                      <span className="text-[9px] bg-slate-900 border border-white/[0.04] text-slate-400 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">{item.formType}</span>
-                                      <span className="text-[9px] bg-blue-600/10 text-blue-400 px-1.5 py-0.5 rounded font-bold">{item.recommendedRegime} REGIME</span>
-                                    </div>
-                                    <span className="text-[10px] text-slate-500 font-bold">{item.date}</span>
-                                  </div>
-
-                                  <div className="p-4 bg-slate-955/40 border border-white/[0.02] rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 leading-relaxed">
-                                    <div>
-                                      <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider block">Gross Salary</span>
-                                      <span className="font-mono text-[11px] font-bold text-slate-200">{formatINR(item.grossSalary)}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider block">Total Deductions</span>
-                                      <span className="font-mono text-[11px] font-bold text-slate-200">{formatINR(item.totalDeductions)}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider block">Net Tax Liability</span>
-                                      <span className="font-mono text-[11px] font-bold text-slate-200">{formatINR(item.netTaxPaid)}</span>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-3.5 text-[10px] text-slate-400 font-bold pt-1">
-                                    <button 
-                                      onClick={() => handleDownloadHistoryJSON(item)}
-                                      className="flex items-center gap-1 hover:text-blue-400 cursor-pointer select-none transition-colors"
-                                    >
-                                      <Download className="w-3.5 h-3.5" />
-                                      <span>Download JSON return</span>
-                                    </button>
-                                    <span>•</span>
-                                    <button 
-                                      onClick={() => handleDownloadHistoryPDF(item)}
-                                      className="flex items-center gap-1 hover:text-blue-400 cursor-pointer select-none transition-colors"
-                                    >
-                                      <Printer className="w-3.5 h-3.5" />
-                                      <span>Print Summary PDF</span>
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-
-                        </div>
-                      </motion.div>
+                      <Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
+                        <HistoryArchive
+                          setActiveStep={setActiveStep}
+                        />
+                      </Suspense>
                     )}
 
                   </AnimatePresence>
@@ -2076,9 +1978,9 @@ export default function App() {
             {!isFloatingAIChatOpen && (
               <button
                 onClick={() => setIsFloatingAIChatOpen(true)}
-                className="fixed right-6 bottom-6 z-40 p-3 bg-emerald-500 hover:bg-emerald-400 text-slate-955 font-bold rounded-full shadow-lg shadow-emerald-500/20 cursor-pointer transition-all active:scale-95 flex items-center gap-1.5 animate-bounce"
+                className="fixed right-6 bottom-6 z-40 p-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-955 font-bold rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_22px_rgba(16,185,129,0.55)] cursor-pointer transition-all hover:scale-108 duration-300 active:scale-95 flex items-center justify-center group"
               >
-                <Sparkles className="w-5 h-5 text-slate-955" />
+                <Sparkles className="w-5 h-5 text-slate-955 transition-transform group-hover:rotate-12 duration-300" />
               </button>
             )}
 
@@ -2224,7 +2126,8 @@ export default function App() {
             </AnimatePresence>
 
           </div>
-        )}
+        );
+      })()}
 
       </Suspense>
 
