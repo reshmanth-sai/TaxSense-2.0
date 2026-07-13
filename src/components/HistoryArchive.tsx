@@ -45,6 +45,9 @@ const SavingsChart: React.FC<{ data: { year: string; savings: number; regime: st
   const minSavings = 0;
 
   const getX = (index: number) => {
+    if (data.length <= 1) {
+      return paddingLeft + (width - paddingLeft - paddingRight) / 2;
+    }
     return paddingLeft + (index / (data.length - 1)) * (width - paddingLeft - paddingRight);
   };
 
@@ -265,13 +268,20 @@ export const HistoryArchive: React.FC<HistoryArchiveProps> = React.memo(({ setAc
   const returnsCount = activeHistory.length + 1; // Including drafts/in-progress
   const lastFilingLabel = activeHistory.length > 0 ? activeHistory[0].id.replace("Filing ", "") : "None";
 
-  // SVG Chart data
   const chartData = React.useMemo(() => {
-    return activeHistory.map(item => ({
-      year: item.id.replace("Filing AY 20", "").replace("-", "/"),
-      savings: item.savings || 0,
-      regime: item.recommendedRegime
-    })).reverse();
+    return activeHistory.map(item => {
+      let displayYear = item.id;
+      if (item.id.startsWith("TXS")) {
+        displayYear = "26/27";
+      } else {
+        displayYear = item.id.replace("Filing AY 20", "").replace("-", "/");
+      }
+      return {
+        year: displayYear,
+        savings: item.savings || 0,
+        regime: item.recommendedRegime
+      };
+    }).reverse();
   }, [activeHistory]);
 
   // Filtering & Search
