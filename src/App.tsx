@@ -138,17 +138,19 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = React.memo(({
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-blue-500 rounded-r" />
         )}
 
-        <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+        <div className={`flex items-center ${
+          isExpanded ? 'gap-3 overflow-hidden min-w-0 flex-1' : 'justify-center w-full'
+        }`}>
           <IconComp className={`h-5 w-5 shrink-0 transition-colors duration-180 ${
             isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-200'
           }`} />
           
           {/* Label transition */}
-          <span className={`truncate transition-all duration-200 ${
-            isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1.5 pointer-events-none'
-          }`}>
-            {label}
-          </span>
+          {isExpanded && (
+            <span className="truncate transition-all duration-200 opacity-100 translate-x-0">
+              {label}
+            </span>
+          )}
         </div>
 
         {/* Badges transition */}
@@ -1163,15 +1165,15 @@ export default function App() {
                   <div className={`py-4 border-b border-white/[0.04] flex items-center relative transition-all duration-200 ${
                     isExpanded ? 'px-4 justify-between flex-row' : 'py-5 px-0 justify-center flex-col gap-2.5'
                   }`}>
-                    <div className="flex items-center gap-2.5 overflow-hidden">
+                    <div className={`flex items-center ${isExpanded ? 'gap-2.5 overflow-hidden' : 'justify-center w-full'}`}>
                       <div className="w-8 h-8 bg-emerald-600 rounded-lg text-slate-955 font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/10 select-none">
                         <Calculator className="h-4.5 w-4.5 text-slate-955" />
                       </div>
-                      <span className={`font-black text-xs uppercase tracking-wider text-slate-100 transition-all duration-200 ${
-                        isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3 pointer-events-none'
-                      }`}>
-                        TaxSense
-                      </span>
+                      {isExpanded && (
+                        <span className="font-black text-xs uppercase tracking-wider text-slate-100 transition-all duration-200 opacity-100 translate-x-0">
+                          TaxSense
+                        </span>
+                      )}
                     </div>
 
                     <button
