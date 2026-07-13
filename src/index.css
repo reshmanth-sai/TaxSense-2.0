@@ -1,0 +1,815 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;650;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", "Geist", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+}
+
+/* Base enhancements */
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family: var(--font-sans);
+  background-color: #F8FAFC;
+  color: #0F172A;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.dark body {
+  background-color: #050607;
+  color: #F6F7F8;
+}
+
+/* Accessibility Focus States */
+button:focus-visible, 
+input:focus-visible, 
+select:focus-visible, 
+textarea:focus-visible, 
+a:focus-visible {
+  outline: 2px solid #16E27A;
+  outline-offset: 2px;
+}
+
+.dark button:focus-visible, 
+.dark input:focus-visible, 
+.dark select:focus-visible, 
+.dark textarea:focus-visible, 
+.dark a:focus-visible {
+  outline: 2px solid #5BEAA5;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #050607;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Shifting Shimmer Keyframes and Utilities */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+.animate-shimmer-dark {
+  background: linear-gradient(90deg, #0E131B 25%, rgba(255,255,255,0.06) 50%, #0E131B 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+/* Dark Mode Overrides for Deductions, Export, Portfolios, Extractions and Checklists */
+.dark #deductions-card,
+.dark #deductions-card-skeleton,
+.dark #export-hub-container,
+.dark #extraction-loading-state,
+.dark #extraction-confirm-card,
+.dark #filing-guide-modal,
+.dark #portfolio-sync-widget {
+  background-color: #0E131B !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: #F6F7F8 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.02) !important;
+  border-radius: 16px !important;
+}
+
+/* Background overrides for subregions */
+.dark #deductions-card .bg-slate-50,
+.dark #deductions-card .bg-slate-50\/10,
+.dark #deductions-card .bg-slate-50\/50,
+.dark #deductions-card .bg-slate-100,
+.dark #deductions-card .bg-slate-100\/50,
+.dark #deductions-card-skeleton .bg-slate-50,
+.dark #deductions-card-skeleton .bg-slate-100,
+.dark #export-hub-container .bg-slate-50,
+.dark #export-hub-container .bg-slate-100,
+.dark #export-hub-container .bg-white,
+.dark #extraction-confirm-card .bg-slate-50,
+.dark #extraction-confirm-card .bg-slate-100,
+.dark #filing-guide-modal .bg-slate-50,
+.dark #filing-guide-modal .bg-slate-100,
+.dark #filing-guide-modal .bg-slate-100\/50,
+.dark #filing-guide-modal .bg-white,
+.dark #portfolio-sync-widget .bg-slate-50,
+.dark #portfolio-sync-widget .bg-neutral-950,
+.dark #portfolio-sync-widget .bg-neutral-900 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: #F6F7F8 !important;
+}
+
+/* Title and typography colors */
+.dark #deductions-card h3,
+.dark #deductions-card h2,
+.dark #deductions-card h4,
+.dark #deductions-card-skeleton h3,
+.dark #export-hub-container h3,
+.dark #export-hub-container h4,
+.dark #extraction-confirm-card h3,
+.dark #extraction-confirm-card h4,
+.dark #filing-guide-modal h2,
+.dark #filing-guide-modal h3,
+.dark #portfolio-sync-widget h3,
+.dark #portfolio-sync-widget h4 {
+  color: #F6F7F8 !important;
+}
+
+/* Body / label text adjustments */
+.dark #deductions-card p,
+.dark #deductions-card label,
+.dark #export-hub-container p,
+.dark #export-hub-container label,
+.dark #extraction-confirm-card p,
+.dark #extraction-confirm-card label,
+.dark #filing-guide-modal p,
+.dark #filing-guide-modal label,
+.dark #portfolio-sync-widget p,
+.dark #portfolio-sync-widget label {
+  color: #8A96A8 !important;
+}
+
+/* Text inputs styling */
+.dark #deductions-card input[type="text"],
+.dark #deductions-card input[type="number"],
+.dark #extraction-confirm-card input[type="text"],
+.dark #extraction-confirm-card input[type="number"],
+.dark #portfolio-sync-widget input[type="text"] {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  color: #F6F7F8 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark #deductions-card input[type="text"]:focus,
+.dark #extraction-confirm-card input[type="text"]:focus,
+.dark #portfolio-sync-widget input[type="text"]:focus {
+  border-color: #16E27A !important;
+  outline: none !important;
+}
+
+/* Range input accent adjustments */
+.dark #deductions-card input[type="range"] {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Button variants styling */
+.dark #deductions-card button.bg-white,
+.dark #export-hub-container button.bg-white,
+.dark #filing-guide-modal button.bg-white,
+.dark #portfolio-sync-widget button.bg-white {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #8A96A8 !important;
+}
+
+.dark #deductions-card button.bg-white:hover,
+.dark #export-hub-container button.bg-white:hover,
+.dark #filing-guide-modal button.bg-white:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #F6F7F8 !important;
+}
+
+.dark #deductions-card button.bg-neutral-900,
+.dark #export-hub-container button.bg-neutral-900,
+.dark #filing-guide-modal button.bg-neutral-900,
+.dark #portfolio-sync-widget button.bg-neutral-900 {
+  background-color: #16E27A !important;
+  color: #050607 !important;
+  font-weight: 700 !important;
+}
+
+.dark #deductions-card button.bg-neutral-900:hover,
+.dark #export-hub-container button.bg-neutral-900:hover,
+.dark #filing-guide-modal button.bg-neutral-900:hover {
+  background-color: #5BEAA5 !important;
+}
+
+/* Skeletons */
+.dark #deductions-card-skeleton .bg-slate-200,
+.dark #deductions-card-skeleton .bg-slate-300 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Borders overrides */
+.dark #deductions-card .border-slate-100,
+.dark #deductions-card .border-slate-150,
+.dark #deductions-card .border-slate-200,
+.dark #export-hub-container .border-slate-100,
+.dark #export-hub-container .border-slate-150,
+.dark #export-hub-container .border-slate-200,
+.dark #extraction-confirm-card .border-slate-100,
+.dark #extraction-confirm-card .border-slate-200,
+.dark #filing-guide-modal .border-slate-100,
+.dark #filing-guide-modal .border-slate-150,
+.dark #filing-guide-modal .border-slate-200,
+.dark #portfolio-sync-widget .border-neutral-800,
+.dark #portfolio-sync-widget .border-neutral-700 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Specific details */
+.dark #export-hub-container #preview-json-payload {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: #5BEAA5 !important;
+}
+
+.dark #extraction-confirm-card table thead tr {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  color: #8A96A8 !important;
+}
+
+.dark #extraction-confirm-card table tbody tr {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: #F6F7F8 !important;
+}
+
+.dark #extraction-confirm-card table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Dark Mode Utility Class Tweaks to match premium dark style */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: #F6F7F8 !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-505,
+.dark .text-slate-500 {
+  color: #8A96A8 !important;
+}
+
+.dark .text-slate-405,
+.dark .text-slate-400 {
+  color: #8A96A8 !important;
+}
+
+/* Specific background transformations for dark mode */
+.dark .bg-blue-50,
+.dark .bg-blue-50\/50,
+.dark .bg-blue-50\/60,
+.dark .bg-blue-50\/80,
+.dark .bg-blue-50\/20,
+.dark .bg-blue-100,
+.dark .bg-indigo-50,
+.dark .bg-indigo-100 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark .bg-emerald-50,
+.dark .bg-emerald-50\/20,
+.dark .bg-emerald-50\/50,
+.dark .bg-emerald-100 {
+  background-color: rgba(22, 226, 122, 0.04) !important;
+  border-color: rgba(22, 226, 122, 0.15) !important;
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-50\/20,
+.dark .bg-amber-50\/50,
+.dark .bg-amber-50\/60,
+.dark .bg-amber-100,
+.dark .bg-amber-950\/30 {
+  background-color: rgba(245, 158, 11, 0.04) !important;
+  border-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+.dark .bg-rose-50,
+.dark .bg-rose-50\/20,
+.dark .bg-rose-50\/40,
+.dark .bg-rose-100,
+.dark .bg-red-55,
+.dark .bg-red-950\/20 {
+  background-color: rgba(239, 68, 68, 0.04) !important;
+  border-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Specific text color transformations for dark mode */
+.dark .text-blue-800,
+.dark .text-blue-700,
+.dark .text-blue-600,
+.dark .text-blue-500 {
+  color: #F6F7F8 !important;
+}
+
+.dark .text-emerald-800,
+.dark .text-emerald-750,
+.dark .text-emerald-700,
+.dark .text-emerald-600 {
+  color: #16E27A !important;
+}
+
+.dark .text-amber-850,
+.dark .text-amber-800,
+.dark .text-amber-700,
+.dark .text-amber-600 {
+  color: #F59E0B !important;
+}
+
+.dark .text-rose-800,
+.dark .text-rose-700,
+.dark .text-rose-600,
+.dark .text-red-700,
+.dark .text-red-600 {
+  color: #EF4444 !important;
+}
+
+/* Specific border transformations for dark mode */
+.dark .border-blue-100,
+.dark .border-blue-150,
+.dark .border-blue-200,
+.dark .border-emerald-100,
+.dark .border-emerald-150,
+.dark .border-emerald-200,
+.dark .border-amber-100,
+.dark .border-amber-150,
+.dark .border-amber-200,
+.dark .border-rose-100,
+.dark .border-rose-150,
+.dark .border-rose-200,
+.dark .border-red-200,
+.dark .border-red-900\/50 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Switcher button hover borders in dark mode */
+.dark button.border-slate-200:hover,
+.dark label.border-slate-200:hover {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Input range thumb colors for premium dark mode aesthetics */
+.dark input[type="range"]::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background: #16E27A !important;
+  border: 2px solid #050607 !important;
+}
+
+/* Premium card and border utility overrides for dark mode */
+.dark .bg-slate-900,
+.dark .bg-slate-900\/60,
+.dark .bg-slate-900\/40,
+.dark .bg-slate-950,
+.dark .bg-slate-900\/35,
+.dark .bg-slate-900\/10 {
+  background-color: rgba(14, 19, 27, 0.45) !important;
+  backdrop-filter: blur(16px) saturate(120%) !important;
+}
+
+.dark .border-slate-800,
+.dark .border-slate-800\/50,
+.dark .border-slate-700 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Custom keyframes for premium landing page */
+@keyframes aurora-drift-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(50px, -70px) scale(1.15) rotate(120deg);
+  }
+  66% {
+    transform: translate(-40px, 40px) scale(0.9) rotate(240deg);
+  }
+}
+
+@keyframes aurora-drift-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate(-60px, 50px) scale(1.2) rotate(-180deg);
+  }
+}
+
+@keyframes card-breathing-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+  50% { transform: translate3d(0, -4px, 0) rotate(1deg); }
+}
+@keyframes card-breathing-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(1.5deg); }
+  50% { transform: translate3d(0, -6px, 0) rotate(-1.5deg); }
+}
+@keyframes card-breathing-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1.5deg); }
+  50% { transform: translate3d(0, -5px, 0) rotate(1deg); }
+}
+@keyframes card-breathing-4 {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(1deg); }
+  50% { transform: translate3d(0, -7px, 0) rotate(-1deg); }
+}
+
+@keyframes particle-twinkle {
+  0%, 100% { opacity: 0.1; transform: translate3d(0, 0, 0); }
+  50% { opacity: 0.6; transform: translate3d(0, -10px, 0); }
+}
+
+@keyframes shift-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes cta-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  }
+  50% {
+    box-shadow: 0 4px 22px rgba(16, 185, 129, 0.35);
+  }
+}
+
+/* Helper Animation classes with hardware acceleration promotions */
+.animate-aurora-1 {
+  animation: aurora-drift-1 45s infinite ease-in-out;
+  will-change: transform;
+}
+.animate-aurora-2 {
+  animation: aurora-drift-2 55s infinite ease-in-out;
+  will-change: transform;
+}
+
+.animate-float-card-1 {
+  animation: card-breathing-1 13s infinite ease-in-out;
+  will-change: transform;
+}
+.animate-float-card-2 {
+  animation: card-breathing-2 15s infinite ease-in-out;
+  will-change: transform;
+}
+.animate-float-card-3 {
+  animation: card-breathing-3 14s infinite ease-in-out;
+  will-change: transform;
+}
+.animate-float-card-4 {
+  animation: card-breathing-4 17s infinite ease-in-out;
+  will-change: transform;
+}
+
+.animate-particle-twinkle {
+  animation: particle-twinkle infinite ease-in-out;
+  will-change: transform, opacity;
+}
+
+.animate-bg-gradient {
+  background-size: 200% 200%;
+  animation: shift-gradient 32s infinite ease-in-out;
+}
+
+.animate-cta-pulse {
+  animation: cta-glow-pulse 5.5s infinite ease-in-out;
+}
+
+/* Glassmorphism card premium styling */
+.glass-card-premium {
+  background: rgba(15, 23, 42, 0.45) !important; /* slate-900 with opacity */
+  backdrop-filter: blur(16px) saturate(120%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.04),
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 35px rgba(16, 185, 129, 0.01);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, border-color, box-shadow;
+  border-radius: 16px !important; /* Design system Standard Cards rounded-2xl */
+}
+
+.glass-card-premium:hover {
+  background: rgba(15, 23, 42, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.08),
+    0 15px 45px rgba(0, 0, 0, 0.6);
+}
+
+/* Faint cinematic noise overlay - Pinned fixed to screen for seamless scroll texture */
+.cinematic-noise {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.007;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes ambient-drift-tl {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(25px, -15px, 0) scale(1.05); }
+}
+@keyframes ambient-drift-br {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-20px, 20px, 0) scale(0.95); }
+}
+.animate-ambient-drift-tl {
+  animation: ambient-drift-tl 38s infinite ease-in-out;
+}
+.animate-ambient-drift-br {
+  animation: ambient-drift-br 44s infinite ease-in-out;
+}
+
+/* Spotlight breathing animation */
+@keyframes spotlight-pulse {
+  0%, 100% {
+    opacity: 0.22;
+    transform: translate3d(-50%, -50%, 0) scale(0.96);
+  }
+  50% {
+    opacity: 0.26;
+    transform: translate3d(-50%, -50%, 0) scale(1.04);
+  }
+}
+
+.animate-spotlight-pulse {
+  animation: spotlight-pulse 10s infinite ease-in-out;
+  will-change: transform, opacity;
+}
+
+/* Slide in from right animation for AI Companion */
+@keyframes slide-in-right {
+  from {
+    transform: translate3d(100%, 0, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Motion Sensitivity / prefers-reduced-motion compliance */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .animate-aurora-1, 
+  .animate-aurora-2, 
+  .animate-float-card-1, 
+  .animate-float-card-2, 
+  .animate-float-card-3, 
+  .animate-float-card-4, 
+  .animate-particle-twinkle, 
+  .animate-bg-gradient, 
+  .animate-cta-pulse, 
+  .animate-spotlight-pulse {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+@keyframes border-beam {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-border-beam {
+  animation: border-beam 4s linear infinite;
+}
+
+@keyframes drift-particle {
+  0% { transform: translateY(0px) translateX(0px); opacity: 0; }
+  15% { opacity: 0.25; }
+  85% { opacity: 0.25; }
+  100% { transform: translateY(-120px) translateX(15px); opacity: 0; }
+}
+.animate-drift {
+  animation: drift-particle 15s infinite ease-in-out;
+}
+
+@keyframes grid-pulse {
+  0% { opacity: 0.08; }
+  50% { opacity: 0.2; }
+  100% { opacity: 0.08; }
+}
+.animate-grid-pulse {
+  animation: grid-pulse 28s infinite ease-in-out;
+}
+
+/* Centerpiece Glass Surface Panel */
+.glass-panel-surface {
+  background: rgba(15, 18, 22, 0.55) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    0 20px 60px rgba(0, 0, 0, 0.45),
+    0 0 60px rgba(22, 226, 122, 0.02) !important;
+  transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+/* Option Choice Cards - Sandbox */
+.glass-option-card-sandbox {
+  background: rgba(255, 255, 255, 0.015) !important;
+  backdrop-filter: blur(16px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.03),
+    0 8px 30px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, border-color, box-shadow;
+}
+
+.glass-option-card-sandbox:hover {
+  transform: translateY(-2px) scale(1.005) !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.06),
+    0 12px 35px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Option Choice Cards - Google */
+.glass-option-card-google {
+  background: rgba(255, 255, 255, 0.015) !important;
+  backdrop-filter: blur(16px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.03),
+    0 8px 30px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, border-color, box-shadow;
+}
+
+.glass-option-card-google:hover {
+  transform: translateY(-2px) scale(1.005) !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  border-color: rgba(22, 226, 122, 0.25) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.06),
+    0 12px 35px rgba(0, 0, 0, 0.5),
+    0 0 25px rgba(22, 226, 122, 0.04) !important;
+}
+
+/* Sandbox Tactile Button */
+.btn-tactile-sandbox {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, box-shadow;
+}
+
+.btn-tactile-sandbox:hover {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 6px 16px rgba(0, 0, 0, 0.35) !important;
+}
+
+.btn-tactile-sandbox:active {
+  transform: translateY(0) scale(0.985) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Premium Glass Badges */
+.glass-badge-premium {
+  background: rgba(255, 255, 255, 0.015) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, border-color, box-shadow;
+}
+
+.glass-badge-premium:hover {
+  background: rgba(255, 255, 255, 0.035) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 12px rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Logo breath animation */
+@keyframes logo-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(22,226,122,0.15), inset 0 1px 1px rgba(255,255,255,0.05);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(22,226,122,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
+    transform: scale(1.02);
+  }
+}
+.animate-logo-pulse {
+  animation: logo-glow-pulse 6s infinite ease-in-out;
+  will-change: transform, box-shadow;
+}
+
+/* Shield badge rotation */
+@keyframes spin-dashed {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-spin-dashed {
+  animation: spin-dashed 24s linear infinite;
+}
+
+/* Shield badge pulse */
+@keyframes shield-glow-pulse {
+  0%, 100% {
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 0 20px rgba(22,226,122,0.04);
+    border-color: rgba(22, 226, 122, 0.18);
+  }
+  50% {
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 0 32px rgba(22,226,122,0.12);
+    border-color: rgba(22, 226, 122, 0.35);
+  }
+}
+.animate-shield-pulse {
+  animation: shield-glow-pulse 8s infinite ease-in-out;
+}
+
+/* Programmatic Google Tactile Button */
+.btn-tactile-google {
+  background: rgba(255, 255, 255, 0.015) !important;
+  backdrop-filter: blur(12px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, box-shadow, border-color, background-color;
+}
+
+.btn-tactile-google:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.025) !important;
+  border-color: rgba(22, 226, 122, 0.22) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.35),
+    0 0 15px rgba(22, 226, 122, 0.03) !important;
+}
+
+.btn-tactile-google:active:not(:disabled) {
+  transform: translateY(0) scale(0.985) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.01),
+    0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+
