@@ -1,4 +1,4 @@
-import React, { useEffect, useTransition } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -13,9 +13,7 @@ import {
   AlertCircle, 
   Sun, 
   Moon, 
-  Laptop,
-  Star,
-  Clock
+  Laptop
 } from 'lucide-react';
 import { useSidebarStore, SidebarTheme } from './useSidebarStore';
 import { SidebarHeader } from './SidebarHeader';
@@ -58,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout
 }) => {
   const isCollapsed = useSidebarStore((state) => state.isCollapsed);
+  const sidebarBehavior = useSidebarStore((state) => state.sidebarBehavior);
   const setCollapsed = useSidebarStore((state) => state.setCollapsed);
   const toggleCollapsed = useSidebarStore((state) => state.toggleCollapsed);
   const setSearchOpen = useSidebarStore((state) => state.setSearchOpen);
@@ -66,30 +65,84 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const theme = useSidebarStore((state) => state.theme);
   const setTheme = useSidebarStore((state) => state.setTheme);
 
+  // Debounced hover state
+  const [isHoverActive, setIsHoverActive] = useState(false);
+  const enterTimer = useRef<NodeJS.Timeout | null>(null);
+  const leaveTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Reset hover state when behavior changes
+  useEffect(() => {
+    setIsHoverActive(false);
+    if (enterTimer.current) clearTimeout(enterTimer.current);
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+  }, [sidebarBehavior]);
+
+  // Clean timers on unmount
+  useEffect(() => {
+    return () => {
+      if (enterTimer.current) clearTimeout(enterTimer.current);
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    if (sidebarBehavior !== 'auto_hover') return;
+
+    if (leaveTimer.current) {
+      clearTimeout(leaveTimer.current);
+      leaveTimer.current = null;
+    }
+
+    if (!isHoverActive && !enterTimer.current) {
+      enterTimer.current = setTimeout(() => {
+        setIsHoverActive(true);
+        enterTimer.current = null;
+      }, 200); // 150-250 ms delay
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    if (sidebarBehavior !== 'auto_hover') return;
+
+    if (enterTimer.current) {
+      clearTimeout(enterTimer.current);
+      enterTimer.current = null;
+    }
+
+    if (isHoverActive && !leaveTimer.current) {
+      leaveTimer.current = setTimeout(() => {
+        setIsHoverActive(false);
+        leaveTimer.current = null;
+      }, 400); // 300-500 ms delay
+    }
+  };
+
   // Responsive layout tracking
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       if (width < 768) {
-        // Mobile starts collapsed
         setCollapsed(true);
       } else if (width < 1024) {
-        // Tablet default collapsed
         setCollapsed(true);
       } else {
-        // Desktop default expanded
-        setCollapsed(false);
+        // Desktop uses the persisted behavior setting
+        if (sidebarBehavior === 'pinned') {
+          setCollapsed(false);
+        } else {
+          setCollapsed(true);
+        }
       }
     };
     
-    // Initial check
     handleResize();
-    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [setCollapsed]);
+  }, [setCollapsed, sidebarBehavior]);
 
-  // Global key listener for Ctrl+B (toggle collapse) and Esc
+  // Global key listener for Ctrl+B and Esc
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
@@ -152,11 +205,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
     'History & Archive': { step: 10, icon: History }
   };
 
+  // Visual expansion state (Unifies manual collapse/expand with hover expansion)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isExpandedVisual = isMobile 
+    ? !isCollapsed 
+    : (sidebarBehavior === 'pinned' || (sidebarBehavior === 'auto_hover' && isHoverActive));
+
   return (
     <>
+      {/* Spacer to reserve layout space on desktop and prevent layout shifts on hover */}
+      {!isMobile && (
+        <div 
+          className="hidden md:block shrink-0 transition-all duration-300 ease-out" 
+          style={{ width: sidebarBehavior === 'pinned' ? 216 : 56 }} 
+        />
+      )}
+
       {/* Mobile Backdrop Overlay */}
       <AnimatePresence>
-        {!isCollapsed && (
+        {isMobile && !isCollapsed && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -171,17 +238,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <motion.aside 
         initial={false}
         animate={{ 
-          width: isCollapsed ? 56 : 216,
+          width: isExpandedVisual ? 216 : 56,
           // Slide completely off-screen on mobile when collapsed
-          x: (typeof window !== 'undefined' && window.innerWidth < 768) && isCollapsed ? -216 : 0
+          x: isMobile && isCollapsed ? -216 : 0
         }}
         transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         style={{ background: 'linear-gradient(to bottom, #101722, #0B111A)' }}
-        className="border-r border-white/[0.04] backdrop-blur-md flex flex-col justify-between shrink-0 z-40 fixed inset-y-0 left-0 md:relative h-screen overflow-y-auto overflow-x-hidden font-sans"
+        className="border-r border-white/[0.04] backdrop-blur-md flex flex-col justify-between shrink-0 z-40 fixed inset-y-0 left-0 h-screen overflow-y-auto overflow-x-hidden font-sans"
       >
         <div className="flex flex-col">
           {/* Header & Logo Section */}
-          <SidebarHeader isExpanded={!isCollapsed} />
+          <SidebarHeader isExpanded={isExpandedVisual} />
 
           {/* Collapsible Groups & Navigation */}
           <div 
@@ -189,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="p-3 space-y-3.5 sidebar-nav-container"
           >
             {/* 1. FAVORITES Section (Dynamic) */}
-            {favorites.length > 0 && !isCollapsed && (
+            {favorites.length > 0 && isExpandedVisual && (
               <SidebarGroup title="Favorites" isExpanded={true}>
                 {favorites.map((favLabel) => {
                   const config = navigationConfig[favLabel as keyof typeof navigationConfig];
@@ -214,12 +283,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* 2. MAIN Section */}
-            <SidebarGroup title="Main" isExpanded={!isCollapsed}>
+            <SidebarGroup title="Main" isExpanded={isExpandedVisual}>
               <SidebarItem
                 label="Dashboard"
                 icon={LayoutDashboard}
                 isActive={activeStep === 11}
-                isExpanded={!isCollapsed}
+                isExpanded={isExpandedVisual}
                 onClick={() => setActiveStep(11)}
                 isPrimary={true}
               />
@@ -227,7 +296,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 label="Optimize"
                 icon={Award}
                 isActive={activeStep === 5}
-                isExpanded={!isCollapsed}
+                isExpanded={isExpandedVisual}
                 savings={taxCalculationResult.savings}
                 onClick={() => setActiveStep(5)}
                 isPrimary={true}
@@ -236,7 +305,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 label="Tax Return"
                 icon={ListTodo}
                 isActive={activeStep === 6}
-                isExpanded={!isCollapsed}
+                isExpanded={isExpandedVisual}
                 onClick={() => setActiveStep(6)}
                 isPrimary={true}
               />
@@ -246,12 +315,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="h-px bg-white/[0.015] mx-2" />
 
             {/* 3. TOOLS Section */}
-            <SidebarGroup title="Tools" isExpanded={!isCollapsed}>
+            <SidebarGroup title="Tools" isExpanded={isExpandedVisual}>
               <SidebarItem
                 label="Document Vault"
                 icon={FileUp}
                 isActive={activeStep === 3}
-                isExpanded={!isCollapsed}
+                isExpanded={isExpandedVisual}
                 completed={taxData.grossSalary !== 850000 || taxData.tdsDeducted !== 15000}
                 onClick={() => setActiveStep(3)}
               />
@@ -259,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 label="AI Analysis"
                 icon={BrainCircuit}
                 isActive={activeStep === 4}
-                isExpanded={!isCollapsed}
+                isExpanded={isExpandedVisual}
                 badge="Gemini"
                 onClick={() => setActiveStep(4)}
               />
@@ -267,13 +336,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 label="History & Archive"
                 icon={History}
                 isActive={activeStep === 10}
-                isExpanded={!isCollapsed}
+                isExpanded={isExpandedVisual}
                 onClick={() => setActiveStep(10)}
               />
             </SidebarGroup>
 
             {/* 4. RECENT VISITED Section (Dynamic) */}
-            {recentlyVisited.length > 0 && !isCollapsed && (
+            {recentlyVisited.length > 0 && isExpandedVisual && (
               <SidebarGroup title="Recent" isExpanded={true}>
                 {recentlyVisited.map((recentLabel) => {
                   const config = navigationConfig[recentLabel as keyof typeof navigationConfig];
@@ -308,10 +377,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div 
               title={`${backgroundStatusMessage} (${backgroundProgress}%)`}
               className={`p-3 bg-white/[0.01] border border-white/[0.015] rounded-xl transition-all ${
-                !isCollapsed ? 'space-y-2' : 'flex justify-center items-center'
+                isExpandedVisual ? 'space-y-2' : 'flex justify-center items-center'
               }`}
             >
-              {isCollapsed ? (
+              {!isExpandedVisual ? (
                 <div className="relative">
                   {ingestionState === 'COMPLETED' ? (
                     <CheckCircle className="w-4 h-4 text-[#16E27A]" />
@@ -329,13 +398,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {ingestionState === 'COMPLETED' ? (
                         <CheckCircle className="w-3.5 h-3.5 text-emerald-500/80 animate-pulse" />
                       ) : (
-                        <Cpu className="w-3.5 h-3.5 text-emerald-450 animate-pulse" /> 
+                        <Cpu className="w-3.5 h-3.5 text-emerald-455 animate-pulse" /> 
                       )}
                       Form 16 Verified
                     </span>
                     <span className="font-mono text-emerald-450/90">{ingestionState === 'COMPLETED' ? '100%' : `${backgroundProgress}%`}</span>
                   </div>
-                  <div className="h-[2px] w-full bg-slate-950/80 rounded-full overflow-hidden">
+                  <div className="h-[2px] w-full bg-slate-955/80 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-emerald-500/40 rounded-full transition-all duration-300" 
                       style={{ width: `${ingestionState === 'COMPLETED' ? 100 : backgroundProgress}%` }} 
@@ -348,14 +417,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Guest Sandbox details */}
           {authMode === 'GUEST' && (
-            isCollapsed ? (
+            !isExpandedVisual ? (
               <div className="relative group/guest-item w-full flex justify-center py-1 select-none">
                 <button
                   onClick={() => {
                     (window as any)._migrationRedirectStep = activeStep;
                     setActiveStep(2);
                   }}
-                  className="w-8 h-8 flex items-center justify-center bg-white/[0.01] border border-white/[0.03] hover:bg-white/[0.05] rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-8 h-8 flex items-center justify-center bg-white/[0.01] border border-white/[0.03] hover:bg-white/[0.05] rounded-xl text-slate-400 hover:text-slate-205 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                 >
                   <AlertCircle className="w-4 h-4 text-slate-500" />
                 </button>
@@ -393,7 +462,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* System settings and theme switcher group */}
           <div className="space-y-1">
             {/* Collapsed Group title */}
-            {!isCollapsed && (
+            {isExpandedVisual && (
               <span className="text-[8.5px] text-slate-500/70 font-bold uppercase tracking-[0.15em] block px-3 mb-1.5 select-none">
                 System
               </span>
@@ -404,13 +473,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               label="Settings & Sandbox"
               icon={Settings}
               isActive={isSettingsOpen}
-              isExpanded={!isCollapsed}
+              isExpanded={isExpandedVisual}
               onClick={() => setIsSettingsOpen(true)}
               showFavoriteOption={false}
             />
 
             {/* Dynamic Inline Theme Switcher */}
-            {!isCollapsed && (
+            {isExpandedVisual && (
               <div className="flex items-center justify-between px-3 py-2.5 mt-1.5 bg-white/[0.01] border border-white/[0.015] rounded-xl text-[10px] text-slate-400 select-none">
                 <span className="font-semibold">Interface Theme</span>
                 <div className="flex items-center gap-1 bg-slate-950/40 p-0.5 border border-white/[0.03] rounded-lg">
@@ -442,7 +511,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* User profile section */}
           <UserProfile
-            isExpanded={!isCollapsed}
+            isExpanded={isExpandedVisual}
             user={user}
             incomeProfile={incomeProfile}
             authMode={authMode}

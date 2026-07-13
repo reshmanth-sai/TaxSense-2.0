@@ -137,6 +137,8 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('••••••••••••');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const isSidebarCollapsed = useSidebarStore((state) => state.isCollapsed);
+  const sidebarBehavior = useSidebarStore((state) => state.sidebarBehavior);
+  const setSidebarBehavior = useSidebarStore((state) => state.setSidebarBehavior);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCopilotExpanded, setIsCopilotExpanded] = useState(false);
   const [activePreviewDoc, setActivePreviewDoc] = useState<any>(null);
@@ -1682,6 +1684,38 @@ export default function App() {
                             />
                             <span className="font-semibold text-slate-400">Multi House Property</span>
                           </label>
+                        </div>
+                      </div>
+
+                      {/* Sidebar Behavior Settings */}
+                      <div className="space-y-1.5 pt-4 border-t border-slate-800/80">
+                        <span className="font-bold text-slate-300 block">Sidebar Behavior</span>
+                        <div className="flex flex-col gap-2 pt-1">
+                          <div className="grid grid-cols-3 gap-2">
+                            {(['pinned', 'collapsed', 'auto_hover'] as const).map((behavior) => {
+                              const isSelected = sidebarBehavior === behavior;
+                              const label = behavior === 'pinned' ? 'Pinned' : behavior === 'collapsed' ? 'Collapsed' : 'Auto Hover';
+                              return (
+                                <button
+                                  key={behavior}
+                                  type="button"
+                                  onClick={() => setSidebarBehavior(behavior)}
+                                  className={`py-2 px-2.5 rounded-xl border text-center font-bold text-[9.5px] uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                                    isSelected 
+                                      ? 'bg-blue-600/10 text-blue-400 border-blue-500/30' 
+                                      : 'bg-slate-950/20 border-slate-850 text-slate-500 hover:text-slate-200 hover:bg-slate-900/40'
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[10px] text-slate-550 font-normal leading-normal pl-1">
+                            {sidebarBehavior === 'pinned' && 'Sidebar is locked open.'}
+                            {sidebarBehavior === 'collapsed' && 'Sidebar remains minimized (hover disabled).'}
+                            {sidebarBehavior === 'auto_hover' && 'Hovering the collapsed sidebar expands it.'}
+                          </p>
                         </div>
                       </div>
 

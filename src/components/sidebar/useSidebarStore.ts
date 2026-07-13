@@ -2,9 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type SidebarTheme = 'light' | 'dark' | 'system';
+export type SidebarBehavior = 'pinned' | 'collapsed' | 'auto_hover';
 
 interface SidebarState {
   isCollapsed: boolean;
+  sidebarBehavior: SidebarBehavior;
+  preferredCollapsedBehavior: 'collapsed' | 'auto_hover';
   collapsedGroups: Record<string, boolean>;
   favorites: string[];
   recentlyVisited: string[];
@@ -15,6 +18,7 @@ interface SidebarState {
   // Actions
   toggleCollapsed: () => void;
   setCollapsed: (collapsed: boolean) => void;
+  setSidebarBehavior: (behavior: SidebarBehavior) => void;
   toggleGroup: (groupName: string) => void;
   toggleFavorite: (pageName: string) => void;
   trackVisit: (pageName: string) => void;
@@ -27,6 +31,8 @@ export const useSidebarStore = create<SidebarState>()(
   persist(
     (set) => ({
       isCollapsed: false,
+      sidebarBehavior: 'pinned',
+      preferredCollapsedBehavior: 'auto_hover',
       collapsedGroups: {},
       favorites: [],
       recentlyVisited: [],
@@ -34,8 +40,44 @@ export const useSidebarStore = create<SidebarState>()(
       theme: 'dark',
       isSearchOpen: false,
 
-      toggleCollapsed: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
-      setCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
+      setSidebarBehavior: (behavior) => set((state) => {
+        const isCollapsed = behavior !== 'pinned';
+        const preferredCollapsedBehavior = isCollapsed ? behavior : state.preferredCollapsedBehavior;
+        return {
+          sidebarBehavior: behavior,
+          isCollapsed,
+          preferredCollapsedBehavior
+        };
+      }),
+
+      toggleCollapsed: () => set((state) => {
+        if (state.sidebarBehavior === 'pinned') {
+          return {
+            sidebarBehavior: state.preferredCollapsedBehavior,
+            isCollapsed: true
+          };
+        } else {
+          return {
+            sidebarBehavior: 'pinned',
+            isCollapsed: false
+          };
+        }
+      }),
+
+      setCollapsed: (collapsed) => set((state) => {
+        if (collapsed) {
+          return {
+            sidebarBehavior: state.preferredCollapsedBehavior,
+            isCollapsed: true
+          };
+        } else {
+          return {
+            sidebarBehavior: 'pinned',
+            isCollapsed: false
+          };
+        }
+      }),
+
       toggleGroup: (groupName) => set((state) => ({
         collapsedGroups: {
           ...state.collapsedGroups,
@@ -65,6 +107,8 @@ export const useSidebarStore = create<SidebarState>()(
       name: 'taxsense_sidebar_store',
       partialize: (state) => ({
         isCollapsed: state.isCollapsed,
+        sidebarBehavior: state.sidebarBehavior,
+        preferredCollapsedBehavior: state.preferredCollapsedBehavior,
         collapsedGroups: state.collapsedGroups,
         favorites: state.favorites,
         recentlyVisited: state.recentlyVisited,
