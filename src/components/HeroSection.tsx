@@ -1,24 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { 
-  FileText, 
-  Sparkles, 
-  ArrowRight, 
-  RotateCcw,
-  Volume2,
-  VolumeX,
-  ArrowUpRight,
-  Check,
-  ShieldCheck,
-  Cpu,
-  MousePointer2,
-  Info,
-  CheckCircle2,
-  Lock
+  FileText, Sparkles, ArrowRight, RotateCcw, Volume2, VolumeX, ArrowUpRight,
+  Check, ShieldCheck, Cpu, MousePointer2, Info, CheckCircle2, Lock
 } from 'lucide-react';
 
 // ----------------------------------------------------------------------
-// SPRING PHYSICS CONFIGURATION (Master Spec constraint)
+// PHYSICS & CONSTRAINTS (V4 Master Spec)
 // ----------------------------------------------------------------------
 const SPRING_HEAVY = { type: 'spring' as const, stiffness: 200, damping: 25 };
 const SPRING_GENTLE = { type: 'spring' as const, stiffness: 120, damping: 20 };
@@ -27,58 +15,45 @@ const SPRING_GENTLE = { type: 'spring' as const, stiffness: 120, damping: 20 };
 // HELPER COMPONENTS
 // ----------------------------------------------------------------------
 
-interface AnimatedCounterProps {
-  value: number;
-  prefix?: string;
-  duration?: number; // in ms
-  delayMs?: number;
-}
-
-const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ value, prefix = "", duration = 1200, delayMs = 0 }) => {
-  const [displayValue, setDisplayValue] = useState(0);
-  const prevValueRef = useRef(0);
-
+// Physical Rolling Counter (Tesla / Apple Wallet style)
+const RollingCounter = ({ value, prefix = "", delayMs = 0 }: { value: number, prefix?: string, delayMs?: number }) => {
+  const [targetStr, setTargetStr] = useState("0");
   useEffect(() => {
-    let startTimestamp: number | null = null;
-    let timeoutId: NodeJS.Timeout;
+    const t = setTimeout(() => {
+      setTargetStr(value.toLocaleString('en-IN'));
+    }, delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
 
-    const startValue = prevValueRef.current;
-    if (startValue === value) {
-      setDisplayValue(value);
-      return;
-    }
-
-    const startAnimation = () => {
-      const step = (timestamp: number) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const elapsed = timestamp - startTimestamp;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Ease Out Quad
-        const easeProgress = progress * (2 - progress);
-        const current = Math.floor(startValue + (value - startValue) * easeProgress);
-        
-        setDisplayValue(current);
-        
-        if (progress < 1) {
-          window.requestAnimationFrame(step);
-        } else {
-          prevValueRef.current = value;
-        }
-      };
-      window.requestAnimationFrame(step);
-    };
-
-    if (delayMs > 0) {
-      timeoutId = setTimeout(startAnimation, delayMs);
-    } else {
-      startAnimation();
-    }
-
-    return () => clearTimeout(timeoutId);
-  }, [value, duration, delayMs]);
-
-  return <span>{prefix}{displayValue.toLocaleString('en-IN')}</span>;
+  return (
+    <div className="inline-flex items-center font-mono">
+      {prefix && <span className="mr-0.5">{prefix}</span>}
+      <AnimatePresence mode="popLayout">
+        {targetStr.split('').map((char, i) => {
+          if (isNaN(Number(char))) {
+            return <span key={`char-${i}`} className="inline-block">{char}</span>;
+          }
+          return (
+            <div key={`digit-${i}-${char}`} className="relative inline-flex flex-col overflow-hidden h-[1.1em] justify-start align-top">
+              <motion.div
+                initial={{ y: "10%" }}
+                animate={{ y: `-${Number(char) * 10}%` }}
+                transition={{ type: 'spring', stiffness: 100, damping: 15, delay: i * 0.05 }}
+                className="flex flex-col"
+              >
+                {/* Digits 0-9 */}
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <span key={num} className="h-[1.1em] flex items-center justify-center leading-none">
+                    {num}
+                  </span>
+                ))}
+              </motion.div>
+            </div>
+          );
+        })}
+      </AnimatePresence>
+    </div>
+  );
 };
 
 // Shimmer highlight effect for active processing
@@ -86,8 +61,7 @@ const ShimmerLine: React.FC<{ active: boolean }> = ({ active }) => {
   if (!active) return null;
   return (
     <motion.div 
-      initial={{ x: '-100%' }}
-      animate={{ x: '200%' }}
+      initial={{ x: '-100%' }} animate={{ x: '200%' }}
       transition={{ duration: 1.2, ease: "easeInOut", repeat: Infinity }}
       className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
     />
@@ -103,26 +77,22 @@ const AnimatedEllipsis = () => {
     }, 400);
     return () => clearInterval(interval);
   }, []);
-  return <span className="inline-block w-4">{dots}</span>;
+  return <span className="inline-block w-4 text-left">{dots}</span>;
 };
 
 // ----------------------------------------------------------------------
 // MAIN HERO COMPONENT
 // ----------------------------------------------------------------------
 
-interface HeroSectionProps {
-  onStart: () => void;
-}
+interface HeroSectionProps { onStart: () => void; }
 
 export default function HeroSection({ onStart }: HeroSectionProps) {
   const prefersReducedMotion = useReducedMotion();
-  const browserRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Playback Control
   const [soundEnabled, setSoundEnabled] = useState(false);
   
-  // Continuous Timeline State (0 to 18000ms)
+  // Continuous Timeline State (0 to 13500ms for V4)
   const [time, setTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
 
@@ -135,16 +105,12 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      
       osc.type = type;
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      
       if (freq === 600) osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + duration);
       else if (freq === 400) osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + duration);
-      
       gain.gain.setValueAtTime(volume, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
@@ -160,126 +126,114 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
     let animationFrame: number;
 
     const playTimeline = (timestamp: number) => {
-      if (!startTimestamp) {
-        startTimestamp = timestamp;
-      }
+      if (!startTimestamp) startTimestamp = timestamp;
       const elapsed = timestamp - startTimestamp;
       
-      // Stop at 18000 (Idle state)
-      if (elapsed <= 18000) {
+      if (elapsed <= 13500) {
         setTime(elapsed);
         animationFrame = window.requestAnimationFrame(playTimeline);
       } else {
-        setTime(18000);
+        // Auto-loop
+        startTimestamp = null;
+        setTime(0);
+        animationFrame = window.requestAnimationFrame(playTimeline);
       }
     };
 
     if (isPlaying && !prefersReducedMotion) {
       animationFrame = window.requestAnimationFrame(playTimeline);
     } else if (prefersReducedMotion) {
-      // Skip animation entirely
-      setTime(18000);
+      setTime(13500);
     }
 
     return () => window.cancelAnimationFrame(animationFrame);
   }, [isPlaying, prefersReducedMotion]);
 
-  // Handle immediate replay
-  const handleReplay = () => {
-    setIsPlaying(false);
-    setTime(0);
-    // Force a small tick delay to reset states smoothly before restarting
-    setTimeout(() => {
-      setIsPlaying(true);
-      playBeep(550, 'sine', 0.1, 0.02);
-    }, 600); // 600ms wait before restart (Master spec)
-  };
-
-  // ----------------------------------------------------------------------
-  // SCENE TIMING BOOLEANS
-  // ----------------------------------------------------------------------
+  // SCENE TIMING BOOLEANS (V4 13.5s Compressed Timeline)
+  // 0.0s - 1.0s: Idle
+  // 1.0s - 3.0s: Upload Card
   const showUploadCard = time >= 500;
-  const isDraggingPDF = time > 1200 && time < 2300;
-  const isUploading = time >= 2300 && time < 4000;
-  const isUploadComplete = time >= 4000;
+  const isDraggingPDF = time > 1000 && time < 1500;
+  const pdfLands = time >= 1500;
+  const isUploading = time >= 1500 && time < 2500;
+  const isUploadComplete = time >= 2500;
   
-  const showAIExtraction = time >= 5000;
-  const showDashboard = time >= 9000;
-  const isFinalPayoff = time >= 15000;
+  // 3.5s - 6.5s: AI Extraction
+  const showAIExtraction = time >= 3500;
+  
+  // 6.5s - 10.0s: Dashboard & Lines
+  const showDashboard = time >= 6500;
+  const showLines = time >= 8500;
+  
+  // 11.5s: Keynote Final Reward
+  const isFinalPayoff = time >= 11500;
+  
+  // 13.0s: Click & Zoom
+  const isZoomingForward = time >= 13000;
 
   // Upload Progress Interpolator
-  const uploadProgress = Math.min(Math.max((time - 2300) / (4000 - 2300), 0), 1);
-  // Ease out progress
-  const easedUpload = uploadProgress * (2 - uploadProgress);
-  const uploadPercent = Math.floor(easedUpload * 100);
+  const uploadProgress = Math.min(Math.max((time - 1500) / (2500 - 1500), 0), 1);
+  const uploadPercent = Math.floor(uploadProgress * (2 - uploadProgress) * 100);
 
-  // AI Task Sequencer (Start at 5.5s, 120ms gap per task, 600ms processing)
+  // AI Task Sequencer (Start at 3.5s, 600ms per task duration)
   const aiTasks = useMemo(() => [
-    { id: 1, label: "Form 16 structure", start: 5500, done: 6100 },
-    { id: 2, label: "Employer details", start: 6220, done: 6820 },
-    { id: 3, label: "Section 80C claims", start: 6940, done: 7540 },
-    { id: 4, label: "Regimes Comparison", start: 7660, done: 8260 }
+    { id: 1, label: "Form 16 structure", start: 3800, done: 4400 },
+    { id: 2, label: "Employer & Deductions", start: 4500, done: 5100 },
+    { id: 3, label: "Regime Optimization", start: 5200, done: 5800 }
   ], []);
 
   // Play sound on task completion
   useEffect(() => {
     aiTasks.forEach(t => {
-      if (Math.abs(time - t.done) < 30) {
-        playBeep(700 + t.id * 20, 'sine', 0.04, 0.012);
-      }
+      if (Math.abs(time - t.done) < 30) playBeep(700 + t.id * 20, 'sine', 0.04, 0.012);
     });
+    if (Math.abs(time - 1500) < 30) playBeep(400, 'sine', 0.1, 0.05); // Drop thump
+    if (Math.abs(time - 2500) < 30) playBeep(800, 'sine', 0.1, 0.05); // Verified
+    if (Math.abs(time - 13000) < 30) playBeep(600, 'sine', 0.05, 0.05); // Click
   }, [time, aiTasks]);
 
-  // ----------------------------------------------------------------------
-  // CURSOR SIMULATION PHYSICS
-  // ----------------------------------------------------------------------
+  // Dynamic AI Text state function
+  const getTaskStatus = (t: { start: number, done: number, label: string }) => {
+    if (time < t.start) return null;
+    if (time >= t.done) return `✓ Verified ${t.label}`;
+    const progress = (time - t.start) / (t.done - t.start);
+    return progress < 0.5 ? `Reading...` : `Scanning...`;
+  };
+
+  // IMPERFECT CURSOR PHYSICS
   let cursorX = "120%";
   let cursorY = "120%";
   let cursorOpacity = 0;
   let cursorClicking = false;
 
-  if (time > 1000 && time <= 2000) {
-    // Bring cursor in to grab PDF
-    cursorOpacity = 1;
-    cursorX = "70%";
-    cursorY = "60%";
-  } else if (time > 2000 && time <= 2500) {
-    // Drag towards center drop zone
-    cursorOpacity = 1;
-    cursorX = "50%";
-    cursorY = "50%";
-  } else if (time > 2500 && time <= 3500) {
-    // Release and drift down slowly while waiting
-    cursorOpacity = 1;
-    cursorX = "52%";
-    cursorY = "55%";
-  } else if (time > 3500 && time < 14000) {
-    // Hide cursor during AI and dashboard build
-    cursorOpacity = 0;
-    cursorX = "80%";
-    cursorY = "80%";
-  } else if (time >= 14000 && time < 15500) {
-    // Bring back for CTA hover
-    cursorOpacity = 1;
-    cursorX = "50%";
-    cursorY = "70%"; // Below CTA
-  } else if (time >= 15500 && time < 16500) {
-    // Move up to hover CTA
-    cursorOpacity = 1;
-    cursorX = "50%";
-    cursorY = "73%"; // Center on CTA (roughly)
-  } else if (time >= 16500 && time < 16700) {
+  if (time > 800 && time <= 1300) {
+    // Bring cursor in to grab PDF (Overshoot slightly)
+    cursorOpacity = 1; cursorX = "72%"; cursorY = "58%";
+  } else if (time > 1300 && time <= 1500) {
+    // Correct and drag to dropzone
+    cursorOpacity = 1; cursorX = "50%"; cursorY = "50%";
+  } else if (time > 1500 && time <= 2500) {
+    // Drift away slightly
+    cursorOpacity = 1; cursorX = "53%"; cursorY = "56%";
+  } else if (time > 2500 && time < 12000) {
+    // Hide during AI & Dashboard build
+    cursorOpacity = 0; cursorX = "80%"; cursorY = "80%";
+  } else if (time >= 12000 && time < 12800) {
+    // Bring back for CTA
+    cursorOpacity = 1; cursorX = "50%"; cursorY = "72%";
+  } else if (time >= 12800 && time < 13000) {
+    // Hover CTA target
+    cursorOpacity = 1; cursorX = "50%"; cursorY = "75%";
+  } else if (time >= 13000 && time < 13200) {
     // Click!
-    cursorOpacity = 1;
-    cursorX = "50%";
-    cursorY = "73%";
-    cursorClicking = true;
-  } else if (time >= 16700) {
+    cursorOpacity = 1; cursorX = "50%"; cursorY = "75%"; cursorClicking = true;
+  } else if (time >= 13200) {
     // Drift away
-    cursorOpacity = 1;
-    cursorX = "55%";
-    cursorY = "80%";
+    cursorOpacity = 1; cursorX = "55%"; cursorY = "80%";
   }
+
+  // Motion Blur Class for major morphs (Upload -> Extract -> Dashboard)
+  const isMorphing = (time > 3000 && time < 3500) || (time > 6000 && time < 6500);
 
   return (
     <div 
@@ -293,25 +247,23 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           80% { opacity: 0.15; }
           100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
         }
-        .animate-drift { animation: drift 15s infinite ease-in-out; }
+        .animate-drift { animation: drift 20s infinite linear; } /* 0.5px/s dust */
 
         @keyframes browser-breathe {
           0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-4px) scale(1.003); }
+          50% { transform: translateY(-3px) scale(1.002); }
         }
-        .animate-browser-breathe {
-          animation: browser-breathe 8s infinite ease-in-out;
-        }
+        .animate-browser-breathe { animation: browser-breathe 8s infinite ease-in-out; }
 
         @keyframes glass-sweep {
           0%, 80% { transform: translate(-50%, -50%) rotate(30deg); opacity: 0; }
           90% { opacity: 1; }
           100% { transform: translate(250%, 250%) rotate(30deg); opacity: 0; }
         }
-        .animate-glass-sweep { animation: glass-sweep 15s infinite cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-glass-sweep { animation: glass-sweep 20s infinite cubic-bezier(0.16, 1, 0.3, 1); }
       `}</style>
       
-      {/* Strict Ambient Background (Max 12 particles, 4% aurora) */}
+      {/* 0.5px/s Dust Particles (Max 12) & 4% Aurora */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {[...Array(8)].map((_, i) => (
           <div
@@ -321,19 +273,18 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
               width: `${(i % 2) + 2}px`,
               height: `${(i % 2) + 2}px`,
               backgroundColor: i % 2 === 0 ? '#60A5FA' : '#34D399',
-              animationDelay: `${i * 1.5}s`,
-              animationDuration: `${12 + (i % 3) * 2}s`,
-              bottom: '10%',
+              animationDelay: `${i * 2}s`,
+              animationDuration: `${20 + (i % 3) * 5}s`,
+              bottom: '5%',
             }}
             className="absolute rounded-full animate-drift opacity-0"
           />
         ))}
-        {/* Subtle Aurora */}
         <div className="absolute top-[20%] left-[20%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-[#2563EB]/4 to-transparent blur-[120px]" />
         <div className="absolute bottom-[20%] right-[20%] w-[400px] h-[400px] rounded-full bg-gradient-to-br from-[#10B981]/4 to-transparent blur-[100px]" />
       </div>
 
-      {/* Hero Content */}
+      {/* Hero Copy (V4 Master Spec) */}
       <motion.div
         initial={prefersReducedMotion ? {} : { opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -344,190 +295,206 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           <Sparkles className="w-3.5 h-3.5" />
           <span>AI Tax Ingestion Platform AY 2026-27</span>
         </div>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white leading-tight">
-          File your taxes <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#34D399] to-blue-400">with absolute confidence.</span>
+        
+        {/* Enforced Typography Hierarchy (36px -> 18px -> 13px baseline) */}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[64px] font-black tracking-tight text-white leading-[1.1]">
+          Know your best tax regime <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#34D399] to-blue-400">before you file.</span>
         </h1>
-        <p className="text-[14px] md:text-[15px] leading-[1.5] text-slate-400 max-w-xl mx-auto">
-          Upload your Form 16 PDF. Our secure AI parses your profile, checks for claims you missed, and generates a verified tax return guide in minutes.
+        <p className="text-[16px] md:text-[18px] leading-[1.5] text-slate-400 max-w-xl mx-auto font-medium">
+          Upload your Form 16. Leave with the best filing strategy. Our secure AI parses your profile and finds every tax saving before you submit.
         </p>
 
         <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
           <button
             onClick={onStart}
-            className="px-7 py-3.5 bg-[#10B981] hover:bg-[#34D399] text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-[0.97] flex items-center justify-center gap-2"
+            className="px-7 py-4 bg-[#10B981] hover:bg-[#34D399] text-slate-950 font-bold text-[13px] uppercase tracking-wider rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(52,211,153,0.5)] active:scale-[0.97] flex items-center justify-center gap-2"
           >
             <span>Start Sandbox Workspace</span>
             <ArrowRight className="w-4 h-4 text-slate-950" />
           </button>
           <div className="flex gap-2">
-            <button className="px-6 py-3.5 bg-white/[0.02] hover:bg-white/[0.05] text-white border border-slate-800 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5">
+            <button className="px-6 py-4 bg-white/[0.02] hover:bg-white/[0.05] text-white border border-slate-800 font-bold text-[13px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5">
               <span>Explore Platform</span>
               <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
             <button
-              onClick={handleReplay}
-              className="px-3.5 py-3.5 bg-white/[0.02] hover:bg-white/[0.05] text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700 rounded-xl transition-all flex items-center justify-center cursor-pointer"
+              onClick={() => {
+                setIsPlaying(false);
+                setTime(0);
+                setTimeout(() => setIsPlaying(true), 600);
+              }}
+              className="px-4 py-4 bg-white/[0.02] hover:bg-white/[0.05] text-slate-400 border border-slate-800 rounded-xl transition-all flex items-center justify-center"
               title="Replay Story"
             >
               <RotateCcw className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => {
-                setSoundEnabled(!soundEnabled);
-                playBeep(700, 'sine', 0.05, 0.02);
-              }}
-              className={`px-3.5 py-3.5 border rounded-xl transition-all flex items-center justify-center cursor-pointer ${
-                soundEnabled ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' : 'bg-white/[0.02] text-slate-500 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
           </div>
         </div>
       </motion.div>
 
-      {/* Browser Window - The Stage */}
+      {/* THE BROWSER STAGE */}
       <motion.div
-        ref={browserRef}
-        className="mt-16 w-full max-w-3xl border border-white/[0.06] bg-[#0c101a]/85 backdrop-blur-[16px] rounded-[24px] p-2 relative z-10 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.6)] animate-browser-breathe"
-        style={{ transformPerspective: 1200, rotateX: prefersReducedMotion ? 0 : 2 }} // 2deg perspective tilt
+        animate={{ 
+          scale: isZoomingForward ? 1.3 : 1, 
+          opacity: isZoomingForward ? 0 : 1,
+          filter: isMorphing ? 'blur(4px)' : 'blur(0px)'
+        }}
+        transition={{ duration: isZoomingForward ? 0.5 : 0.3 }}
+        className="mt-16 w-full max-w-[800px] border border-white/[0.06] bg-[#0c101a]/85 backdrop-blur-[16px] rounded-[24px] p-2 relative z-10 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.7)] animate-browser-breathe"
       >
-        <div className="absolute inset-0 overflow-hidden rounded-[24px] pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden rounded-[24px] pointer-events-none z-20">
           <div className="w-1/2 h-[200%] bg-gradient-to-r from-transparent via-white/[0.015] to-transparent absolute animate-glass-sweep" />
         </div>
 
-        {/* Title Bar */}
-        <div className="h-9 border-b border-white/[0.04] bg-slate-900/50 backdrop-blur-md px-4 flex items-center justify-between rounded-t-[22px]">
+        {/* Title Bar with Semantic Timeline */}
+        <div className="h-10 border-b border-white/[0.04] bg-slate-900/50 backdrop-blur-md px-5 flex items-center justify-between rounded-t-[22px]">
           <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500/40 border border-red-500/20" />
-            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/40 border border-yellow-500/20" />
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500/40 border border-green-500/20" />
+            <span className="w-3 h-3 rounded-full bg-red-500/40 border border-red-500/20" />
+            <span className="w-3 h-3 rounded-full bg-yellow-500/40 border border-yellow-500/20" />
+            <span className="w-3 h-3 rounded-full bg-green-500/40 border border-green-500/20" />
           </div>
-          <div className="text-[9px] font-mono text-slate-500 tracking-wider flex items-center gap-1.5">
-            <Lock className="w-3 h-3" /> taxsense.in/sandbox
+          
+          <div className="flex items-center gap-4 text-[10px] font-mono text-slate-500 tracking-wider">
+            <div className="flex items-center gap-1.5">
+              <Lock className="w-3 h-3" /> taxsense.in/sandbox
+            </div>
+            <div className="hidden sm:flex items-center gap-3 border-l border-white/10 pl-4">
+              <span className={time >= 0 && time < 3500 ? "text-emerald-400" : ""}>● Upload</span>
+              <span className={time >= 3500 && time < 6500 ? "text-emerald-400" : ""}>● Extract</span>
+              <span className={time >= 6500 && time < 11500 ? "text-emerald-400" : ""}>● Compare</span>
+              <span className={time >= 11500 ? "text-emerald-400" : ""}>● Ready</span>
+            </div>
           </div>
-          <div className="w-10 text-[8px] font-mono text-slate-600">
-            {time > 0 ? (time / 1000).toFixed(1) + 's' : ''}
+          <div className="w-12 text-[9px] font-mono text-slate-600 text-right">
+            {(time / 1000).toFixed(1)}s
           </div> 
         </div>
 
-        {/* Browser Content Area */}
-        <div className="w-full bg-[#030712] rounded-b-[22px] h-[450px] relative overflow-hidden flex items-center justify-center font-sans text-xs p-8">
+        {/* BROWSER CONTENT WINDOW */}
+        <div className="w-full bg-[#030712] rounded-b-[22px] min-h-[450px] relative overflow-hidden flex items-center justify-center font-sans p-8">
           
-          {/* SCENE 1: UPLOAD (0.5s - 4.9s) */}
+          {/* APPLE KEYNOTE DESATURATION LAYER */}
+          <motion.div 
+            animate={{ 
+              opacity: isFinalPayoff ? 1 : 0, 
+              backdropFilter: isFinalPayoff ? 'blur(12px) grayscale(100%) brightness(0.4)' : 'blur(0px) grayscale(0%) brightness(1)'
+            }}
+            transition={{ duration: 1.2 }}
+            className="absolute inset-0 z-20 pointer-events-none"
+          />
+
+          {/* SCENE 1: UPLOAD (0.5s - 3.0s) */}
           <AnimatePresence>
             {showUploadCard && !showAIExtraction && (
               <motion.div
-                layoutId="upload-container"
+                layoutId="morph-container"
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0.4, scale: 0.95, y: -40 }} // Scene 1 Exit Rule
+                exit={{ opacity: 0, scale: 0.95, y: -40 }} // Exit morph
                 transition={SPRING_HEAVY}
-                className="w-[320px] bg-slate-900/10 border border-slate-800 rounded-[20px] p-8 flex flex-col items-center text-center relative overflow-hidden"
+                className="w-[340px] bg-slate-900/10 border border-slate-700/50 rounded-[20px] p-8 flex flex-col items-center text-center relative overflow-hidden group"
+                style={{ borderStyle: isUploadComplete ? 'solid' : 'dashed' }}
               >
-                {/* Simulated Dragged PDF */}
+                {/* Dotted Hover Glow */}
+                <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/[0.02] transition-colors duration-500" />
+
+                {/* PDF Drag Simulate */}
                 {isDraggingPDF && (
                   <motion.div 
-                    initial={{ opacity: 0, scale: 1.1, y: 50, rotate: 10 }}
+                    initial={{ opacity: 0, scale: 1.2, y: 50, rotate: 15 }}
                     animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
-                    className="absolute z-20 pointer-events-none drop-shadow-xl"
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="absolute z-20 pointer-events-none drop-shadow-2xl"
                   >
-                    <div className="w-16 h-20 bg-white rounded-lg shadow border border-slate-200 flex flex-col items-center justify-center">
+                    <div className="w-16 h-20 bg-white rounded-lg shadow-lg border border-slate-200 flex flex-col items-center justify-center">
                       <FileText className="w-8 h-8 text-red-500" />
-                      <span className="text-[6px] text-slate-600 font-bold mt-1">PDF</span>
+                      <span className="text-[7px] text-slate-800 font-bold mt-1">PDF</span>
                     </div>
                   </motion.div>
                 )}
 
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors duration-500 ${
-                  isUploadComplete ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'
-                } border shadow-inner`}>
+                <motion.div 
+                  animate={{ scale: pdfLands ? 1.05 : 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                  className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-colors duration-300 relative z-10 ${
+                    isUploadComplete ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'
+                  } border shadow-inner`}
+                >
                   {isUploadComplete ? (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={SPRING_HEAVY}>
-                      <Check className="w-6 h-6 text-emerald-400" />
-                    </motion.div>
+                    <Check className="w-7 h-7 text-emerald-400" />
                   ) : (
-                    <FileText className="w-6 h-6 text-slate-400" />
+                    <FileText className="w-7 h-7 text-slate-400" />
                   )}
-                </div>
+                </motion.div>
                 
-                <h4 className="text-sm font-bold text-white mb-2">
-                  {isUploadComplete ? 'Document Verified' : 'Drag Form 16 Here'}
+                <h4 className="text-[15px] font-bold text-white mb-2 relative z-10">
+                  {isUploadComplete ? 'Document Secured' : 'Drag Form 16 Here'}
                 </h4>
 
                 {!isUploading && !isUploadComplete && (
-                  <p className="text-[11px] text-slate-500">Secure AES-256 Client Processing</p>
+                  <p className="text-[12px] text-slate-500 relative z-10">Secure AES-256 Client Processing</p>
                 )}
 
                 {isUploading && (
-                  <div className="w-full mt-4 space-y-2">
-                    <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                  <div className="w-full mt-4 space-y-2 relative z-10">
+                    <div className="flex justify-between items-center text-[11px] font-mono text-slate-400">
                       <span>Form16.pdf</span>
-                      <span className="text-emerald-400">{uploadPercent}%</span>
+                      <span className="text-emerald-400 font-bold">{uploadPercent}%</span>
                     </div>
-                    <div className="h-1 bg-slate-950 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 relative"
-                        style={{ width: `${uploadPercent}%` }}
-                      >
+                    <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                      <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 relative" style={{ width: `${uploadPercent}%` }}>
                         <ShimmerLine active={true} />
                       </div>
                     </div>
                   </div>
                 )}
-
-                {isUploadComplete && (
-                  <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-                    className="flex flex-col items-center mt-2 space-y-1 text-[10px] text-emerald-400/80 font-mono"
-                  >
-                    <span>✓ Encrypted Locally</span>
-                    <span>Ready for AI Analysis</span>
-                  </motion.div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* SCENE 2: AI EXTRACTION (5.0s - 8.9s) */}
+          {/* SCENE 2: AI EXTRACTION (3.5s - 6.5s) */}
           <AnimatePresence>
             {showAIExtraction && !showDashboard && (
               <motion.div
-                layoutId="ai-extraction"
+                layoutId="morph-container"
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }} // Collapse & expand out
+                exit={{ opacity: 0, scale: 1.05 }}
                 transition={SPRING_HEAVY}
-                className="w-[420px] bg-slate-905/40 border border-slate-800/85 backdrop-blur-md rounded-[20px] p-6 shadow-2xl relative overflow-hidden"
+                className="w-[460px] bg-slate-905/40 border border-slate-800/85 backdrop-blur-xl rounded-[20px] p-6 shadow-2xl relative overflow-hidden"
               >
+                {/* Laser Scanning Line */}
+                <motion.div 
+                  initial={{ top: "-10%" }} animate={{ top: "110%" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-500/40 to-transparent pointer-events-none z-10"
+                />
+
                 <div className="flex items-center justify-between border-b border-white/[0.04] pb-4 mb-4">
                   <div className="flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">AI Extraction</span>
+                    <Cpu className="w-5 h-5 text-blue-400" />
+                    <span className="text-[13px] font-bold text-white uppercase tracking-wider">AI Extraction</span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-[9px] font-bold tracking-wide uppercase w-[88px]">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-[10px] font-bold tracking-wide uppercase w-[95px]">
                     Analyzing<AnimatedEllipsis />
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 relative z-10">
                   {aiTasks.map((task) => {
-                    const isStarted = time >= task.start;
+                    const statusText = getTaskStatus(task);
+                    if (!statusText) return null;
                     const isDone = time >= task.done;
-                    if (!isStarted) return null;
 
                     return (
                       <motion.div
                         key={task.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className={`flex items-center justify-between p-3 rounded-lg border text-[11px] relative overflow-hidden transition-colors ${
-                          isDone 
-                            ? 'bg-emerald-500/[0.02] border-emerald-500/20 text-slate-300' 
-                            : 'bg-blue-500/[0.02] border-blue-500/20 text-white'
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                        className={`flex items-center justify-between p-3.5 rounded-xl border text-[12px] relative overflow-hidden transition-colors duration-300 ${
+                          isDone ? 'bg-emerald-500/[0.03] border-emerald-500/20 text-emerald-100' : 'bg-blue-500/[0.02] border-blue-500/20 text-blue-100'
                         }`}
                       >
-                        <span className="font-mono">{isDone ? `✓ Verified ${task.label}` : `Reading ${task.label}...`}</span>
+                        <span className="font-mono">{statusText}</span>
                         {!isDone && <ShimmerLine active={true} />}
                       </motion.div>
                     );
@@ -537,66 +504,89 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
             )}
           </AnimatePresence>
 
-          {/* SCENE 3: DASHBOARD STRUCTURE (9.0s onwards) */}
+          {/* SCENE 3: DASHBOARD STRUCTURE (6.5s - 13.5s) */}
           <AnimatePresence>
             {showDashboard && (
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ 
-                  opacity: isFinalPayoff ? 0.4 : 1, // Final payoff constraint: dim to 40%
-                  filter: isFinalPayoff ? 'blur(8px)' : 'blur(0px)', // Final payoff constraint: Max blur 8px
-                }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="absolute inset-0 p-8 flex flex-col gap-8 max-w-xl mx-auto w-full overflow-hidden"
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                className="absolute inset-0 p-8 flex flex-col gap-8 max-w-[600px] mx-auto w-full z-10"
               >
-                {/* 1. Salary Card (Entry 9.0s) */}
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.0, ...SPRING_GENTLE }}
-                  className="bg-slate-905/40 border border-slate-800 rounded-2xl p-5 flex justify-between items-center shadow-lg"
-                >
-                  <div>
-                    <div className="text-[10px] text-slate-500 font-mono uppercase mb-1 tracking-wider">Detected Income</div>
-                    <div className="text-sm font-bold text-white">Google India Private Ltd</div>
-                  </div>
-                  <div className="text-lg font-mono font-bold text-white">
-                    ₹8,50,000
-                  </div>
-                </motion.div>
+                {/* SVG CONNECTION LINES */}
+                {showLines && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
+                    {/* Line from Income to Comparison */}
+                    <motion.path 
+                      initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.3 }}
+                      transition={{ duration: 1.2, ease: "easeInOut" }}
+                      d="M 50,80 L 50,150 L 250,150 L 250,220" 
+                      stroke="#10B981" strokeWidth="2" fill="none" strokeDasharray="4 4"
+                    />
+                    <motion.circle
+                      initial={{ offsetDistance: "0%" }} animate={{ offsetDistance: "100%" }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                      r="4" fill="#34D399" style={{ offsetPath: "path('M 50,80 L 50,150 L 250,150 L 250,220')" }}
+                      className="drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                    />
+                    {/* Line from Deductions to Comparison */}
+                    <motion.path 
+                      initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.3 }}
+                      transition={{ duration: 1.2, ease: "easeInOut", delay: 0.2 }}
+                      d="M 550,80 L 550,150 L 350,150 L 350,220" 
+                      stroke="#10B981" strokeWidth="2" fill="none" strokeDasharray="4 4"
+                    />
+                    <motion.circle
+                      initial={{ offsetDistance: "0%" }} animate={{ offsetDistance: "100%" }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear", delay: 0.2 }}
+                      r="4" fill="#34D399" style={{ offsetPath: "path('M 550,80 L 550,150 L 350,150 L 350,220')" }}
+                      className="drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                    />
+                  </svg>
+                )}
 
-                {/* 2. Deductions Card (Entry 9.4s) */}
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, ...SPRING_GENTLE }}
-                  className="bg-slate-905/40 border border-slate-800 rounded-2xl p-5 flex justify-between items-center shadow-lg"
-                >
-                  <div>
-                    <div className="text-[10px] text-slate-500 font-mono uppercase mb-1 tracking-wider">Verified Deductions</div>
-                    <div className="text-sm font-bold text-white">Sec 80C + Standard Deduction</div>
-                  </div>
-                  <div className="text-lg font-mono font-bold text-emerald-400">
-                    ₹2,25,000
-                  </div>
-                </motion.div>
+                <div className="grid grid-cols-2 gap-8 relative z-10 w-full">
+                  {/* 1. Salary Card (Entry 6.5s) */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.0, ...SPRING_GENTLE }}
+                    className="bg-slate-905/40 border border-slate-800 rounded-2xl p-6 shadow-xl"
+                  >
+                    <div className="text-[11px] text-slate-500 font-mono uppercase mb-2 tracking-wider">Detected Income</div>
+                    <div className="text-[15px] font-bold text-white mb-4">Google India Pvt Ltd</div>
+                    <div className="text-xl font-mono font-bold text-white">₹8,50,000</div>
+                  </motion.div>
 
-                {/* 3. Regime Comparison (Entry 9.8s) */}
+                  {/* 2. Deductions Card (Entry 7.0s) */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, ...SPRING_GENTLE }}
+                    className="bg-slate-905/40 border border-slate-800 rounded-2xl p-6 shadow-xl"
+                  >
+                    <div className="text-[11px] text-slate-500 font-mono uppercase mb-2 tracking-wider">Verified Deductions</div>
+                    <div className="text-[15px] font-bold text-white mb-4">Sec 80C + Standard</div>
+                    <div className="text-xl font-mono font-bold text-emerald-400">₹2,25,000</div>
+                  </motion.div>
+                </div>
+
+                {/* 3. Regime Comparison (Entry 8.0s) */}
                 <motion.div
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8, ...SPRING_GENTLE }}
-                  className="bg-slate-905/40 border border-slate-800 rounded-2xl p-5 grid grid-cols-2 gap-4 shadow-lg relative overflow-hidden"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.5, ...SPRING_GENTLE }}
+                  className="bg-slate-905/40 border border-slate-800 rounded-2xl p-6 grid grid-cols-2 gap-6 shadow-2xl relative overflow-hidden mx-auto w-[400px]"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent animate-pulse opacity-50" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent animate-pulse opacity-50" />
                   
-                  <div>
-                    <div className="text-[10px] text-slate-500 font-mono uppercase mb-1 tracking-wider">Old Regime Tax</div>
-                    <div className="text-base font-mono font-bold text-slate-300">
-                      <AnimatedCounter value={54600} prefix="₹" delayMs={1000} />
+                  <div className="text-center relative z-10">
+                    <div className="text-[11px] text-slate-500 font-mono uppercase mb-2 tracking-wider">Old Regime</div>
+                    <div className="text-2xl font-mono font-bold text-slate-400 line-through decoration-red-500/50 decoration-2">
+                      {time >= 10000 ? <RollingCounter value={54600} prefix="₹" delayMs={0} /> : "₹00,000"}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] text-emerald-500 font-mono uppercase mb-1 tracking-wider">New Regime Tax</div>
-                    <div className="text-base font-mono font-bold text-emerald-400">
-                      <AnimatedCounter value={36360} prefix="₹" delayMs={1000} />
+                  <div className="text-center relative z-10">
+                    <div className="text-[11px] text-emerald-500 font-mono uppercase mb-2 tracking-wider">New Regime</div>
+                    <div className="text-2xl font-mono font-bold text-emerald-400">
+                      {time >= 10000 ? <RollingCounter value={36360} prefix="₹" delayMs={500} /> : "₹00,000"}
                     </div>
                   </div>
                 </motion.div>
@@ -604,62 +594,55 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
             )}
           </AnimatePresence>
 
-          {/* SCENE 4: FINAL HERO PAYOFF CARD (Appears at 15.0s) */}
+          {/* SCENE 4: FINAL HERO KEYNOTE PAYOFF (Appears at 11.5s) */}
           <AnimatePresence>
             {isFinalPayoff && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.96, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: -8 }} // Lifts 8px
+                initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: -10 }} // Lift 10px
                 transition={SPRING_HEAVY}
-                className="absolute z-30 w-[380px] bg-slate-900 border border-emerald-500/30 rounded-2xl p-8 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col items-center text-center"
+                className="absolute z-30 w-[420px] bg-slate-900 border border-emerald-500/40 rounded-[24px] p-10 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.9)] flex flex-col items-center text-center"
               >
-                {/* Soft ambient backlighting */}
-                <div className="absolute inset-0 bg-emerald-500/5 rounded-2xl blur-xl -z-10" />
+                {/* 12% single pulse glow */}
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: [0, 0.12, 0] }}
+                  transition={{ duration: 1.5, times: [0, 0.3, 1] }}
+                  className="absolute inset-0 bg-emerald-500 rounded-[24px] blur-2xl -z-10" 
+                />
 
-                <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mb-5">
+                  <ShieldCheck className="w-7 h-7 text-emerald-400" />
                 </div>
                 
-                <h3 className="text-base font-bold text-white mb-1">Analysis Complete</h3>
-                <div className="text-xs text-slate-400 mb-6 flex items-center gap-1 group relative cursor-default">
+                <h3 className="text-lg font-bold text-white mb-1">Analysis Complete</h3>
+                <div className="text-[13px] text-slate-400 mb-8 flex items-center gap-1.5 cursor-default">
                   Very High Confidence 
-                  <Info className="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-[10px] rounded text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Verified using 126 current AY tax rules.
-                  </span>
+                  <Info className="w-3.5 h-3.5 text-slate-500 hover:text-slate-300 transition-colors" />
                 </div>
 
-                <div className="w-full bg-slate-950 rounded-xl p-4 border border-slate-800 mb-6 relative overflow-hidden">
-                   <motion.div 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: [0, 1, 0] }} 
-                    transition={{ delay: 0.5, duration: 1.5, times: [0, 0.5, 1] }} // Pulse ONCE
-                    className="absolute inset-0 bg-emerald-500/10" 
-                  />
-                  <div className="text-[10px] text-emerald-500 font-mono uppercase mb-2 tracking-widest relative z-10">Estimated Savings</div>
-                  <div className="text-4xl font-black text-white font-mono relative z-10">
-                    <AnimatedCounter value={18240} prefix="₹" duration={1500} delayMs={500} />
+                <div className="w-full bg-slate-950 rounded-2xl p-5 border border-slate-800 mb-8">
+                  <div className="text-[11px] text-emerald-500 font-mono uppercase mb-3 tracking-widest">Estimated Savings</div>
+                  <div className="text-[42px] font-black text-white font-mono leading-none tracking-tight">
+                    <RollingCounter value={18240} prefix="+" delayMs={200} />
                   </div>
                 </div>
 
-                <div className="w-full space-y-2 text-left text-[11px] font-mono text-slate-300 mb-6">
-                  <div className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Documents Verified</div>
-                  <div className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Deductions Optimized</div>
-                  <div className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Regimes Compared</div>
+                <div className="w-full space-y-3 text-left text-[12px] font-mono text-slate-300 mb-8">
+                  <div className="flex items-center gap-2.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Documents Verified</div>
+                  <div className="flex items-center gap-2.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Deductions Optimized</div>
+                  <div className="flex items-center gap-2.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Regimes Compared</div>
                 </div>
 
                 <motion.button
-                  animate={cursorClicking ? { scale: 0.95 } : { scale: 1 }}
+                  animate={cursorClicking ? { scale: 0.94 } : { scale: 1 }}
                   transition={{ duration: 0.15 }}
-                  className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors shadow-lg relative overflow-hidden"
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[13px] uppercase tracking-wider rounded-xl transition-colors shadow-lg relative overflow-hidden group"
                 >
                   <span className="relative z-10">Start Filing →</span>
                   {cursorClicking && (
                     <motion.span 
-                      initial={{ scale: 0, opacity: 0.5 }} 
-                      animate={{ scale: 2, opacity: 0 }} 
-                      transition={{ duration: 0.5 }}
-                      className="absolute inset-0 bg-white/50 rounded-xl"
+                      initial={{ scale: 0, opacity: 0.5 }} animate={{ scale: 3, opacity: 0 }} transition={{ duration: 0.6 }}
+                      className="absolute inset-0 bg-white/60 rounded-xl origin-center"
                     />
                   )}
                 </motion.button>
@@ -670,32 +653,22 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           {/* SIMULATED LIVING CURSOR */}
           {!prefersReducedMotion && (
             <motion.div
-              animate={{ 
-                left: cursorX, 
-                top: cursorY, 
-                opacity: cursorOpacity,
-                scale: cursorClicking ? 0.9 : 1
-              }}
-              transition={{ 
-                type: 'spring', stiffness: 150, damping: 25, // Hardware feel
-                opacity: { duration: 0.3 }
-              }}
-              className="absolute z-50 pointer-events-none w-6 h-6 flex items-center justify-center drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
+              animate={{ left: cursorX, top: cursorY, opacity: cursorOpacity, scale: cursorClicking ? 0.9 : 1 }}
+              transition={{ type: 'spring', stiffness: 140, damping: 24, opacity: { duration: 0.3 } }} // Human imperfect spring
+              className="absolute z-50 pointer-events-none w-7 h-7 flex items-center justify-center drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
               style={{ x: '-20%', y: '-10%' }}
             >
-              <MousePointer2 className="w-5 h-5 text-white fill-black stroke-[1.5]" />
+              <MousePointer2 className="w-6 h-6 text-white fill-black stroke-[1.5]" />
               {cursorClicking && (
                 <motion.div 
-                  initial={{ scale: 0.5, opacity: 1 }} animate={{ scale: 2, opacity: 0 }} transition={{ duration: 0.4 }}
-                  className="absolute inset-0 rounded-full border border-white/50" 
+                  initial={{ scale: 0.5, opacity: 1 }} animate={{ scale: 2.5, opacity: 0 }} transition={{ duration: 0.4 }}
+                  className="absolute inset-0 rounded-full border-2 border-white/40" 
                 />
               )}
             </motion.div>
           )}
-
         </div>
       </motion.div>
-
     </div>
   );
 }
