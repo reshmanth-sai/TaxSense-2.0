@@ -1,14 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { 
-  ShieldCheck, Lock, Cloud, FolderOpen, MessageSquare, ArrowRight, Check, AlertCircle 
+  ShieldCheck, Lock, Cloud, FolderOpen, MessageSquare, ArrowRight, Check, AlertCircle, Zap, Eraser
 } from 'lucide-react';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  picture?: string;
-}
 
 interface WorkspaceSelectionProps {
   googleGsiState: 'loading' | 'ready' | 'success' | 'failed';
@@ -99,8 +93,8 @@ export default function WorkspaceSelection({
       <style>{`
         @keyframes dust-drift {
           0% { transform: translateY(0) translateX(0); opacity: 0; }
-          15% { opacity: 0.2; }
-          85% { opacity: 0.2; }
+          15% { opacity: 0.15; }
+          85% { opacity: 0.15; }
           100% { transform: translateY(-120px) translateX(30px); opacity: 0; }
         }
         .animate-dust-drift {
@@ -109,7 +103,7 @@ export default function WorkspaceSelection({
         
         @keyframes glass-sweep-diag {
           0%, 85% { transform: translate(-100%, -100%) rotate(35deg); opacity: 0; }
-          90% { opacity: 0.15; }
+          90% { opacity: 0.12; }
           100% { transform: translate(200%, 200%) rotate(35deg); opacity: 0; }
         }
         .animate-glass-sweep-diag {
@@ -124,24 +118,24 @@ export default function WorkspaceSelection({
           animation: modal-breathe 9s infinite ease-in-out;
         }
 
-        @keyframes shadow-pulse-green {
-          0%, 100% { box-shadow: 0 0 0px rgba(16, 185, 129, 0); }
-          50% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.25); }
+        @keyframes shadow-pulse-neutral {
+          0%, 100% { box-shadow: 0 0 0px rgba(255, 255, 255, 0); }
+          50% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
         }
-        .animate-shadow-pulse-green {
-          animation: shadow-pulse-green 2s ease-out;
+        .animate-shadow-pulse-neutral {
+          animation: shadow-pulse-neutral 2s ease-out;
         }
       `}</style>
 
       {/* Edge Vignette */}
       <div className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_100px_rgba(0,0,0,0.95)]" />
 
-      {/* Background Radial Green Glow */}
+      {/* Background Radial Blue Glow (AI theme) */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-        <div className="w-[600px] h-[600px] rounded-full bg-[#10B981]/[0.03] blur-[120px] transition-opacity duration-1000" />
+        <div className="w-[600px] h-[600px] rounded-full bg-ai-accent/[0.015] blur-[120px] transition-opacity duration-1000" />
       </div>
 
-      {/* Floating Particles (Dust Ecosystem) */}
+      {/* Floating Particles (Dust Ecosystem - Neutral & Blue theme colors) */}
       {!prefersReducedMotion && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
           {[...Array(12)].map((_, i) => (
@@ -150,9 +144,9 @@ export default function WorkspaceSelection({
               style={{
                 left: `${(i * 11) % 100}%`,
                 bottom: `${(i * 7) % 50}%`,
-                width: `${(i % 2) + 2.5}px`,
-                height: `${(i % 2) + 2.5}px`,
-                backgroundColor: i % 2 === 0 ? '#34D399' : '#10B981',
+                width: `${(i % 2) + 2}px`,
+                height: `${(i % 2) + 2}px`,
+                backgroundColor: i % 2 === 0 ? 'var(--color-ai-accent)' : 'var(--color-neutral-info)',
                 animationDelay: `${i * 1.5}s`,
                 animationDuration: `${22 + (i % 3) * 4}s`,
               }}
@@ -177,15 +171,15 @@ export default function WorkspaceSelection({
           aria-label="Back to landing page"
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onBackToHome(); }}
         >
-          <div className="w-6 h-6 rounded bg-[#10B981] flex items-center justify-center text-slate-950 font-bold text-xs">
+          <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-slate-100 font-bold text-xs">
             T
           </div>
           <span className="text-xs font-bold tracking-wider uppercase text-white">TaxSense</span>
         </div>
         <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.015] border border-white/[0.04]">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#10B981]"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ai-accent opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-ai-accent"></span>
           </span>
           <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Public Beta Active</span>
         </div>
@@ -207,13 +201,13 @@ export default function WorkspaceSelection({
           boxShadow: '0 30px 100px -15px rgba(0,0,0,0.85), inset 0 1px 1px rgba(255,255,255,0.05)'
         }}
       >
-        {/* Subtle Conic Glow Border */}
-        <div className="absolute inset-[-150%] bg-[conic-gradient(from_0deg,transparent,rgba(16,185,129,0.05),transparent_50%)]" />
+        {/* Subtle Conic Glow Border using neutral highlight */}
+        <div className="absolute inset-[-150%] bg-[conic-gradient(from_0deg,transparent,rgba(255,255,255,0.02),transparent_50%)]" />
 
         {/* Diagonal reflection sweep */}
         {!prefersReducedMotion && (
           <div className="absolute inset-0 overflow-hidden rounded-[28px] pointer-events-none z-20">
-            <div className="w-[120%] h-[300%] bg-gradient-to-r from-transparent via-white/[0.02] to-transparent absolute animate-glass-sweep-diag" />
+            <div className="w-[120%] h-[300%] bg-gradient-to-r from-transparent via-white/[0.015] to-transparent absolute animate-glass-sweep-diag" />
           </div>
         )}
 
@@ -224,16 +218,16 @@ export default function WorkspaceSelection({
           {modalHovered && (
             <div 
               style={{
-                background: `radial-gradient(350px circle at ${modalCoords.x}px ${modalCoords.y}px, rgba(16, 185, 129, 0.015), transparent 85%)`
+                background: `radial-gradient(350px circle at ${modalCoords.x}px ${modalCoords.y}px, rgba(255, 255, 255, 0.01), transparent 85%)`
               }}
               className="absolute inset-0 pointer-events-none transition-opacity duration-300"
             />
           )}
 
-          {/* Secure Shield emblem with micro-interaction */}
+          {/* Secure Shield emblem with micro-interaction (Moved to Neutral Info colors) */}
           <div className="relative mb-6 flex items-center justify-center">
             {/* Rotating outer ring */}
-            <div className="absolute w-20 h-20 rounded-full border border-dashed border-[#10B981]/15 animate-spin pointer-events-none" style={{ animationDuration: '30s' }} />
+            <div className="absolute w-20 h-20 rounded-full border border-dashed border-slate-700/30 animate-spin pointer-events-none" style={{ animationDuration: '30s' }} />
             
             {/* Pulsing ring animation */}
             <AnimatePresence>
@@ -243,16 +237,16 @@ export default function WorkspaceSelection({
                   animate={{ scale: 1.6, opacity: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 1.4, ease: "easeOut" }}
-                  className="absolute w-14 h-14 rounded-full border border-emerald-500/40 pointer-events-none"
+                  className="absolute w-14 h-14 rounded-full border border-slate-400/20 pointer-events-none"
                 />
               )}
             </AnimatePresence>
             
             {/* Main Badge Container */}
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center bg-emerald-500/[0.03] border border-[#10B981]/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] relative z-10 ${
-              shieldActive ? 'animate-shadow-pulse-green' : ''
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.02] border border-white/[0.1] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] relative z-10 ${
+              shieldActive ? 'animate-shadow-pulse-neutral' : ''
             }`}>
-              <ShieldCheck className="w-6.5 h-6.5 text-[#10B981] filter drop-shadow-[0_0_6px_rgba(16,185,129,0.35)]" />
+              <ShieldCheck className="w-6.5 h-6.5 text-slate-300 filter drop-shadow-[0_0_6px_rgba(255,255,255,0.15)]" aria-hidden="true" />
             </div>
           </div>
 
@@ -261,7 +255,7 @@ export default function WorkspaceSelection({
             <h2 className="text-3xl md:text-[36px] font-bold tracking-tight text-white leading-none">
               Start Your TaxSense Workspace
             </h2>
-            <p className="text-[14px] text-slate-400 leading-relaxed max-w-md mx-auto font-medium">
+            <p className="text-[15px] text-slate-400 leading-relaxed max-w-md mx-auto font-medium">
               Continue instantly in a private local sandbox, or securely sync your workspace across devices.
             </p>
           </div>
@@ -277,7 +271,7 @@ export default function WorkspaceSelection({
               onClick={onLaunchSandbox}
               role="button"
               tabIndex={0}
-              aria-label="Launch Instantly in local sandbox"
+              aria-label="Launch Instantly in local sandbox. Best for Quick Try."
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onLaunchSandbox(); }}
               className="p-8 rounded-[24px] flex flex-col justify-between text-left cursor-pointer transition-all duration-300 select-none relative overflow-hidden group"
               style={{
@@ -299,6 +293,7 @@ export default function WorkspaceSelection({
 
               <div className="space-y-6">
                 <div className="space-y-2">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold block">Best for Quick Try</span>
                   <h3 className="text-xl font-bold text-white tracking-tight">Try Instantly</h3>
                   <p className="text-[13.5px] text-slate-400 leading-normal">
                     Start immediately without creating an account.
@@ -308,8 +303,8 @@ export default function WorkspaceSelection({
                 {/* Features */}
                 <div className="space-y-4 pt-1">
                   <div className="flex gap-3 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-[12px] flex-shrink-0">
-                      <span className="group-hover:scale-110 transition-transform duration-300">⚡</span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center flex-shrink-0">
+                      <Zap className="w-3.5 h-3.5 text-neutral-info group-hover:scale-110 transition-transform duration-300" aria-hidden="true" />
                     </div>
                     <div className="space-y-0.5">
                       <h4 className="text-[12px] font-bold text-slate-200">Instant Sandbox</h4>
@@ -318,8 +313,8 @@ export default function WorkspaceSelection({
                   </div>
 
                   <div className="flex gap-3 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-[12px] flex-shrink-0">
-                      <Lock className="w-3.5 h-3.5 text-slate-400 group-hover:rotate-12 transition-transform duration-300" />
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center flex-shrink-0">
+                      <Lock className="w-3.5 h-3.5 text-neutral-info group-hover:rotate-12 transition-transform duration-300" aria-hidden="true" />
                     </div>
                     <div className="space-y-0.5">
                       <h4 className="text-[12px] font-bold text-slate-200">Local Processing</h4>
@@ -328,27 +323,39 @@ export default function WorkspaceSelection({
                   </div>
 
                   <div className="flex gap-3 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-[12px] flex-shrink-0">
-                      <span className="group-hover:translate-y-[-2px] transition-transform duration-300 inline-block">🧹</span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center flex-shrink-0">
+                      <Eraser className="w-3.5 h-3.5 text-neutral-info group-hover:translate-y-[-1.5px] transition-transform duration-300" aria-hidden="true" />
                     </div>
                     <div className="space-y-0.5">
                       <h4 className="text-[12px] font-bold text-slate-200">Auto Cleanup</h4>
                       <p className="text-[10px] text-slate-400">Session automatically expires</p>
                     </div>
                   </div>
+
+                  {/* Warning: Session Persistence tradeoff moved inside the card */}
+                  <div className="flex gap-3 text-left pt-2 border-t border-white/[0.02]">
+                    <div className="w-7 h-7 rounded-lg bg-red-950/20 border border-red-900/20 flex items-center justify-center flex-shrink-0">
+                      <AlertCircle className="w-3.5 h-3.5 text-red-400" aria-hidden="true" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <h4 className="text-[12px] font-bold text-red-300">Session Not Saved</h4>
+                      <p className="text-[10px] text-slate-400">Data is lost on browser close</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Secondary Outline CTA (Option A) */}
               <div className="mt-8 flex flex-col items-center w-full">
                 <button
                   type="button"
-                  className="w-full h-11 rounded-xl text-[12px] tracking-wide font-bold cursor-pointer flex items-center justify-between px-5 transition-all duration-200 bg-[#10B981] hover:bg-[#34D399] text-slate-950 shadow-md group-hover:shadow-[#10B981]/10 group-active:scale-[0.96]"
+                  className="w-full h-11 rounded-xl text-[12px] tracking-wide font-bold cursor-pointer flex items-center justify-between px-5 transition-all duration-200 border border-primary-action text-primary-action bg-transparent hover:bg-primary-action/10 hover:text-white focus-visible:ring-2 focus-visible:ring-primary-action focus-visible:outline-none group-active:scale-[0.96]"
                 >
                   <span className="w-3.5" />
                   <span>Launch Sandbox</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-950 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </button>
-                <span className="text-[9.5px] text-slate-500 font-mono mt-2.5">Ready in under 3 seconds.</span>
+                <span className="text-[10px] text-slate-400 font-mono mt-2.5">Ready in under 3 seconds.</span>
               </div>
             </div>
 
@@ -360,23 +367,23 @@ export default function WorkspaceSelection({
               onClick={onGoogleSignIn}
               role="button"
               tabIndex={0}
-              aria-label="Continue with Google cloud sync workspace"
+              aria-label="Continue with Google cloud sync workspace. Recommended choice. Best for Long-Term."
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onGoogleSignIn(); }}
               className="p-8 rounded-[24px] flex flex-col justify-between text-left cursor-pointer transition-all duration-300 select-none relative overflow-hidden group"
               style={{
-                background: secureHovered ? 'rgba(16, 185, 129, 0.02)' : 'rgba(16, 185, 129, 0.008)',
-                border: secureHovered ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(16, 185, 129, 0.08)',
+                background: secureHovered ? 'rgba(16, 185, 129, 0.025)' : 'rgba(16, 185, 129, 0.008)',
+                border: '1px solid rgba(16, 185, 129, 0.25)', // Keep recommended border standing out
                 transform: secureHovered ? 'translateY(-4px) scale(1.01)' : 'translateY(0px) scale(1)',
-                boxShadow: secureHovered ? '0 12px 35px rgba(0,0,0,0.5), 0 0 25px rgba(16,185,129,0.04)' : '0 8px 30px rgba(0,0,0,0.4)',
+                boxShadow: secureHovered ? '0 12px 35px rgba(0,0,0,0.5), 0 0 25px rgba(16,185,129,0.15)' : '0 8px 30px rgba(0,0,0,0.4), 0 0 15px rgba(16,185,129,0.08)',
               }}
             >
-              {/* Dynamic Recommended Badge */}
+              {/* Dynamic Recommended Badge (Moved to Blue AI Accent Theme) */}
               <div 
-                className="absolute top-3 right-3 bg-emerald-500/10 border border-emerald-500/20 text-[#34D399] px-2.5 py-0.5 rounded-full text-[8.5px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_8px_rgba(22,226,122,0.08)]"
+                className="absolute top-3 right-3 bg-ai-accent/10 border border-ai-accent/35 text-blue-300 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
               >
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] ${badgeActive ? 'opacity-100' : 'opacity-0'}`}></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#10B981]"></span>
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-ai-accent ${badgeActive ? 'opacity-100' : 'opacity-0'}`}></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-ai-accent"></span>
                 </span>
                 <span>Recommended</span>
               </div>
@@ -385,7 +392,7 @@ export default function WorkspaceSelection({
               {secureHovered && (
                 <div 
                   style={{
-                    background: `radial-gradient(150px circle at ${secureCoords.x}px ${secureCoords.y}px, rgba(16, 185, 129, 0.035), transparent 85%)`
+                    background: `radial-gradient(150px circle at ${secureCoords.x}px ${secureCoords.y}px, rgba(59, 130, 246, 0.035), transparent 85%)`
                   }}
                   className="absolute inset-0 pointer-events-none"
                 />
@@ -393,6 +400,7 @@ export default function WorkspaceSelection({
 
               <div className="space-y-6">
                 <div className="space-y-2">
+                  <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold block">Best for Long-Term</span>
                   <h3 className="text-xl font-bold text-white tracking-tight">Continue Securely</h3>
                   <p className="text-[13.5px] text-slate-400 leading-normal">
                     Securely sync your workspace across devices.
@@ -402,8 +410,8 @@ export default function WorkspaceSelection({
                 {/* Features */}
                 <div className="space-y-4 pt-1">
                   <div className="flex gap-3 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-[12px] flex-shrink-0">
-                      <Cloud className="w-3.5 h-3.5 text-slate-400 group-hover:translate-y-[-1.5px] transition-transform duration-300" />
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center flex-shrink-0">
+                      <Cloud className="w-3.5 h-3.5 text-neutral-info group-hover:translate-y-[-1.5px] transition-transform duration-300" aria-hidden="true" />
                     </div>
                     <div className="space-y-0.5">
                       <h4 className="text-[12px] font-bold text-slate-200">Cloud Sync</h4>
@@ -412,8 +420,8 @@ export default function WorkspaceSelection({
                   </div>
 
                   <div className="flex gap-3 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-[12px] flex-shrink-0">
-                      <FolderOpen className="w-3.5 h-3.5 text-slate-400 group-hover:scale-105 transition-transform duration-300" />
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center flex-shrink-0">
+                      <FolderOpen className="w-3.5 h-3.5 text-neutral-info group-hover:scale-105 transition-transform duration-300" aria-hidden="true" />
                     </div>
                     <div className="space-y-0.5">
                       <h4 className="text-[12px] font-bold text-slate-200">Secure Vault</h4>
@@ -422,27 +430,30 @@ export default function WorkspaceSelection({
                   </div>
 
                   <div className="flex gap-3 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-[12px] flex-shrink-0">
-                      <MessageSquare className="w-3.5 h-3.5 text-slate-400 group-hover:translate-y-[-1px] group-hover:opacity-100 transition-all duration-300" />
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="w-3.5 h-3.5 text-ai-accent group-hover:translate-y-[-1px] transition-all duration-300" aria-hidden="true" />
                     </div>
                     <div className="space-y-0.5">
                       <h4 className="text-[12px] font-bold text-slate-200">AI History</h4>
                       <p className="text-[10px] text-slate-400">Continue previous AI conversations</p>
+                      {/* Surfaced Trust Signal under AI History bullet */}
+                      <span className="text-[10px] text-ai-accent block font-medium mt-0.5">Never used for AI training.</span>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* Solid Green Primary CTA (Option A) */}
               <div className="mt-8 flex flex-col items-center w-full">
                 <button
                   type="button"
                   disabled={googleGsiState === 'loading' || googleGsiState === 'success'}
-                  className={`w-full h-11 rounded-xl text-[12px] tracking-wide font-bold cursor-pointer flex items-center justify-between px-5 transition-all duration-200 border border-slate-800 bg-slate-900 text-slate-200 select-none group-active:scale-[0.96] ${
+                  className={`w-full h-11 rounded-xl text-[12px] tracking-wide font-bold cursor-pointer flex items-center justify-between px-5 transition-all duration-200 select-none group-active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-primary-action focus-visible:outline-none ${
                     googleGsiState === 'success'
-                      ? 'bg-[#10B981]/10 border-[#10B981]/25 text-[#34D399] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(16,185,129,0.15)]'
+                      ? 'bg-[#10B981]/10 border-[#10B981]/25 text-[#34D399] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
                       : googleGsiState === 'loading'
-                      ? 'text-slate-500 cursor-wait'
-                      : 'hover:bg-slate-800'
+                      ? 'text-slate-500 cursor-wait bg-slate-900 border border-slate-800'
+                      : 'bg-primary-action hover:bg-primary-action/90 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
                   }`}
                 >
                   {googleGsiState === 'loading' ? (
@@ -469,11 +480,11 @@ export default function WorkspaceSelection({
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                       </svg>
                       <span className="text-[12px] font-bold">Continue with Google</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-950 group-hover:translate-x-0.5 transition-transform" />
                     </>
                   )}
                 </button>
-                <span className="text-[9.5px] text-slate-500 font-mono mt-2.5">Sync takes about 10 seconds.</span>
+                <span className="text-[10px] text-slate-400 font-mono mt-2.5">Sync takes about 10 seconds.</span>
               </div>
             </div>
 
@@ -481,44 +492,24 @@ export default function WorkspaceSelection({
 
           {/* Spacer Divider */}
           <div className="relative w-full h-[1px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent my-10">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-[1px] bg-[#10B981]/20 blur-[1.5px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-[1px] bg-[#10B981]/15 blur-[1.5px]" />
           </div>
 
-          {/* Minimal Comparison Table */}
+          {/* Minimal Comparison Table - Reduced to non-redundant rows */}
           <div className="w-full overflow-x-auto select-none relative z-10 mb-8 max-w-2xl">
             <table className="w-full text-[11px] font-sans text-slate-400 border-collapse">
               <thead>
                 <tr className="border-b border-white/[0.04]">
-                  <th className="py-2 text-left font-bold text-slate-300">Feature</th>
+                  <th className="py-2 text-left font-bold text-slate-300">Workspace Feature</th>
                   <th className="py-2 text-center font-bold text-slate-300">Sandbox</th>
                   <th className="py-2 text-center font-bold text-slate-300">Secure</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.02]">
-                <tr>
-                  <td className="py-2.5 text-left">Account Required</td>
-                  <td className="py-2.5 text-center">❌</td>
-                  <td className="py-2.5 text-center text-[#34D399] font-bold">✅</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 text-left">Cloud Sync</td>
-                  <td className="py-2.5 text-center">❌</td>
-                  <td className="py-2.5 text-center text-[#34D399] font-bold">✅</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 text-left">Local Processing</td>
-                  <td className="py-2.5 text-center text-[#34D399] font-bold">✅</td>
-                  <td className="py-2.5 text-center text-[#34D399] font-bold">✅</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 text-left">Continue Later</td>
-                  <td className="py-2.5 text-center">❌</td>
-                  <td className="py-2.5 text-center text-[#34D399] font-bold">✅</td>
-                </tr>
                 <tr className="font-medium text-slate-300">
-                  <td className="py-2.5 text-left">Best For</td>
-                  <td className="py-2.5 text-center text-slate-400">Quick Try</td>
-                  <td className="py-2.5 text-center text-emerald-400 font-bold">Long-Term</td>
+                  <td className="py-3 text-left">Continue Later (Session Saved)</td>
+                  <td className="py-3 text-center text-error-indicator">❌</td>
+                  <td className="py-3 text-center text-success-indicator font-bold">✅</td>
                 </tr>
               </tbody>
             </table>
@@ -527,21 +518,21 @@ export default function WorkspaceSelection({
           {/* Sequential Trust Footer Badges */}
           <div className="flex flex-wrap items-center justify-center gap-3.5 my-4 relative z-10">
             <div className="px-3.5 py-1.5 rounded-full text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 bg-white/[0.015] border border-white/[0.04] transition-all duration-300 hover:shadow-[0_0_12px_rgba(255,255,255,0.03)] hover:text-white">
-              <span>🔒</span> AES-256 Encryption
+              <span aria-hidden="true">🔒</span> AES-256 Encryption
             </div>
             <div className="px-3.5 py-1.5 rounded-full text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 bg-white/[0.015] border border-white/[0.04] transition-all duration-300 hover:shadow-[0_0_12px_rgba(255,255,255,0.03)] hover:text-white">
-              <span>🛡</span> ISO 27001 Certified
+              <span aria-hidden="true">🛡</span> ISO 27001 Certified
             </div>
             <div className="px-3.5 py-1.5 rounded-full text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 bg-white/[0.015] border border-white/[0.04] transition-all duration-300 hover:shadow-[0_0_12px_rgba(255,255,255,0.03)] hover:text-white">
-              <span>⚡</span> Local AI Processing
+              <span aria-hidden="true">⚡</span> Local AI Processing
             </div>
             <div className="px-3.5 py-1.5 rounded-full text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 bg-white/[0.015] border border-white/[0.04] transition-all duration-300 hover:shadow-[0_0_12px_rgba(255,255,255,0.03)] hover:text-white">
-              <span>☁</span> Secure Cloud Sync
+              <span aria-hidden="true">☁</span> Secure Cloud Sync
             </div>
           </div>
 
-          {/* Reassuring Privacy Statement */}
-          <div className="text-[10px] text-slate-500 font-medium text-center max-w-sm mt-4 select-none relative z-10">
+          {/* Reassuring Privacy Statement Footer (Upgraded opacity/color to meet WCAG AA) */}
+          <div className="text-[11px] text-slate-400 font-medium text-center max-w-sm mt-4 select-none relative z-10 leading-relaxed">
             Your tax documents are encrypted, processed securely, and never used to train AI models.
           </div>
 

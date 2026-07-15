@@ -6,6 +6,12 @@
 @theme {
   --font-sans: "Inter", "Geist", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-primary-action: #10B981;
+  --color-ai-accent: #3B82F6;
+  --color-neutral-info: #94A3B8;
+  --color-success-indicator: #059669;
+  --color-error-indicator: #DC2626;
 }
 
 h1, h2, h3, h4, h5, h6 {
