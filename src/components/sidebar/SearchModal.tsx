@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, LayoutDashboard, Award, ListTodo, FileUp, BrainCircuit, History, Settings, CornerDownLeft } from 'lucide-react';
 import { useSidebarStore } from './useSidebarStore';
 
@@ -21,13 +21,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const searchItems = [
-    { label: 'Dashboard', stepNum: 11, icon: LayoutDashboard, category: 'Workspace' },
-    { label: 'Optimizer', stepNum: 5, icon: Award, category: 'Workspace' },
-    { label: 'Return', stepNum: 6, icon: ListTodo, category: 'Workspace' },
-    { label: 'Vault', stepNum: 3, icon: FileUp, category: 'Documents' },
-    { label: 'AI Chat', stepNum: 4, icon: BrainCircuit, category: 'Documents' },
-    { label: 'History', stepNum: 10, icon: History, category: 'Documents' },
-    { label: 'Settings', stepNum: 99, icon: Settings, category: 'Account' }
+    { label: 'Dashboard', stepNum: 11, icon: LayoutDashboard, category: 'Main' },
+    { label: 'Optimize Regime', stepNum: 5, icon: Award, category: 'Main' },
+    { label: 'Tax Return filing', stepNum: 6, icon: ListTodo, category: 'Main' },
+    { label: 'Document Vault', stepNum: 3, icon: FileUp, category: 'Tools' },
+    { label: 'AI Diagnosis Analysis', stepNum: 4, icon: BrainCircuit, category: 'Tools' },
+    { label: 'History & Archives', stepNum: 10, icon: History, category: 'Tools' },
+    { label: 'Settings & Sandbox Configuration', stepNum: 99, icon: Settings, category: 'System' }
   ];
 
   const filteredItems = searchItems.filter(item => 

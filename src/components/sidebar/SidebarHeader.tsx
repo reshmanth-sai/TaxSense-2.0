@@ -1,134 +1,122 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { ShieldCheck, Lock, Info, Clock, Terminal } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Calculator, ChevronDown, Check, Plus, Briefcase } from 'lucide-react';
+import { useSidebarStore } from './useSidebarStore';
 import { CollapseButton } from './CollapseButton';
 
 interface SidebarHeaderProps {
   isExpanded: boolean;
-  authMode: 'GOOGLE' | 'PAN' | 'GUEST';
-  sessionTimeLeft: number;
 }
 
-export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ 
-  isExpanded,
-  authMode,
-  sessionTimeLeft
-}) => {
-  const prefersReducedMotion = useReducedMotion();
-  const [isHovered, setIsHovered] = useState(false);
+export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ isExpanded }) => {
+  const activeWorkspace = useSidebarStore((state) => state.activeWorkspace);
+  const setWorkspace = useSidebarStore((state) => state.setWorkspace);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Status mapping
-  const statusLabel = authMode === 'GUEST' ? 'Local Sandbox' : 'Secure Session';
-  const connectionType = authMode === 'GUEST' ? 'Local Sandbox' : 'Secure Cloud Vault';
+  const workspaces = [
+    { id: 'TaxSense-2.0', name: 'TaxSense-2.0', sub: 'Production' },
+    { id: 'Sandbox-Personal', name: 'Sandbox-Personal', sub: 'Testing Environment' }
+  ];
 
-  const formatSessionTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')} remaining`;
-  };
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <div 
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`py-5 border-b border-white/[0.04] flex items-center relative select-none z-50 ${
-        isExpanded ? 'px-4 justify-between flex-row' : 'px-0 justify-center flex-col gap-3.5'
-      }`}
-    >
-      {/* Brand logo & Info Trigger */}
-      <div className={`flex items-center ${isExpanded ? 'gap-3 overflow-hidden min-w-0 flex-1 relative' : 'justify-center w-full'}`}>
+    <div className={`py-4 border-b border-white/[0.04] flex items-center relative transition-all duration-200 select-none ${
+      isExpanded ? 'px-4 justify-between flex-row' : 'py-5 px-0 justify-center flex-col gap-2.5'
+    }`}>
+      {/* Brand logo & Workspace Switcher */}
+      <div 
+        ref={dropdownRef}
+        className={`flex items-center ${isExpanded ? 'gap-2 overflow-hidden min-w-0 flex-1 relative' : 'justify-center w-full'}`}
+      >
         {isExpanded ? (
-          <div className="flex items-center gap-3 min-w-0 flex-1 relative">
-            {/* Brand Logo [T] */}
-            <div className="w-[30px] h-[30px] bg-[#10B981] rounded-lg text-slate-950 font-bold shrink-0 flex items-center justify-center shadow-lg shadow-emerald-500/10 transition-transform duration-300 hover:scale-105">
-              <span className="text-[15px] font-black tracking-tighter text-slate-950 font-sans">T</span>
-            </div>
-            
-            {/* Text details */}
-            <div className="flex flex-col min-w-0 text-left font-sans">
-              <span className="font-semibold text-[15px] text-slate-200 leading-tight">
-                TaxSense
-              </span>
-              <span className="text-[11px] text-slate-400 font-medium leading-none mt-1">
-                AI Tax Workspace
-              </span>
-              
-              {/* Workspace Live Status Badge (Cleaned to prevent truncation) */}
-              <div className="flex items-center gap-1.5 mt-2 text-[10px] text-emerald-450 font-semibold tracking-tight">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                <span>{statusLabel}</span>
+          <div className="relative flex-1 min-w-0">
+            {/* Clickable Switcher trigger */}
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 hover:bg-white/5 px-2 py-1.5 rounded-xl transition-all duration-180 w-full text-left group cursor-pointer focus:outline-none"
+            >
+              <div className="w-6.5 h-6.5 bg-emerald-600 rounded-lg text-slate-950 font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/10">
+                <Calculator className="h-3.5 w-3.5 text-slate-950" />
               </div>
-            </div>
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className="font-bold text-[11px] text-slate-200 group-hover:text-white transition-colors truncate leading-tight">
+                  {activeWorkspace}
+                </span>
+                <span className="text-[8px] text-slate-500 font-medium tracking-wider uppercase leading-none mt-0.5">
+                  WORKSPACE
+                </span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-350 transition-colors shrink-0" />
+            </button>
 
-            {/* Hover Popover */}
-            <AnimatePresence>
-              {isHovered && (
-                <motion.div
-                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 5 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                  className="absolute top-full left-0 mt-3 w-56 bg-slate-950/95 border border-white/[0.08] backdrop-blur-[16px] rounded-2xl p-4 shadow-2xl z-50 text-left"
-                >
-                  <div className="space-y-3.5">
-                    {/* Header */}
-                    <div className="flex items-center gap-2 border-b border-white/[0.04] pb-2.5">
-                      <div className="w-6 h-6 bg-[#10B981]/10 rounded border border-[#10B981]/20 flex items-center justify-center">
-                        <Terminal className="w-3.5 h-3.5 text-[#10B981]" />
-                      </div>
-                      <div>
-                        <div className="text-[11.5px] font-bold text-slate-100">TaxSense Sandbox</div>
-                        <div className="text-[9px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">Workspace Config</div>
-                      </div>
-                    </div>
-
-                    {/* Metadata details */}
-                    <div className="space-y-2.5 text-[11px] font-sans">
-                      <div className="flex justify-between items-center text-slate-400">
-                        <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-slate-500" /> Security</span>
-                        <span className="text-slate-200 font-bold">Encrypted</span>
-                      </div>
-                      <div className="flex justify-between items-center text-slate-400">
-                        <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-slate-500" /> Connection</span>
-                        <span className="text-slate-200 font-bold truncate max-w-[100px] text-right">{connectionType}</span>
-                      </div>
-                      {authMode === 'GUEST' && (
-                        <div className="flex justify-between items-center text-slate-400">
-                          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-slate-500" /> Session</span>
-                          <span className="text-amber-400 font-mono font-bold">{formatSessionTime(sessionTimeLeft)}</span>
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-52 bg-slate-900 border border-white/[0.08] rounded-xl shadow-2xl py-1.5 z-50 text-left backdrop-blur-md">
+                <div className="px-3 py-1.5 border-b border-white/[0.04] text-[8.5px] font-bold text-slate-500 uppercase tracking-wider">
+                  Switch Workspace
+                </div>
+                <div className="py-1 space-y-0.5">
+                  {workspaces.map((ws) => {
+                    const isSelected = ws.id === activeWorkspace;
+                    return (
+                      <button
+                        key={ws.id}
+                        onClick={() => {
+                          setWorkspace(ws.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors duration-150 cursor-pointer ${
+                          isSelected 
+                            ? 'bg-blue-600/10 text-white font-semibold' 
+                            : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                        }`}
+                      >
+                        <div className="flex flex-col text-left min-w-0">
+                          <span className="truncate">{ws.name}</span>
+                          <span className="text-[8px] text-slate-500 truncate mt-0.5">{ws.sub}</span>
                         </div>
-                      )}
-                      <div className="flex justify-between items-center text-slate-400 border-t border-white/[0.04] pt-2 mt-1">
-                        <span className="flex items-center gap-1.5"><Info className="w-3.5 h-3.5 text-slate-500" /> Version</span>
-                        <span className="text-slate-350 font-mono">Sandbox v2.0</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="border-t border-white/[0.04] mt-1 pt-1">
+                  <button
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[10.5px] text-slate-450 hover:bg-white/5 hover:text-slate-200 transition-colors duration-150 cursor-pointer text-left"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Create new Workspace</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          /* Collapsed Logo view */
+          /* Collapsed logo displaying tooltip */
           <div className="relative group/logo w-full flex justify-center py-1">
-            <div className="w-[30px] h-[30px] bg-[#10B981] rounded-lg text-slate-950 font-bold shrink-0 flex items-center justify-center shadow-lg shadow-emerald-500/10 transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer">
-              <span className="text-[15px] font-black tracking-tighter text-slate-950 font-sans">T</span>
+            <div className="w-8 h-8 bg-emerald-600 rounded-lg text-slate-950 font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/10 transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer">
+              <Calculator className="h-4.5 w-4.5 text-slate-950" />
             </div>
-            
-            {/* Tooltip for collapsed view */}
             <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/logo:opacity-100 group-hover/logo:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
-              TaxSense Workspace ({statusLabel})
+              {activeWorkspace}
             </div>
           </div>
         )}
       </div>
 
-      {/* Circular, hover-glowing, detached Collapse button */}
-      {isExpanded && (
-        <div className="pl-1 relative z-25">
-          <CollapseButton />
-        </div>
-      )}
+      {/* Collapse/Minimize trigger */}
+      {isExpanded && <CollapseButton />}
     </div>
   );
 };
