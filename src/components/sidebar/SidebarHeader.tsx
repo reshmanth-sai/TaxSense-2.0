@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { Calculator, ShieldCheck, Lock, Info, Clock, Terminal } from 'lucide-react';
+import { ShieldCheck, Lock, Info, Clock, Terminal } from 'lucide-react';
 import { CollapseButton } from './CollapseButton';
 
 interface SidebarHeaderProps {
@@ -19,7 +19,6 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
 
   // Status mapping
   const statusLabel = authMode === 'GUEST' ? 'Local Sandbox' : 'Secure Session';
-  const statusDetail = authMode === 'GUEST' ? 'Encrypted' : 'Private';
   const connectionType = authMode === 'GUEST' ? 'Local Sandbox' : 'Secure Cloud Vault';
 
   const formatSessionTime = (seconds: number) => {
@@ -46,7 +45,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
             </div>
             
             {/* Text details */}
-            <div className="flex flex-col min-w-0 text-left">
+            <div className="flex flex-col min-w-0 text-left font-sans">
               <span className="font-semibold text-[15px] text-slate-200 leading-tight">
                 TaxSense
               </span>
@@ -54,12 +53,10 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
                 AI Tax Workspace
               </span>
               
-              {/* Workspace Live Status Badge (V2 requirements) */}
+              {/* Workspace Live Status Badge (Cleaned to prevent truncation) */}
               <div className="flex items-center gap-1.5 mt-2 text-[10px] text-emerald-450 font-semibold tracking-tight">
-                <span className="w-1 h-1 rounded-full bg-[#10B981] animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                 <span>{statusLabel}</span>
-                <span className="text-slate-600">•</span>
-                <span className="text-slate-500">{statusDetail}</span>
               </div>
             </div>
 

@@ -180,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // V2 Simplified Workflow Navigation Config
+  // V2 Simplified Workflow Navigation Config (Concise Labels)
   interface NavConfigItem {
     step: number;
     icon: React.ComponentType<any>;
@@ -192,10 +192,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navigationConfig: Record<string, NavConfigItem> = {
     'Dashboard': { step: 11, icon: LayoutDashboard, isPrimary: true },
-    'Tax Optimizer': { step: 5, icon: Award, isPrimary: true, savings: taxCalculationResult.savings },
-    'Tax Return': { step: 6, icon: ListTodo, isPrimary: true },
-    'Document Vault': { step: 3, icon: FileUp, completed: taxData.grossSalary !== 850000 || taxData.tdsDeducted !== 15000 },
-    'AI Analysis': { step: 4, icon: BrainCircuit, badge: 'Gemini' },
+    'Optimizer': { step: 5, icon: Award, isPrimary: true, savings: taxCalculationResult.savings },
+    'Return': { step: 6, icon: ListTodo, isPrimary: true },
+    'Vault': { step: 3, icon: FileUp, completed: taxData.grossSalary !== 850000 || taxData.tdsDeducted !== 15000 },
+    'AI Chat': { step: 4, icon: BrainCircuit, badge: 'Gemini' },
     'History': { step: 10, icon: History }
   };
 
@@ -311,7 +311,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 isPrimary={true}
               />
               <SidebarItem
-                label="Tax Optimizer"
+                label="Optimizer"
                 icon={Award}
                 isActive={activeStep === 5}
                 isExpanded={isExpandedVisual}
@@ -320,7 +320,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 isPrimary={true}
               />
               <SidebarItem
-                label="Tax Return"
+                label="Return"
                 icon={ListTodo}
                 isActive={activeStep === 6}
                 isExpanded={isExpandedVisual}
@@ -335,7 +335,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* 2. DOCUMENTS Category */}
             <SidebarGroup title="Documents" isExpanded={isExpandedVisual}>
               <SidebarItem
-                label="Document Vault"
+                label="Vault"
                 icon={FileUp}
                 isActive={activeStep === 3}
                 isExpanded={isExpandedVisual}
@@ -343,7 +343,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => setActiveStep(3)}
               />
               <SidebarItem
-                label="AI Analysis"
+                label="AI Chat"
                 icon={BrainCircuit}
                 isActive={activeStep === 4}
                 isExpanded={isExpandedVisual}
@@ -382,11 +382,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
                 <div className="mx-2 p-3 bg-white/[0.01] border border-white/[0.03] rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow-sm">
                   <div className="absolute inset-0 bg-emerald-500/[0.005] pointer-events-none" />
-                  <div className="flex justify-between items-center text-[10px] font-mono text-slate-450 font-bold leading-none z-10">
+                  <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 font-bold leading-none z-10">
                     <span>{progressPercent}% Done</span>
                     <span>{progressStepNum} / 5 Steps</span>
                   </div>
-                  <div className="h-1 bg-slate-950 border border-white/[0.03] rounded-full overflow-hidden w-full z-10">
+                  <div className="h-1 bg-slate-900 rounded-full overflow-hidden w-full z-10 relative">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${progressPercent}%` }}
@@ -394,7 +394,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className="h-full bg-[#10B981] rounded-full"
                     />
                   </div>
-                  <div className="text-[9.5px] text-slate-500 font-semibold leading-tight z-10">
+                  <div className="text-[9.5px] text-slate-550 font-semibold leading-tight z-10">
                     {progressLabel}
                   </div>
                 </div>
@@ -428,7 +428,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <div className="space-y-2 text-left w-full">
                   <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-emerald-500/80">
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 font-sans">
                       {ingestionState === 'COMPLETED' ? (
                         <CheckCircle className="w-3.5 h-3.5 text-[#10B981] animate-pulse" />
                       ) : (
@@ -449,7 +449,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Redesigned Premium Glass Guest Session Card */}
+          {/* Redesigned Premium Glass Guest Session Card (V2 outline/glassmorphic) */}
           {authMode === 'GUEST' && (
             !isExpandedVisual ? (
               <div className="relative group/guest-item w-full flex justify-center py-1 select-none">
@@ -464,23 +464,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-[#10B981]/[0.015] border border-white/[0.04] shadow-[0_4px_15px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.02)] rounded-2xl flex flex-col gap-2.5 text-left relative overflow-hidden">
-                <div className="absolute inset-0 bg-[#10B981]/[0.005] pointer-events-none" />
-                <div className="space-y-1 z-10">
-                  <div className="text-[12px] font-bold text-slate-200 flex items-center gap-1.5 font-sans leading-none">
+              <div className="p-4 bg-emerald-500/[0.01] border border-white/[0.04] shadow-[0_4px_15px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.02)] rounded-2xl flex flex-col gap-3 text-left relative overflow-hidden">
+                <div className="absolute inset-0 bg-emerald-500/[0.005] pointer-events-none" />
+                <div className="space-y-1.5 z-10 font-sans">
+                  <div className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5 leading-none">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                     Guest Session
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium leading-none mt-1">
+                  <div className="text-[9.5px] text-slate-400 font-medium leading-tight">
                     Private Local Workspace
                   </div>
-                  <div className="text-[10px] text-slate-500 font-medium leading-none pt-0.5">
+                  <div className="text-[9px] text-slate-500 font-medium leading-none pt-0.5">
                     Expires in <span className="font-mono text-slate-400 font-bold">{Math.floor(sessionTimeLeft / 60)} minutes</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setActiveStep(2)}
-                  className="w-full py-2 bg-white hover:bg-slate-100 text-slate-950 font-bold rounded-lg text-[10px] uppercase tracking-wider cursor-pointer transition-all duration-150 shadow-md text-center z-10 active:scale-[0.97]"
+                  className="w-full py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/10 hover:border-white/20 font-bold rounded-lg text-[9px] uppercase tracking-wider cursor-pointer transition-all duration-150 text-center z-10 active:scale-[0.97]"
                 >
                   Sign In
                 </button>
@@ -488,7 +488,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )
           )}
 
-          {/* V2 Compact Segmented Theme Switcher */}
+          {/* V2 Compact Segmented Theme Switcher (Animate active bg via layoutId) */}
           {isExpandedVisual && (
             <div className="flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-400 select-none font-sans mt-2">
               <span className="font-medium text-slate-500">Theme</span>
@@ -502,11 +502,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => setTheme(t)}
                       title={`Select ${t} theme`}
                       className={`w-6 h-6 rounded-full cursor-pointer flex items-center justify-center transition-all duration-150 focus:outline-none relative z-10 ${
-                        isSelected 
-                          ? 'bg-white/[0.06] text-[#10B981]' 
-                          : 'text-slate-500 hover:text-slate-350'
+                        isSelected ? 'text-[#10B981]' : 'text-slate-500 hover:text-slate-350'
                       }`}
                     >
+                      {isSelected && (
+                        <motion.div 
+                          layoutId="theme-active-bg"
+                          className="absolute inset-0 bg-white/10 rounded-full border border-white/5 -z-10" 
+                          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                        />
+                      )}
                       <Icon className="w-3.5 h-3.5 stroke-[1.5]" />
                     </button>
                   );

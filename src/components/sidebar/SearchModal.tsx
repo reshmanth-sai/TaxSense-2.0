@@ -22,10 +22,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   const searchItems = [
     { label: 'Dashboard', stepNum: 11, icon: LayoutDashboard, category: 'Workspace' },
-    { label: 'Tax Optimizer', stepNum: 5, icon: Award, category: 'Workspace' },
-    { label: 'Tax Return', stepNum: 6, icon: ListTodo, category: 'Workspace' },
-    { label: 'Document Vault', stepNum: 3, icon: FileUp, category: 'Documents' },
-    { label: 'AI Analysis', stepNum: 4, icon: BrainCircuit, category: 'Documents' },
+    { label: 'Optimizer', stepNum: 5, icon: Award, category: 'Workspace' },
+    { label: 'Return', stepNum: 6, icon: ListTodo, category: 'Workspace' },
+    { label: 'Vault', stepNum: 3, icon: FileUp, category: 'Documents' },
+    { label: 'AI Chat', stepNum: 4, icon: BrainCircuit, category: 'Documents' },
     { label: 'History', stepNum: 10, icon: History, category: 'Documents' },
     { label: 'Settings', stepNum: 99, icon: Settings, category: 'Account' }
   ];
