@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Star, CheckCircle } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { useSidebarStore } from './useSidebarStore';
@@ -45,13 +45,15 @@ export const SidebarItem: React.FC<SidebarItemProps> = React.memo(({
     toggleFavorite(label);
   };
 
-  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleItemClick();
     }
   };
+
+  // Simplify AI Badge: replace "Gemini" with "AI"
+  const resolvedBadge = badge === 'Gemini' ? 'AI' : badge;
 
   const content = (
     <button
@@ -61,16 +63,27 @@ export const SidebarItem: React.FC<SidebarItemProps> = React.memo(({
       aria-current={isActive ? 'page' : undefined}
       className={`w-full flex items-center justify-between group/btn relative ${
         isExpanded ? 'px-3' : 'px-0 justify-center'
-      } py-2 rounded-xl text-[11.5px] font-medium transition-all duration-200 cursor-pointer select-none border border-transparent focus:outline-none focus:ring-1 focus:ring-blue-500/50 ${
+      } py-2 rounded-xl text-[13px] font-medium transition-all duration-[160ms] cursor-pointer select-none border border-transparent focus:outline-none focus-visible:ring-1 focus-visible:ring-[#10B981]/50 ${
         isActive 
-          ? 'bg-blue-600/10 text-white font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02),0_0_12px_rgba(37,99,235,0.08)]' 
-          : `${isPrimary ? 'text-slate-200 font-bold' : 'text-slate-400 font-semibold'} hover:bg-white/[0.03] hover:text-slate-100`
+          ? 'text-white font-bold' 
+          : `${isPrimary ? 'text-slate-200' : 'text-slate-400'} hover:bg-white/[0.025] hover:text-slate-100`
       }`}
     >
-      {/* Active Accent Bar & Glow */}
+      {/* Active Accent Bar & background shadow glow (Linear-style motion indicators) */}
       {isActive && (
         <>
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4.5 bg-blue-500 rounded-r shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+          {/* Vertical sliding bar */}
+          <motion.div 
+            layoutId="sidebar-active-bar"
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-[#10B981] rounded-r shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          />
+          {/* Subtle green ambient backing glow */}
+          <motion.div 
+            layoutId="sidebar-active-bg"
+            className="absolute inset-0 bg-[#10B981]/[0.03] border-y border-white/[0.01] rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.02),0_0_15px_rgba(16,185,129,0.05)] -z-10"
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          />
         </>
       )}
 
@@ -78,17 +91,11 @@ export const SidebarItem: React.FC<SidebarItemProps> = React.memo(({
       <div className={`flex items-center ${
         isExpanded ? 'gap-3 overflow-hidden min-w-0 flex-1' : 'justify-center w-full'
       }`}>
-        <motion.div
-          animate={{ 
-            scale: isActive ? 1.05 : 1,
-            filter: isActive ? 'brightness(1.15)' : 'brightness(1)'
-          }}
-          whileHover={{ scale: 1.05, filter: 'brightness(1.1)' }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          className={`shrink-0 flex items-center justify-center ${isActive ? 'text-blue-450' : 'text-slate-500 group-hover/btn:text-slate-200'}`}
-        >
-          <IconComp className="h-4.5 w-4.5" />
-        </motion.div>
+        <div className={`shrink-0 flex items-center justify-center transition-colors duration-[160ms] ${
+          isActive ? 'text-[#10B981]' : 'text-slate-500 group-hover/btn:text-slate-350'
+        }`}>
+          <IconComp className="h-4.5 w-4.5 stroke-[1.5]" />
+        </div>
 
         {isExpanded && (
           <span className="truncate leading-none">
@@ -101,14 +108,14 @@ export const SidebarItem: React.FC<SidebarItemProps> = React.memo(({
       {isExpanded && (
         <div className="flex items-center gap-1.5 shrink-0 pl-2">
           {completed && <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />}
-          {badge && (
-            <span className="text-[8px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded-md font-bold tracking-wider uppercase">
-              {badge}
+          {resolvedBadge && (
+            <span className="text-[8px] bg-emerald-500/10 text-emerald-450 px-1.5 py-0.5 rounded font-bold tracking-wider uppercase">
+              {resolvedBadge}
             </span>
           )}
           {savings !== undefined && savings > 0 && (
-            <span className="text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-450 px-2 py-0.5 rounded-full tracking-tighter">
-              ₹{(savings / 1000).toFixed(0)}K
+            <span className="text-[9px] font-bold bg-emerald-500/10 text-[#34D399] px-2 py-0.5 rounded-full tracking-tight">
+              Save ₹{(savings / 1000).toFixed(0)}K
             </span>
           )}
           
@@ -133,7 +140,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = React.memo(({
     <Tooltip 
       content={label} 
       visible={!isExpanded} 
-      badge={badge} 
+      badge={resolvedBadge} 
       savings={savings}
     >
       {content}
