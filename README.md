@@ -160,8 +160,4 @@ Rebate u/s 87A: Taxable Income up to **₹5,00,000** pays **₹0 Tax** (Max reba
 - **LTCG (Section 112A):** flat **12.5%** tax rate, with an exemption of up to **₹1,25,000** of cumulative annual gains.
 
 ---
-
-## 👥 Authors
-- **Naidu Reshmanth Sai**
-- **Srikakulam Venkat Pranav Guptha**
 # TaxSense-2.0
