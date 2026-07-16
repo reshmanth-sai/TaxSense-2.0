@@ -281,7 +281,7 @@ export default function ExtractionConfirm({
                 inputMode="numeric"
                 value={grossSalary || ''}
                 onChange={(e) => handleNumericStateChange(setGrossSalary, e.target.value)}
-                className={`w-full bg-slate-950/60 border rounded-xl py-2 pl-8 pr-3.5 text-sm text-white font-mono focus:outline-none focus:bg-slate-955 transition-all ${
+                className={`w-full bg-slate-900/60 border rounded-xl py-2 pl-8 pr-3.5 text-sm text-white font-mono focus:outline-none focus:bg-slate-900 transition-all ${
                   isGrossSalaryEmpty ? 'border-amber-500/30 bg-amber-500/[0.02]' : 'border-white/[0.08] focus:border-emerald-500/50'
                 }`}
                 placeholder="Enter annual gross salary"
@@ -324,7 +324,7 @@ export default function ExtractionConfirm({
                 inputMode="numeric"
                 value={tdsDeducted || ''}
                 onChange={(e) => handleNumericStateChange(setTdsDeducted, e.target.value)}
-                className={`w-full bg-slate-955/60 border rounded-xl py-2 pl-8 pr-3.5 text-sm text-white font-mono focus:outline-none focus:bg-slate-955 transition-all ${
+                className={`w-full bg-slate-900/60 border rounded-xl py-2 pl-8 pr-3.5 text-sm text-white font-mono focus:outline-none focus:bg-slate-900 transition-all ${
                   isTdsDeductedEmpty ? 'border-amber-500/30 bg-amber-500/[0.02]' : 'border-white/[0.08] focus:border-emerald-500/50'
                 }`}
                 placeholder="Enter tax deducted at source"
@@ -408,7 +408,7 @@ export default function ExtractionConfirm({
                 inputMode="numeric"
                 value={hraReceived || ''}
                 onChange={(e) => handleNumericStateChange(setHraReceived, e.target.value)}
-                className="w-full bg-slate-955/60 border border-white/[0.08] focus:border-emerald-500/50 focus:bg-slate-950 rounded-xl py-2 pl-8 pr-3.5 text-sm text-white font-mono transition-all"
+                className="w-full bg-slate-900/60 border border-white/[0.08] focus:border-emerald-500/50 focus:bg-slate-950 rounded-xl py-2 pl-8 pr-3.5 text-sm text-white font-mono transition-all"
                 placeholder="Enter HRA received from employer"
               />
             </div>
@@ -421,7 +421,7 @@ export default function ExtractionConfirm({
         </div>
 
         {/* Additional Optional Section for full control */}
-        <div className="bg-slate-955/40 p-5 rounded-2xl border border-white/[0.06] space-y-4 text-left">
+        <div className="bg-slate-900/40 p-5 rounded-2xl border border-white/[0.06] space-y-4 text-left">
           <span className="text-[9px] font-bold tracking-wider text-slate-500 uppercase font-mono block">Secondary Adjustments</span>
           <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-4">
             <div>

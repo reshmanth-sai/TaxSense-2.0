@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense, useRef } from 'react';
 import CountUp from './components/CountUp';
 import { motion, AnimatePresence } from 'motion/react';
 import { TaxData, FilingHistoryItem } from './types';
@@ -13,20 +13,20 @@ const DocumentVault = lazy(() => import('./components/DocumentVault'));
 const AICopilot = lazy(() => import('./components/copilot/AICopilot').then(m => ({ default: m.AICopilot })));
 const HistoryArchive = lazy(() => import('./components/HistoryArchive'));
 import { useTaxStore, useTaxStoreHydrated, UserProfile } from './store/useTaxStore';
-import { 
-  DashboardCard, 
-  SectionHeader, 
-  StatusBadge, 
-  ProgressWidget, 
-  RecommendationCard, 
-  AlertCard, 
-  MetricCard, 
-  TimelineItem, 
-  LedgerRow, 
-  PrimaryButton, 
-  SecondaryButton, 
-  DocumentPreviewModal, 
-  CopilotDetailsDrawer 
+import {
+  DashboardCard,
+  SectionHeader,
+  StatusBadge,
+  ProgressWidget,
+  RecommendationCard,
+  AlertCard,
+  MetricCard,
+  TimelineItem,
+  LedgerRow,
+  PrimaryButton,
+  SecondaryButton,
+  DocumentPreviewModal,
+  CopilotDetailsDrawer
 } from './components/dashboard/DashboardComponents';
 import LandingPage from './components/LandingPage';
 import WorkspaceSelection from './components/WorkspaceSelection';
@@ -36,11 +36,11 @@ import { AuditPanel, RecommendationsPanel, FilingWorkspacePanel } from './compon
 import { Sidebar } from './components/sidebar/Sidebar';
 import { useSidebarStore } from './components/sidebar/useSidebarStore';
 
-import { 
-  Lock, 
-  SlidersHorizontal, 
-  Calculator, 
-  BookOpen, 
+import {
+  Lock,
+  SlidersHorizontal,
+  Calculator,
+  BookOpen,
   RotateCcw,
   ListTodo,
   TrendingUp,
@@ -116,15 +116,15 @@ const dashboardVariants = {
 
 const dashboardItemVariants = {
   hidden: { opacity: 0, y: 15, scale: 0.98 },
-  show: { 
-    opacity: 1, 
-    y: 0, 
+  show: {
+    opacity: 1,
+    y: 0,
     scale: 1,
-    transition: { 
-      type: "spring" as const, 
-      stiffness: 380, 
-      damping: 30 
-    } 
+    transition: {
+      type: "spring" as const,
+      stiffness: 380,
+      damping: 30
+    }
   }
 };
 
@@ -141,6 +141,65 @@ export default function App() {
   const sidebarBehavior = useSidebarStore((state) => state.sidebarBehavior);
   const setSidebarBehavior = useSidebarStore((state) => state.setSidebarBehavior);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [aiModel, setAiModel] = useState(() => localStorage.getItem('taxsense_ai_model') || 'Gemini 1.5 Pro');
+  const [aiTemperature, setAiTemperature] = useState(() => Number(localStorage.getItem('taxsense_ai_temp')) || 0.7);
+  const [complianceYear, setComplianceYear] = useState(() => localStorage.getItem('taxsense_compliance_year') || 'AY 2026-27 (New regime focus)');
+
+  const handleLoadPreset = (profileType: 'developer' | 'freelancer' | 'executive') => {
+    if (profileType === 'developer') {
+      setIncomeProfile({
+        grossSalary: 1450000,
+        basicSalary: 580000,
+        hraReceived: 240000,
+        otherIncome: 45000,
+        employeeName: 'Mohit Kumar',
+        employerName: 'Acme Corp Technologies',
+        pan: 'MK*****32F',
+        pfContribution: 72000,
+        stcg: 12000,
+        ltcg: 35000
+      });
+      updateDeduction('80C', 150000);
+      updateDeduction('80D', 25000);
+      updateDeduction('HRA exemption', 120000);
+      updateDeduction('section24b', 0);
+    } else if (profileType === 'freelancer') {
+      setIncomeProfile({
+        grossSalary: 750000,
+        basicSalary: 300000,
+        hraReceived: 0,
+        otherIncome: 12000,
+        employeeName: 'Rajesh Patel',
+        employerName: 'Freelance IT Services',
+        pan: 'RP*****88A',
+        pfContribution: 0,
+        stcg: 0,
+        ltcg: 0
+      });
+      updateDeduction('80C', 50000);
+      updateDeduction('80D', 0);
+      updateDeduction('HRA exemption', 0);
+      updateDeduction('section24b', 0);
+    } else if (profileType === 'executive') {
+      setIncomeProfile({
+        grossSalary: 4500000,
+        basicSalary: 1800000,
+        hraReceived: 600000,
+        otherIncome: 180000,
+        employeeName: 'Ananya Sharma',
+        employerName: 'Global Finance Corp',
+        pan: 'AS*****45D',
+        pfContribution: 150000,
+        stcg: 150000,
+        ltcg: 450000
+      });
+      updateDeduction('80C', 150000);
+      updateDeduction('80D', 50000);
+      updateDeduction('HRA exemption', 300000);
+      updateDeduction('section24b', 200000);
+    }
+    showToast(`Loaded ${profileType} preset profile. Slabs recalculated.`, 'success');
+  };
   const [isCopilotExpanded, setIsCopilotExpanded] = useState(false);
   const [activePreviewDoc, setActivePreviewDoc] = useState<any>(null);
   const [isGuestSessionExpanded, setIsGuestSessionExpanded] = useState(false);
@@ -187,9 +246,24 @@ export default function App() {
   const currentStep = useTaxStore((state) => state.currentStep);
   const setStep = useTaxStore((state) => state.setStep);
   const ingestionState = useTaxStore((state) => state.ingestionState);
-  const theme = useTaxStore((state) => state.theme) || 'light';
-  const setTheme = useTaxStore((state) => state.setTheme);
   const uploadedFiles = useTaxStore((state) => state.uploadedFiles) || [];
+
+  // Invariant Assertion Check: Ledger files count must match timeline log count
+  const timelineLogsCount = uploadedFiles.length;
+  if (uploadedFiles.length !== timelineLogsCount) {
+    console.error(`Assertion failed: State contradiction. Ledger files: ${uploadedFiles.length}, timeline log count: ${timelineLogsCount}`);
+  }
+
+  const [showStickyContinue, setShowStickyContinue] = useState(false);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+
+  const handleMainScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (activeStep === 5) {
+      setShowStickyContinue(e.currentTarget.scrollTop > 240);
+    } else {
+      setShowStickyContinue(false);
+    }
+  };
 
   // Guest Session countdown ticker
   useEffect(() => {
@@ -264,10 +338,42 @@ export default function App() {
     };
   }, []);
 
-  // Enforce dark mode class on document element
+  const theme = useSidebarStore((state) => state.theme);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
+
+  // Sync theme with document.documentElement
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+    const root = document.documentElement;
+    const updateTheme = () => {
+      let activeTheme: 'light' | 'dark' = 'dark';
+      if (theme === 'dark') {
+        root.classList.add('dark');
+        activeTheme = 'dark';
+      } else if (theme === 'light') {
+        root.classList.remove('dark');
+        activeTheme = 'light';
+      } else if (theme === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (systemTheme === 'dark') {
+          root.classList.add('dark');
+          activeTheme = 'dark';
+        } else {
+          root.classList.remove('dark');
+          activeTheme = 'light';
+        }
+      }
+      setResolvedTheme(activeTheme);
+    };
+
+    updateTheme();
+
+    if (theme === 'system') {
+      const media = window.matchMedia('(prefers-color-scheme: dark)');
+      const listener = () => updateTheme();
+      media.addEventListener('change', listener);
+      return () => media.removeEventListener('change', listener);
+    }
+  }, [theme]);
 
   // Stepped thinking timer in Stage 4
   useEffect(() => {
@@ -290,6 +396,10 @@ export default function App() {
   useEffect(() => {
     setShowConfirmScreen(false);
     setShowCelebration(false);
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+    setShowStickyContinue(false);
   }, [activeStep]);
 
   const handleGoogleLoginSuccess = (profile: UserProfile) => {
@@ -298,47 +408,44 @@ export default function App() {
       setIsAuthenticating(false);
       setUser(profile);
       setAuthMode('GOOGLE');
-      
+
       const redirectStep = (window as any)._migrationRedirectStep || 11;
       (window as any)._migrationRedirectStep = null;
       setActiveStep(redirectStep);
     }, 600);
   };
 
-  // Google GSI script loader and pre-initialization
+  // Google GSI script loader and pre-initialization on mount
   useEffect(() => {
     let active = true;
 
-    if (activeStep === 2) {
-      if (googleGsiState === 'ready' || googleGsiState === 'success') {
-        return;
-      }
-      setGoogleGsiState('loading');
-      
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      if (!clientId) {
-        console.error("[GIS] Google Client ID missing");
-        setGoogleGsiState('failed');
-        return;
-      }
-
-      GoogleAuthService.loadScript()
-        .then(() => {
-          if (!active) return;
-          console.log('[GIS] Google Script Loaded & Ready');
-          setGoogleGsiState('ready');
-        })
-        .catch((err) => {
-          if (!active) return;
-          console.error('[GIS] Failed to preload Google Identity SDK:', err);
-          setGoogleGsiState('failed');
-        });
+    if (googleGsiState === 'ready' || googleGsiState === 'success') {
+      return;
     }
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.error("[GIS] Google Client ID missing");
+      setGoogleGsiState('failed');
+      return;
+    }
+
+    GoogleAuthService.loadScript()
+      .then(() => {
+        if (!active) return;
+        console.log('[GIS] Google Script Loaded & Ready');
+        setGoogleGsiState('ready');
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error('[GIS] Failed to preload Google Identity SDK:', err);
+        setGoogleGsiState('failed');
+      });
 
     return () => {
       active = false;
     };
-  }, [activeStep]);
+  }, []);
 
   // Programmatic custom login click handler
   const handleGoogleSignIn = async () => {
@@ -359,9 +466,9 @@ export default function App() {
       console.log('[GIS] Launching programmatic OAuth 2.0 flow');
       const profile = await GoogleAuthService.signIn(clientId);
       console.log('[GIS] Google Sign-In Success:', profile);
-      
+
       setGoogleGsiState('success');
-      
+
       // Delay briefly for Signed In checkmark animation before entering workspace
       setTimeout(() => {
         handleGoogleLoginSuccess(profile);
@@ -369,7 +476,7 @@ export default function App() {
     } catch (err: any) {
       console.error('[GIS] Sign-In Failed:', err);
       setGoogleGsiState('ready'); // reset button state to ready so they can retry
-      
+
       // Human-friendly error translation for the toast
       let userMessage = "Authentication cancelled. Please try again.";
       if (err.message && err.message.includes("popup_closed_by_user")) {
@@ -379,7 +486,7 @@ export default function App() {
       } else if (err.message && err.message.includes("access_denied")) {
         userMessage = "Access denied. Please grant required permissions.";
       }
-      
+
       showToast(userMessage, 'error');
     }
   };
@@ -417,7 +524,7 @@ export default function App() {
       const refreshActivity = () => {
         localStorage.setItem('taxsense_last_active', Date.now().toString());
       };
-      
+
       window.addEventListener('mousemove', refreshActivity);
       window.addEventListener('keydown', refreshActivity);
       window.addEventListener('click', refreshActivity);
@@ -439,7 +546,7 @@ export default function App() {
         e.preventDefault();
         useSidebarStore.getState().toggleCollapsed();
       }
-      
+
       // Stage jumps: only when activeStep >= 3 and not typing in input
       if (activeStep >= 3 && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
         switch (e.key) {
@@ -518,7 +625,7 @@ export default function App() {
     updateDeduction('80D', confirmedData.deduction80D || 0);
     updateDeduction('HRA exemption', confirmedData.hraExemption || 0);
     updateDeduction('section24b', confirmedData.section24b || 0);
-    
+
     setShowConfirmScreen(false);
     setActiveStep(4); // Route to Copilot diagnosis stage
   };
@@ -531,13 +638,13 @@ export default function App() {
   const executeFilingSubmission = () => {
     // Collect active values and push into log history
     const taxSummary = taxCalculationResult;
-    const optimalTax = taxSummary.recommendedRegime === 'NEW' 
-      ? taxSummary.newRegime.totalTaxPayable 
+    const optimalTax = taxSummary.recommendedRegime === 'NEW'
+      ? taxSummary.newRegime.totalTaxPayable
       : taxSummary.oldRegime.totalTaxPayable;
     const netTax = Math.max(0, optimalTax - taxData.tdsDeducted);
     const randomId = `TXS-${Math.floor(100000 + Math.random() * 900000)}`;
     const curDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    
+
     addFilingHistory({
       id: randomId,
       date: curDate,
@@ -548,7 +655,7 @@ export default function App() {
       formType: formType,
       taxData: { ...taxData }
     });
-    
+
     setShowCelebration(true);
   };
 
@@ -609,7 +716,7 @@ export default function App() {
   // Prevent any unhydrated flash or flicker by deferring until state is resolved
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#060708] flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-[#020202] flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center">
             <Calculator className="h-5 w-5 text-emerald-400 animate-pulse" />
@@ -625,16 +732,16 @@ export default function App() {
   }
 
   return (
-    <div id="taxsense-app" className="min-h-screen bg-[#060708] text-white dark:text-slate-100 flex font-sans select-none antialiased relative overflow-hidden" style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>
-      
+    <div id="taxsense-app" className="min-h-screen bg-gradient-to-b from-sky-100 via-slate-50 to-emerald-50 text-slate-900 dark:bg-[#020202] dark:from-transparent dark:via-transparent dark:to-transparent dark:text-slate-100 flex font-sans select-none antialiased relative overflow-hidden" style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>
+
       {/* Layer 5: Pinned fixed cinematic noise texture across the viewport (GPU-accelerated) */}
-      <div 
-        className="cinematic-noise" 
-        style={{ transform: 'translate3d(0, 0, 0)', opacity: 0.025 }}
+      <div
+        className="cinematic-noise"
+        style={{ transform: 'translate3d(0, 0, 0)', opacity: resolvedTheme === 'light' ? 0.015 : 0.025 }}
       />
 
       {/* BACKGROUND FLOATING EFFECTS: Ambient Glows */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.5, ease: 'easeOut' }}
@@ -645,36 +752,42 @@ export default function App() {
         className="absolute inset-0 z-0 overflow-hidden pointer-events-none"
       >
         {/* Top Left: Large dark emerald ambient light */}
-        <div 
-          style={{ 
-            background: 'radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.075) 0%, transparent 70%)',
+        <div
+          style={{
+            background: resolvedTheme === 'light'
+              ? 'radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 70%)'
+              : 'radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.075) 0%, transparent 70%)',
             filter: 'blur(120px)'
           }}
-          className="absolute -top-[20%] -left-[20%] w-[1000px] h-[1000px] pointer-events-none animate-ambient-drift-tl" 
+          className="absolute -top-[20%] -left-[20%] w-[1000px] h-[1000px] pointer-events-none animate-ambient-drift-tl"
         />
-        
+
         {/* Bottom Right: Soft cyan/blue ambient light */}
-        <div 
-          style={{ 
-            background: 'radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.04) 0%, transparent 70%)',
+        <div
+          style={{
+            background: resolvedTheme === 'light'
+              ? 'radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.02) 0%, transparent 70%)'
+              : 'radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.04) 0%, transparent 70%)',
             filter: 'blur(140px)'
           }}
-          className="absolute -bottom-[20%] -right-[20%] w-[1000px] h-[1000px] pointer-events-none animate-ambient-drift-br" 
+          className="absolute -bottom-[20%] -right-[20%] w-[1000px] h-[1000px] pointer-events-none animate-ambient-drift-br"
         />
       </motion.div>
 
       {/* Layer 4: Screen Edges Soft Vignette */}
-      <div className="absolute inset-0 z-0 pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.55)]" />
+      <div className="absolute inset-0 z-0 pointer-events-none shadow-[inset_0_0_150px_rgba(255,255,255,0.4)] dark:shadow-[inset_0_0_150px_rgba(0,0,0,0.55)]" />
 
       {/* Layer 6: Soft background grid texture faded toward edges */}
-      <div 
-        style={{ 
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.004) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.004) 1px, transparent 1px)', 
+      <div
+        style={{
+          backgroundImage: resolvedTheme === 'light'
+            ? 'linear-gradient(rgba(15,23,42,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.025) 1px, transparent 1px)'
+            : 'linear-gradient(rgba(255,255,255,0.004) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.004) 1px, transparent 1px)',
           backgroundSize: '100px 100px',
           WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 30%, transparent 80%)',
           maskImage: 'radial-gradient(circle at 50% 50%, black 30%, transparent 80%)'
-        }} 
-        className="absolute inset-0 z-0 pointer-events-none" 
+        }}
+        className="absolute inset-0 z-0 pointer-events-none"
       />
 
       {/* TWINKLING PARTICLE FIELD */}
@@ -742,751 +855,888 @@ export default function App() {
           />
         </div>
 
-              {hydrated && activeStep >= 3 && (() => {
-            return (
-              <div className="relative z-10 flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-transparent">
-                <Sidebar
-                  activeStep={activeStep}
-                  setActiveStep={setActiveStep}
-                  taxCalculationResult={taxCalculationResult}
-                  taxData={taxData}
-                  ingestionState={ingestionState}
-                  backgroundStatusMessage={backgroundStatusMessage}
-                  backgroundProgress={backgroundProgress}
-                  authMode={authMode}
-                  sessionTimeLeft={sessionTimeLeft}
-                  user={user}
-                  incomeProfile={incomeProfile}
-                  isSettingsOpen={isSettingsOpen}
-                  setIsSettingsOpen={setIsSettingsOpen}
-                  onLogout={() => {
-                    GoogleAuthService.revokeSession();
-                    clearSession();
-                    setActiveStep(2);
-                  }}
-                />
+        {hydrated && activeStep >= 3 && (() => {
+          return (
+            <div className="relative z-10 flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-transparent">
+              <Sidebar
+                activeStep={activeStep}
+                setActiveStep={setActiveStep}
+                taxCalculationResult={taxCalculationResult}
+                taxData={taxData}
+                ingestionState={ingestionState}
+                backgroundStatusMessage={backgroundStatusMessage}
+                backgroundProgress={backgroundProgress}
+                authMode={authMode}
+                sessionTimeLeft={sessionTimeLeft}
+                user={user}
+                incomeProfile={incomeProfile}
+                isSettingsOpen={isSettingsOpen}
+                setIsSettingsOpen={setIsSettingsOpen}
+                onGoogleSignIn={handleGoogleSignIn}
+                onLogout={() => {
+                  GoogleAuthService.revokeSession();
+                  clearSession();
+                  setGoogleGsiState('ready');
+                  setActiveStep(2);
+                }}
+              />
 
-            {/* Viewport Core Workspace Area */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              
-              {/* Persistent Tax Summary HUD */}
-              {activeStep >= 3 && activeStep <= 9 && (
-                <div className="w-full bg-[#040608]/20 border-b border-white/[0.04] dark:border-slate-800/30 backdrop-blur-md py-3 px-6 transition-colors duration-200 shadow-xs shrink-0 z-20 relative">
-                  <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Tax Status:</span>
-                      
-                      <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900/40 border border-white/[0.04] rounded-lg">
-                        <span className="text-slate-400">Gross Salary:</span>
-                        <span className="font-mono font-semibold text-slate-200">{formatINR(taxData.grossSalary)}</span>
+              {/* Viewport Core Workspace Area */}
+              <div className="flex-1 flex flex-col h-full overflow-hidden">
+
+                {/* Persistent Tax Summary HUD */}
+                {activeStep >= 3 && activeStep <= 9 && (
+                  <div className="w-full h-[60px] bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/35 dark:border-white/[0.03] backdrop-blur-xl px-6 transition-colors duration-200 shadow-xs shrink-0 z-20 relative flex items-center">
+                    <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-[11px]">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-slate-550 dark:text-slate-500 uppercase tracking-wider text-[9px] mr-1">Tax Status:</span>
+
+                        {/* Salary */}
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-lg font-medium border border-slate-200 dark:border-white/[0.02]">
+                          <span className="opacity-70 text-[9px] uppercase tracking-wider font-bold">Salary</span>
+                          <span className="font-mono font-bold text-slate-900 dark:text-slate-200">{formatINR(taxData.grossSalary)}</span>
+                        </div>
+
+                        {/* ITR */}
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-lg font-medium border border-slate-200 dark:border-white/[0.02] ${showStickyContinue && activeStep === 5 ? 'hidden md:flex' : 'flex'}`}>
+                          <span className="opacity-70 text-[9px] uppercase tracking-wider font-bold">ITR</span>
+                          <span className="font-bold text-slate-900 dark:text-slate-200">{formType}</span>
+                        </div>
+
+                        {/* Claimed */}
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-lg font-medium border border-slate-200 dark:border-white/[0.02] ${showStickyContinue && activeStep === 5 ? 'hidden md:flex' : 'flex'}`}>
+                          <span className="opacity-70 text-[9px] uppercase tracking-wider font-bold">Claimed</span>
+                          <span className="font-mono font-bold text-slate-900 dark:text-slate-200">
+                            {formatINR(
+                              taxData.deduction80C +
+                              taxData.deduction80D +
+                              taxData.hraExemption +
+                              taxData.section24b
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Savings */}
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-lg font-bold">
+                          <span className="opacity-75 text-[9px] uppercase tracking-wider font-bold">Savings</span>
+                          <span className="font-mono font-black">{formatINR(taxCalculationResult.savings)}</span>
+                        </div>
+
+                        {/* Regime */}
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-lg font-bold">
+                          <span className="opacity-75 text-[9px] uppercase tracking-wider font-bold">Regime</span>
+                          <span className="font-bold">{taxCalculationResult.recommendedRegime === 'NEW' ? 'New Regime' : 'Old Regime'}</span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900/40 border border-white/[0.04] rounded-lg text-slate-400">
-                        <span>{formType} Eligible</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-900/40 border border-white/[0.04] rounded-lg text-slate-500">
-                        <span>
-                          {formatINR(
-                            taxData.deduction80C + 
-                            taxData.deduction80D + 
-                            taxData.hraExemption + 
-                            taxData.section24b
-                          )} Claimed
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-white/[0.02] text-slate-350 border border-white/[0.08] rounded-lg font-semibold">
-                        <span>✓ {taxCalculationResult.recommendedRegime === 'NEW' ? 'New Regime Recommended' : 'Old Regime Recommended'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-955 font-extrabold rounded-full shadow-[0_0_18px_rgba(16,185,129,0.35)] border border-emerald-300/10 hover:border-emerald-300/25 transition-all duration-300 scale-105 active:scale-100 hover:shadow-[0_0_25px_rgba(16,185,129,0.55)] cursor-pointer">
-                        <span className="text-[9px] uppercase font-extrabold tracking-widest opacity-85">Saves</span>
-                        <span className="font-mono text-sm font-black tracking-tight"><CountUp end={taxCalculationResult.savings} formatter={formatINR} /></span>
-                        <span className="text-[9px] uppercase font-extrabold tracking-wididest opacity-85">Estimated</span>
+                      <div className="flex items-center gap-3">
+                        {showStickyContinue && activeStep === 5 && (
+                          <button
+                            onClick={() => setActiveStep(6)}
+                            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer shadow-md flex items-center gap-1.5 active:scale-95 duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400"
+                          >
+                            <span>Continue</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Main Content Viewport */}
-              <div className="flex-1 overflow-y-auto flex flex-col justify-between relative bg-transparent z-10">
-                {/* Mobile Header Bar */}
-                <div className="md:hidden flex items-center justify-between p-4 border-b border-white/[0.04] bg-[#040608]/80 backdrop-blur-md z-30 shrink-0 select-none">
-                  <button 
-                    onClick={() => useSidebarStore.getState().toggleCollapsed()} 
-                    className="p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 focus:outline-none cursor-pointer"
-                  >
-                    <Menu className="w-5 h-5" />
-                  </button>
-                  <span className="font-black text-xs uppercase tracking-wider text-slate-100 text-left flex-1 pl-3">TaxSense</span>
-                  <div className="w-8 h-8 rounded-full bg-slate-900 border border-white/[0.05] flex items-center justify-center">
-                    <User className="w-4 h-4 text-slate-400" />
+                {/* Main Content Viewport */}
+                <div
+                  ref={mainContentRef}
+                  onScroll={handleMainScroll}
+                  className="flex-1 overflow-y-auto flex flex-col justify-between relative bg-transparent z-10"
+                >
+                  {/* Mobile Header Bar */}
+                  <div className="md:hidden flex items-center justify-between p-4 border-b border-white/[0.04] bg-[#040608]/80 backdrop-blur-md z-30 shrink-0 select-none">
+                    <button
+                      onClick={() => useSidebarStore.getState().toggleCollapsed()}
+                      className="p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 focus:outline-none cursor-pointer"
+                    >
+                      <Menu className="w-5 h-5" />
+                    </button>
+                    <span className="font-black text-xs uppercase tracking-wider text-slate-100 text-left flex-1 pl-3">TaxSense</span>
+                    <div className="w-8 h-8 rounded-full bg-slate-900 border border-white/[0.05] flex items-center justify-center">
+                      <User className="w-4 h-4 text-slate-400" />
+                    </div>
                   </div>
-                </div>
 
-                <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-8">
-                  
-                  {/* Dialog Trigger: Extraction Confirmation */}
-                  <AnimatePresence>
-                    {showConfirmScreen && (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-                      >
+                  <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-8">
+
+                    {/* Dialog Trigger: Extraction Confirmation */}
+                    <AnimatePresence>
+                      {showConfirmScreen && (
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                          className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl relative z-50 space-y-6"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
                         >
-                          <Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
-                            <ExtractionConfirm 
-                              extractedData={extractedData} 
-                              onConfirm={acceptExtractedData}
-                              onCancel={() => {
-                                setShowConfirmScreen(false);
-                                setExtractedData(null);
-                              }}
-                              isProcessing={isExtracting}
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                            className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl relative z-50 space-y-6"
+                          >
+                            <Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
+                              <ExtractionConfirm
+                                extractedData={extractedData}
+                                onConfirm={acceptExtractedData}
+                                onCancel={() => {
+                                  setShowConfirmScreen(false);
+                                  setExtractedData(null);
+                                }}
+                                isProcessing={isExtracting}
+                              />
+                            </Suspense>
+                          </motion.div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <AnimatePresence mode="wait">
+                      {/* Stage 11: Dashboard Command Center */}
+                      {activeStep === 11 && (
+                        <motion.div
+                          key="step-11"
+                          variants={dashboardVariants}
+                          initial="hidden"
+                          animate="show"
+                          exit="hidden"
+                          className="space-y-6 font-sans"
+                        >
+                          {/* Top Hero Row */}
+                          <motion.div
+                            variants={dashboardItemVariants}
+                            className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-[24px] p-6 backdrop-blur-md relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]"
+                          >
+                            <div className="md:col-span-2 space-y-4 text-left z-10">
+                              <div className="space-y-3">
+                                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-sans">
+                                  Your return is 72% complete. ₹77,896 in tax savings optimized.
+                                </h1>
+                                <p className="text-[12px] text-slate-650 dark:text-slate-400 leading-normal font-normal">
+                                  AI is continuously analyzing your documents for additional deductions.
+                                </p>
+
+                                {/* Sleek Premium Spotlight Chip (Consolidated Link) */}
+                                <a
+                                  href="#next-action-card"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    document.getElementById('next-action-card')?.scrollIntoView({ behavior: 'smooth' });
+                                  }}
+                                  className="flex items-center gap-2 px-3 py-1 bg-primary-action/10 border border-primary-action/20 hover:bg-primary-action/20 text-[10px] text-primary-action font-semibold rounded-full w-fit transition-colors cursor-pointer select-none"
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-primary-action animate-pulse" />
+                                  <span>Next Action Available</span>
+                                  <span className="text-primary-action font-bold underline ml-1">View Details →</span>
+                                </a>
+                              </div>
+
+                              {/* Guest Session warning relocation */}
+                              {authMode === 'GUEST' && (
+                                <div className="transition-all duration-300 w-full">
+                                  {!isGuestSessionExpanded ? (
+                                    <div className="p-3 bg-slate-100/50 dark:bg-slate-900/30 border border-slate-200 dark:border-white/[0.04] rounded-xl flex items-center justify-between gap-3 text-xs w-full">
+                                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                        <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                        <span className="text-[10.5px]">Guest Session • Progress is not saved permanently.</span>
+                                      </div>
+                                      <button
+                                        onClick={() => setIsGuestSessionExpanded(true)}
+                                        className="text-[10px] text-primary-action hover:text-primary-action/80 font-bold uppercase tracking-wider cursor-pointer focus:outline-none"
+                                      >
+                                        Save Session ↓
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="p-4 bg-white/60 dark:bg-slate-900/40 border border-slate-200/60 dark:border-white/[0.06] rounded-xl space-y-2.5 text-xs w-full">
+                                      <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/[0.04] pb-2">
+                                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                                          <Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                                          <span className="font-semibold text-[10.5px]">Save Filing Progress</span>
+                                        </div>
+                                        <button
+                                          onClick={() => setIsGuestSessionExpanded(false)}
+                                          className="text-[10px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-350 cursor-pointer focus:outline-none"
+                                        >
+                                          Collapse ✕
+                                        </button>
+                                      </div>
+                                      <p className="text-slate-600 dark:text-slate-400 font-normal text-left text-[11px] leading-relaxed">
+                                        Save your filing history, uploaded documents, and AI conversations by signing in.
+                                      </p>
+                                      <div className="flex justify-end pt-0.5">
+                                        <button
+                                          onClick={() => {
+                                            (window as any)._migrationRedirectStep = 11;
+                                            setActiveStep(2);
+                                          }}
+                                          className="px-3 py-1.5 bg-primary-action/10 border border-primary-action/20 hover:bg-primary-action/20 text-primary-action font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer shrink-0"
+                                        >
+                                          Save Progress
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="flex flex-wrap items-center gap-3 pt-1">
+                                <button
+                                  onClick={() => setActiveStep(6)}
+                                  className="px-5 py-2.5 bg-primary-action hover:bg-primary-action/90 text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer shadow-lg shadow-primary-action/10 hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
+                                >
+                                  Resume Filing
+                                </button>
+                                <button
+                                  onClick={() => setActiveStep(4)}
+                                  className="px-4 py-2.5 bg-slate-100/50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] hover:bg-slate-200/50 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
+                                >
+                                  Explain My Savings
+                                </button>
+                                <button
+                                  onClick={() => setActiveStep(5)}
+                                  className="px-4 py-2.5 bg-slate-100/50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] hover:bg-slate-200/50 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
+                                >
+                                  Review Tax Return
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Circular Filing Progress Ring */}
+                            <div className="z-10">
+                              <ProgressWidget
+                                percentage={72}
+                                stepsRemaining={3}
+                                estimatedMinutes={4}
+                                checklist={[
+                                  { label: 'Upload Form 16', completed: true, stepNum: 1 },
+                                  { label: 'Verify Deductions', completed: true, stepNum: 2 },
+                                  { label: 'Run AI Copilot Diagnosis', completed: false, stepNum: 3 },
+                                  { label: 'Review Optimization Recommendations', completed: false, stepNum: 4 },
+                                  { label: 'File Tax Return', completed: false, stepNum: 5 }
+                                ]}
+                              />
+                            </div>
+                          </motion.div>
+
+                          {/* Middle Columns: Left (Actions/insights) & Right (Timeline/Status) */}
+                          <motion.div
+                            variants={dashboardItemVariants}
+                            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+                          >
+
+                            {/* Left Columns (Span 2) */}
+                            <div className="lg:col-span-2 space-y-6">
+                               {/* AI Summary Card */}
+                               <DashboardCard variant="accent-purple">
+                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 z-10 relative">
+                                   <div className="space-y-3.5 flex-1 text-left">
+                                     <div className="space-y-0.5">
+                                       <span className="text-[9px] text-purple-650 dark:text-purple-400 font-bold uppercase tracking-wider font-mono block">AI Copilot</span>
+                                       <h3 className="text-[17px] font-semibold text-purple-950 dark:text-white tracking-tight font-sans flex items-center gap-2">
+                                         <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-pulse" />
+                                         TaxSense Copilot
+                                       </h3>
+                                     </div>
+                                     <p className="text-[13px] text-slate-700 dark:text-slate-300 leading-relaxed font-normal font-sans">
+                                       I've reviewed your Form 16. You can reduce your taxable income by another <span className="text-purple-950 dark:text-white font-extrabold font-mono">₹77,896</span>.
+                                     </p>
+                                     <CopilotDetailsDrawer
+                                       isOpen={isCopilotExpanded}
+                                       onToggle={() => setIsCopilotExpanded(!isCopilotExpanded)}
+                                       confidence={97}
+                                     />
+                                   </div>
+
+                                  <MetricCard
+                                    title="Tax Health Score"
+                                    value={85}
+                                    maxVal={100}
+                                    badgeText="Good • Claim 80D"
+                                    badgeType="success"
+                                  />
+                                </div>
+                              </DashboardCard>
+
+                              {/* Volumetric Next Step CTA Spotlight (Apple Wallet style) */}
+                              <div id="next-action-card">
+                                <RecommendationCard
+                                  title="Claim Health Insurance (Section 80D)"
+                                  description="We detected zero claims under Section 80D. Synced profiles usually save an additional ₹25,000 in taxable deductions."
+                                  savings="₹25,000"
+                                  difficulty="Easy"
+                                  time="3 minutes"
+                                  documents={['Insurance Premium Receipt']}
+                                  confidence={96}
+                                  onAction={() => setActiveStep(6)}
+                                />
+                              </div>
+
+                              {/* Ingested Document Ledger */}
+                              {uploadedFiles.length > 0 ? (
+                                <DashboardCard variant="secondary" className="space-y-3 p-6">
+                                  <SectionHeader
+                                    title="Ingested Document Ledger"
+                                    subtitle="FILES"
+                                    icon={FolderOpen}
+                                    iconColor="text-ai-brand"
+                                  />
+                                  <div className="space-y-2.5">
+                                    {uploadedFiles.map((doc) => (
+                                      <LedgerRow
+                                        key={doc.id}
+                                        doc={doc}
+                                        onPreview={() => setActivePreviewDoc(doc)}
+                                      />
+                                    ))}
+                                    {(taxData.stcg > 0 || taxData.ltcg > 0) && (
+                                      <LedgerRow
+                                        doc={{
+                                          id: 'equity-cg-csv',
+                                          name: 'Equity_Capital_Gains.csv',
+                                          size: '1.2 MB',
+                                          uploadTime: 'Jul 4, 19:40',
+                                          status: 'Verified',
+                                          confidence: 98
+                                        }}
+                                        onPreview={() => setActivePreviewDoc({
+                                          id: 'equity-cg-csv',
+                                          name: 'Equity_Capital_Gains.csv',
+                                          size: '1.2 MB',
+                                          uploadTime: 'Jul 4, 19:40',
+                                          status: 'Verified',
+                                          confidence: 98,
+                                          employer: 'Zerodha Sync',
+                                          financialYear: 'FY 2025-26',
+                                          pages: 1
+                                        })}
+                                      />
+                                    )}
+                                  </div>
+                                </DashboardCard>
+                              ) : (
+                                /* Low-profile inline upload row when empty */
+                                <div className="bg-white/40 dark:bg-[#0f172a]/30 border border-slate-200/50 dark:border-white/[0.05] rounded-2xl p-4 flex items-center justify-between gap-4 backdrop-blur-md hover:border-slate-350 dark:hover:border-white/[0.08] transition-all duration-300">
+                                  <div className="flex items-center gap-2.5 text-left">
+                                    <FolderOpen className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">No documents ingested in this session</span>
+                                  </div>
+                                  <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setActiveStep(3)}
+                                    className="px-4 py-2 border border-slate-300 dark:border-white/10 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer focus:outline-none transition-colors"
+                                  >
+                                    Open Vault →
+                                  </motion.button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right Columns (Span 1) */}
+                            <div className="space-y-6">
+
+                              {/* Latest AI Insights drawer card */}
+                              <DashboardCard variant="secondary" className="space-y-4">
+                                <SectionHeader
+                                  title="Latest Copilot Alerts"
+                                  subtitle="AI INSIGHTS"
+                                  icon={Sparkles}
+                                  iconColor="text-purple-400"
+                                />
+
+                                <div className="space-y-3.5">
+                                  <AlertCard
+                                    title="Section 80D Audit"
+                                    message="You paid zero medical premiums. Seniors aged 60+ parents unlock an extra limit of ₹50,000."
+                                    type="insight"
+                                  />
+                                  <AlertCard
+                                    title="HRA rent exemption"
+                                    message="Confirm rent receipt logs to check compliance with Section 10(13A). Rent above 1L requires landlord PAN."
+                                    type="insight"
+                                  />
+                                </div>
+                              </DashboardCard>
+
+                              {/* Recent Activity Log timeline card */}
+                              <DashboardCard variant="secondary" className="space-y-4">
+                                <SectionHeader
+                                  title="Activity History"
+                                  subtitle="WORKSPACE"
+                                  icon={History}
+                                  iconColor="text-slate-400"
+                                />
+
+                                <div className="space-y-4 text-left">
+                                  <div className="space-y-2">
+                                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono block">Today</span>
+                                    <div className="relative pl-6 space-y-4">
+                                      <div className="absolute left-[11px] top-2 bottom-2 w-[1px] bg-slate-800 pointer-events-none" />
+                                      {uploadedFiles.map((file) => (
+                                        <TimelineItem
+                                          key={`timeline-${file.id}`}
+                                          label={`${file.name.replace(/\.[^/.]+$/, "")} uploaded`}
+                                          desc="Auto extraction computed successfully"
+                                          date={file.uploadTime}
+                                          icon={FileText}
+                                          iconColor="text-ai-brand"
+                                        />
+                                      ))}
+                                      <TimelineItem
+                                        label="Sandbox profile active"
+                                        desc="Secure local connection established"
+                                        date="19:38"
+                                        icon={Cpu}
+                                        iconColor="text-primary-action"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono block">Yesterday</span>
+                                    <div className="relative pl-6 space-y-4">
+                                      <div className="absolute left-[11px] top-2 bottom-2 w-[1px] bg-slate-850 pointer-events-none" />
+                                      <TimelineItem
+                                        label="Regime optimized"
+                                        desc="New regime saves ₹18,240"
+                                        date="15:45"
+                                        icon={TrendingUp}
+                                        iconColor="text-emerald-450"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </DashboardCard>
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      )}
+
+                      {/* Stage 3: Dedicated Document Vault page */}
+                      {activeStep === 3 && (
+                        <motion.div
+                          key="step-3"
+                          initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                          className="space-y-6"
+                        >
+                          <Suspense fallback={<div className="h-[400px] bg-slate-900/10 animate-pulse rounded-3xl" />}>
+                            <DocumentVault
+                              onFileUpload={() => { }}
+                              setActiveStep={setActiveStep}
+                              onViewExtractedFields={() => setShowConfirmScreen(true)}
                             />
                           </Suspense>
                         </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      )}
 
-                  <AnimatePresence mode="wait">
-                    {/* Stage 11: Dashboard Command Center */}
-                    {activeStep === 11 && (
-                      <motion.div
-                        key="step-11"
-                        variants={dashboardVariants}
-                        initial="hidden"
-                        animate="show"
-                        exit="hidden"
-                        className="space-y-6 font-sans"
-                      >
-                        {/* Top Hero Row */}
-                        <motion.div 
-                          variants={dashboardItemVariants}
-                          className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-slate-900/35 border border-white/[0.04] rounded-[24px] p-6 backdrop-blur-md relative overflow-hidden shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]"
+                      {/* Stage 4: AI Analysis page */}
+                      {activeStep === 4 && (
+                        <motion.div
+                          key="step-4"
+                          initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                          className="font-sans max-w-6xl mx-auto space-y-6"
                         >
-                          <div className="md:col-span-2 space-y-4 text-left z-10">
-                            <div className="space-y-3">
-                              <h1 className="text-xl font-bold tracking-tight text-white font-sans">
-                                Your return is 72% complete. ₹77,896 in tax savings optimized.
-                              </h1>
-                              <p className="text-[12px] text-slate-400 leading-normal font-normal">
-                                AI is continuously analyzing your documents for additional deductions.
+                          {uploadedFiles.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-slate-100/50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-800/50 rounded-3xl backdrop-blur-md max-w-2xl mx-auto">
+                              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                                <Sparkles className="w-8 h-8 text-slate-400 dark:text-slate-650 animate-pulse" />
+                              </div>
+                              <h3 className="text-sm font-bold text-slate-805 dark:text-slate-350 tracking-tight">AI Audit Standby</h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 max-w-sm mx-auto">
+                                The TaxSense AI engine requires a Form 16 document to perform compliance validations. Upload a file in the Document Vault to begin the audit.
                               </p>
-                              
-                              {/* Sleek Premium Spotlight Chip */}
-                              <div className="flex items-center gap-2 px-3 py-1 bg-blue-600/10 border border-blue-500/20 text-[10px] text-blue-300 font-semibold rounded-full w-fit">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                                Next Action: <span className="text-white font-bold">Claim Health Insurance under Section 80D</span>
-                              </div>
                             </div>
-                            
-                            <div className="flex flex-wrap items-center gap-3 pt-1">
-                              <button
-                                onClick={() => setActiveStep(6)}
-                                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer shadow-lg shadow-blue-500/10 hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
-                              >
-                                Resume Filing
-                              </button>
-                              <button
-                                onClick={() => setActiveStep(4)}
-                                className="px-4 py-2.5 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.06] text-slate-200 hover:text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
-                              >
-                                Explain My Savings
-                              </button>
-                              <button
-                                onClick={() => setActiveStep(5)}
-                                className="px-4 py-2.5 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.06] text-slate-200 hover:text-white font-semibold rounded-xl text-xs transition-all duration-200 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 active:scale-98"
-                              >
-                                Review Tax Return
-                              </button>
-                            </div>
-
-                            {authMode === 'GUEST' && (
-                              <div className="transition-all duration-300">
-                                {!isGuestSessionExpanded ? (
-                                  <div className="mt-3 p-3 bg-slate-900/30 border border-white/[0.04] rounded-xl flex items-center justify-between gap-3 text-xs">
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                      <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                                      <span className="text-[10.5px]">Guest Session • Progress is not saved permanently.</span>
-                                    </div>
-                                    <button 
-                                      onClick={() => setIsGuestSessionExpanded(true)}
-                                      className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider cursor-pointer focus:outline-none"
-                                    >
-                                      Save Session ↓
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="mt-3 p-4 bg-slate-900/40 border border-white/[0.06] rounded-xl space-y-2.5 text-xs">
-                                    <div className="flex items-center justify-between border-b border-white/[0.04] pb-2">
-                                      <div className="flex items-center gap-2 text-slate-300">
-                                        <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                        <span className="font-semibold text-[10.5px]">Save Filing Progress</span>
-                                      </div>
-                                      <button 
-                                        onClick={() => setIsGuestSessionExpanded(false)}
-                                        className="text-[10px] text-slate-550 hover:text-slate-350 cursor-pointer focus:outline-none"
-                                      >
-                                        Collapse ✕
-                                      </button>
-                                    </div>
-                                    <p className="text-slate-400 font-normal text-left text-[11px] leading-relaxed">
-                                      Save your filing history, uploaded documents, and AI conversations by signing in.
-                                    </p>
-                                    <div className="flex justify-end pt-0.5">
-                                      <button
-                                        onClick={() => {
-                                          (window as any)._migrationRedirectStep = 11;
-                                          setActiveStep(2);
-                                        }}
-                                        className="px-3 py-1.5 bg-blue-600/10 border border-blue-600/20 hover:bg-blue-600/20 text-blue-400 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer shrink-0"
-                                      >
-                                        Save Progress
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Circular Filing Progress Ring */}
-                          <div className="z-10">
-                            <ProgressWidget 
-                              percentage={72} 
-                              stepsRemaining={3} 
-                              estimatedMinutes={4} 
-                              checklist={[
-                                { label: 'Upload Form 16', completed: true, stepNum: 1 },
-                                { label: 'Verify Deductions', completed: true, stepNum: 2 },
-                                { label: 'Run AI Copilot Diagnosis', completed: false, stepNum: 3 },
-                                { label: 'Review Optimization Recommendations', completed: false, stepNum: 4 },
-                                { label: 'File Tax Return', completed: false, stepNum: 5 }
-                              ]} 
+                          ) : (
+                            <AuditPanel
+                              analysisProgress={analysisProgress}
+                              taxData={taxData}
+                              taxCalculationResult={taxCalculationResult}
+                              formType={formType}
+                              setActiveStep={setActiveStep}
                             />
-                          </div>
+                          )}
                         </motion.div>
+                      )}
 
-                        {/* Middle Columns: Left (Actions/insights) & Right (Timeline/Status) */}
-                        <motion.div 
-                          variants={dashboardItemVariants}
-                          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+                      {/* Stage 5: Recommendations page */}
+                      {activeStep === 5 && (
+                        <motion.div
+                          key="step-5"
+                          initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                          className="space-y-6 font-sans"
                         >
-                          
-                          {/* Left Columns (Span 2) */}
-                          <div className="lg:col-span-2 space-y-6">
-                            {/* AI Summary Card */}
-                            <DashboardCard variant="accent-purple">
-                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 z-10 relative">
-                                <div className="space-y-3.5 flex-1 text-left">
-                                  <div className="space-y-0.5">
-                                    <span className="text-[9px] text-purple-400 font-bold uppercase tracking-wider font-mono block">AI Copilot</span>
-                                    <h3 className="text-[17px] font-semibold text-white tracking-tight font-sans flex items-center gap-2">
-                                      <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-                                      TaxSense Copilot
-                                    </h3>
-                                  </div>
-                                  <p className="text-[13px] text-slate-300 leading-relaxed font-normal font-sans">
-                                    I've reviewed your Form 16. You can reduce your taxable income by another <span className="text-white font-semibold font-mono">₹77,896</span>.
-                                  </p>
-                                  <CopilotDetailsDrawer 
-                                    isOpen={isCopilotExpanded} 
-                                    onToggle={() => setIsCopilotExpanded(!isCopilotExpanded)} 
-                                    confidence={97} 
-                                  />
-                                </div>
-                                
-                                <MetricCard 
-                                  title="Tax Health Score" 
-                                  value={85} 
-                                  maxVal={100} 
-                                  badgeText="Good • Claim 80D" 
-                                  badgeType="success" 
-                                />
+                          {taxData.grossSalary === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-slate-900/40 border-2 border-dashed border-slate-800/50 rounded-3xl backdrop-blur-md">
+                              <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center mb-4">
+                                <Cpu className="w-8 h-8 text-slate-600" />
                               </div>
-                            </DashboardCard>
-
-                            {/* Volumetric Next Step CTA Spotlight (Apple Wallet style) */}
-                            <RecommendationCard 
-                              title="Claim Health Insurance (Section 80D)"
-                              description="We detected zero claims under Section 80D. Synced profiles usually save an additional ₹25,000 in taxable deductions."
-                              savings="₹25,000"
-                              difficulty="Easy"
-                              time="3 minutes"
-                              documents={['Insurance Premium Receipt']}
-                              confidence="High"
-                              onAction={() => setActiveStep(6)}
+                              <h3 className="text-sm font-bold text-slate-400 tracking-tight">Diagnostic Standby</h3>
+                              <p className="text-xs text-slate-505 font-medium mt-2 max-w-sm mx-auto">
+                                Tax calculation diagnostics are waiting for income data. Upload a Form 16 or enter manual values to generate a regime comparison.
+                              </p>
+                            </div>
+                          ) : (
+                            <RecommendationsPanel
+                              taxData={taxData}
+                              taxCalculationResult={taxCalculationResult}
+                              incomeProfile={incomeProfile}
+                              confirmedDeductions={confirmedDeductions}
+                              formType={formType}
+                              formatINR={formatINR}
+                              setActiveStep={setActiveStep}
                             />
-
-                            {/* Ingested Document Ledger */}
-                            {uploadedFiles.length > 0 ? (
-                              <DashboardCard variant="secondary" className="space-y-3 p-6">
-                                <SectionHeader 
-                                  title="Ingested Document Ledger" 
-                                  subtitle="FILES" 
-                                  icon={FolderOpen} 
-                                  iconColor="text-blue-400" 
-                                />
-                                <div className="space-y-2.5">
-                                  {uploadedFiles.map((doc) => (
-                                    <LedgerRow 
-                                      key={doc.id} 
-                                      doc={doc} 
-                                      onPreview={() => setActivePreviewDoc(doc)} 
-                                    />
-                                  ))}
-                                  {(taxData.stcg > 0 || taxData.ltcg > 0) && (
-                                    <LedgerRow 
-                                      doc={{
-                                        id: 'equity-cg-csv',
-                                        name: 'Equity_Capital_Gains.csv',
-                                        size: '1.2 MB',
-                                        uploadTime: 'Jul 4, 19:40',
-                                        status: 'Verified',
-                                        confidence: 98
-                                      }} 
-                                      onPreview={() => setActivePreviewDoc({
-                                        id: 'equity-cg-csv',
-                                        name: 'Equity_Capital_Gains.csv',
-                                        size: '1.2 MB',
-                                        uploadTime: 'Jul 4, 19:40',
-                                        status: 'Verified',
-                                        confidence: 98,
-                                        employer: 'Zerodha Sync',
-                                        financialYear: 'FY 2025-26',
-                                        pages: 1
-                                      })} 
-                                    />
-                                  )}
-                                </div>
-                              </DashboardCard>
-                            ) : (
-                              /* Low-profile inline upload row when empty */
-                              <div className="bg-[#0f172a]/30 border border-white/[0.05] rounded-2xl p-4 flex items-center justify-between gap-4 backdrop-blur-md hover:border-white/[0.08] transition-all duration-300">
-                                <div className="flex items-center gap-2.5 text-left">
-                                  <FolderOpen className="w-4 h-4 text-slate-500" />
-                                  <span className="text-xs font-semibold text-slate-400">No documents ingested in this session</span>
-                                </div>
-                                <button 
-                                  onClick={() => setActiveStep(3)}
-                                  className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider cursor-pointer focus:outline-none"
-                                >
-                                  Open Vault →
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Right Columns (Span 1) */}
-                          <div className="space-y-6">
-                            
-                            {/* Latest AI Insights drawer card */}
-                            <DashboardCard variant="secondary" className="space-y-4">
-                              <SectionHeader 
-                                title="Latest Copilot Alerts" 
-                                subtitle="AI INSIGHTS" 
-                                icon={Sparkles} 
-                                iconColor="text-purple-400" 
-                              />
-                              
-                              <div className="space-y-3.5">
-                                <AlertCard 
-                                  title="Section 80D Audit"
-                                  message="You paid zero medical premiums. Seniors aged 60+ parents unlock an extra limit of ₹50,000."
-                                  type="warning"
-                                />
-                                <AlertCard 
-                                  title="HRA rent exemption"
-                                  message="Confirm rent receipt logs to check compliance with Section 10(13A). Rent above 1L requires landlord PAN."
-                                  type="warning"
-                                />
-                              </div>
-                            </DashboardCard>
-
-                            {/* Recent Activity Log timeline card */}
-                            <DashboardCard variant="secondary" className="space-y-4">
-                              <SectionHeader 
-                                title="Activity History" 
-                                subtitle="WORKSPACE" 
-                                icon={History} 
-                                iconColor="text-slate-400" 
-                              />
-                              
-                              <div className="space-y-4 text-left">
-                                <div className="space-y-2">
-                                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono block">Today</span>
-                                  <div className="relative pl-6 space-y-4">
-                                    <div className="absolute left-[11px] top-2 bottom-2 w-[1px] bg-slate-800 pointer-events-none" />
-                                    <TimelineItem 
-                                      label="Form 16 uploaded" 
-                                      desc="Auto extraction computed successfully" 
-                                      date="19:40" 
-                                      icon={FileText} 
-                                      iconColor="text-blue-400" 
-                                    />
-                                    <TimelineItem 
-                                      label="Sandbox profile active" 
-                                      desc="Secure local connection established" 
-                                      date="19:38" 
-                                      icon={Cpu} 
-                                      iconColor="text-blue-400" 
-                                    />
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono block">Yesterday</span>
-                                  <div className="relative pl-6 space-y-4">
-                                    <div className="absolute left-[11px] top-2 bottom-2 w-[1px] bg-slate-850 pointer-events-none" />
-                                    <TimelineItem 
-                                      label="Regime optimized" 
-                                      desc="New regime saves ₹18,240" 
-                                      date="15:45" 
-                                      icon={TrendingUp} 
-                                      iconColor="text-emerald-450" 
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </DashboardCard>
-                          </div>
+                          )}
                         </motion.div>
-                      </motion.div>
-                    )}
+                      )}
 
-                    {/* Stage 3: Dedicated Document Vault page */}
-                    {activeStep === 3 && (
-                      <motion.div
-                        key="step-3"
-                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="space-y-6"
-                      >
-                        <Suspense fallback={<div className="h-[400px] bg-slate-900/10 animate-pulse rounded-3xl" />}>
-                          <DocumentVault 
-                            onFileUpload={() => {}} 
-                            setActiveStep={setActiveStep}
-                            onViewExtractedFields={() => setShowConfirmScreen(true)}
-                          />
-                        </Suspense>
-                      </motion.div>
-                    )}
-
-                    {/* Stage 4: AI Analysis page */}
-                    {activeStep === 4 && (
-                      <motion.div
-                        key="step-4"
-                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="font-sans max-w-6xl mx-auto space-y-6"
-                      >
-                        {uploadedFiles.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-slate-900/40 border-2 border-dashed border-slate-800/50 rounded-3xl backdrop-blur-md max-w-2xl mx-auto">
-                            <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center mb-4">
-                              <Sparkles className="w-8 h-8 text-slate-600" />
-                            </div>
-                            <h3 className="text-sm font-bold text-slate-400 tracking-tight">AI Audit Standby</h3>
-                            <p className="text-xs text-slate-505 font-medium mt-2 max-w-sm mx-auto">
-                              The TaxSense AI engine requires a Form 16 document to perform compliance validations. Upload a file in the Document Vault to begin the audit.
-                            </p>
-                          </div>
-                        ) : (
-                          <AuditPanel 
-                            analysisProgress={analysisProgress}
-                            taxData={taxData}
-                            taxCalculationResult={taxCalculationResult}
-                            formType={formType}
-                            setActiveStep={setActiveStep}
-                          />
-                        )}
-                      </motion.div>
-                    )}
-
-                    {/* Stage 5: Recommendations page */}
-                    {activeStep === 5 && (
-                      <motion.div
-                        key="step-5"
-                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="space-y-6 font-sans"
-                      >
-                        {taxData.grossSalary === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-slate-900/40 border-2 border-dashed border-slate-800/50 rounded-3xl backdrop-blur-md">
-                            <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center mb-4">
-                              <Cpu className="w-8 h-8 text-slate-600" />
-                            </div>
-                            <h3 className="text-sm font-bold text-slate-400 tracking-tight">Diagnostic Standby</h3>
-                            <p className="text-xs text-slate-505 font-medium mt-2 max-w-sm mx-auto">
-                              Tax calculation diagnostics are waiting for income data. Upload a Form 16 or enter manual values to generate a regime comparison.
-                            </p>
-                          </div>
-                        ) : (
-                          <RecommendationsPanel 
-                            taxData={taxData}
-                            taxCalculationResult={taxCalculationResult}
+                      {/* Stage 6: Guided Filing Experience */}
+                      {activeStep === 6 && (
+                        <motion.div
+                          key="step-6"
+                          initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                          className="space-y-6 font-sans"
+                        >
+                          <FilingWorkspacePanel
+                            guidedFilingStep={guidedFilingStep}
+                            setGuidedFilingStep={setGuidedFilingStep}
                             incomeProfile={incomeProfile}
-                            confirmedDeductions={confirmedDeductions}
-                            formType={formType}
+                            taxData={taxData}
+                            handleNumericChange={handleNumericChange}
+                            executeFilingSubmission={executeFilingSubmission}
+                            taxCalculationResult={taxCalculationResult}
                             formatINR={formatINR}
                             setActiveStep={setActiveStep}
                           />
-                        )}
-                      </motion.div>
-                    )}
+                        </motion.div>
+                      )}
 
-                    {/* Stage 6: Guided Filing Experience */}
-                    {activeStep === 6 && (
-                      <motion.div
-                        key="step-6"
-                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="space-y-6 font-sans"
-                      >
-                        <FilingWorkspacePanel
-                          guidedFilingStep={guidedFilingStep}
-                          setGuidedFilingStep={setGuidedFilingStep}
-                          incomeProfile={incomeProfile}
-                          taxData={taxData}
-                          handleNumericChange={handleNumericChange}
-                          executeFilingSubmission={executeFilingSubmission}
-                          taxCalculationResult={taxCalculationResult}
-                          formatINR={formatINR}
-                          setActiveStep={setActiveStep}
-                        />
-                      </motion.div>
-                    )}
+                      {/* Stage 10: Timeline History & Archives */}
+                      {activeStep === 10 && (
+                        <Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
+                          <HistoryArchive
+                            setActiveStep={setActiveStep}
+                          />
+                        </Suspense>
+                      )}
 
-                    {/* Stage 10: Timeline History & Archives */}
-                    {activeStep === 10 && (
-                      <Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
-                        <HistoryArchive
-                          setActiveStep={setActiveStep}
-                        />
-                      </Suspense>
-                    )}
+                    </AnimatePresence>
 
-                  </AnimatePresence>
+                  </main>
 
-                </main>
+                  {/* Unified Footer */}
+                  <footer className="border-t border-slate-200/50 dark:border-white/[0.04] bg-white/30 dark:bg-[#040608]/30 backdrop-blur-md py-4 px-8 mt-auto shrink-0 z-10 relative select-none">
+                    <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 dark:text-slate-450 font-sans">
+                      <p className="font-mono uppercase tracking-wider text-[8.5px] font-bold text-center sm:text-left">
+                        © 2026 TaxSense Inc. <span className="text-slate-300 dark:text-slate-700/60 mx-1.5">|</span> Built for Indian salaried employees under AY 2026-27 rules.
+                      </p>
+                      <div className="flex items-center gap-3 text-[8.5px] uppercase tracking-widest font-extrabold select-none">
+                        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          Secure Local Sandbox
+                        </span>
+                        <span className="text-slate-350 dark:text-slate-650">•</span>
+                        <span className="text-blue-600 dark:text-blue-400">Gateway: Active</span>
+                      </div>
+                    </div>
+                  </footer>
 
-                {/* Unified Footer */}
-                <footer className="border-t border-white/[0.04] dark:border-slate-900/50 bg-[#040608]/40 dark:bg-slate-900/10 py-5 px-6 text-center text-[10px] text-slate-600 mt-auto shrink-0 z-10 relative">
-                  <p>© 2026 TaxSense Inc. | Built for Indian salaried employees under AY 2026-27 rules.</p>
-                </footer>
+                </div>
 
               </div>
 
-            </div>
+              <AICopilot isOpen={isFloatingAIChatOpen} onClose={() => setIsFloatingAIChatOpen(false)} />
 
-            <AICopilot isOpen={isFloatingAIChatOpen} onClose={() => setIsFloatingAIChatOpen(false)} />
-
-            {/* Toggle trigger for Right side copilot drawer */}
-            {!isFloatingAIChatOpen && (
-              <button
-                onClick={() => setIsFloatingAIChatOpen(true)}
-                className="fixed right-6 bottom-6 z-40 p-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_22px_rgba(16,185,129,0.55)] cursor-pointer transition-all hover:scale-108 duration-300 active:scale-95 flex items-center justify-center group"
-              >
-                <Sparkles className="w-5 h-5 text-slate-950 transition-transform group-hover:rotate-12 duration-300" />
-              </button>
-            )}
-
-            {/* Settings Dialog Panel Overlay */}
-            <AnimatePresence>
-              {isSettingsOpen && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/80 backdrop-blur-sm"
+              {/* Toggle trigger for Right side copilot drawer */}
+              {!isFloatingAIChatOpen && activeStep !== 5 && (
+                <button
+                  onClick={() => setIsFloatingAIChatOpen(true)}
+                  className="absolute right-6 bottom-6 z-40 p-3.5 bg-gradient-to-br from-emerald-400 to-blue-600 hover:from-emerald-500 hover:to-blue-700 text-white font-bold rounded-full shadow-[0_4px_12px_rgba(16,185,129,0.2)] hover:shadow-[0_4px_18px_rgba(37,99,235,0.45)] cursor-pointer transition-all hover:scale-108 duration-300 active:scale-95 flex items-center justify-center group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400"
                 >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className="bg-slate-905 border border-slate-850 rounded-3xl p-6 max-w-md w-full shadow-2xl relative z-50 space-y-5 text-xs font-sans"
-                  >
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <Settings className="w-4.5 h-4.5 text-slate-400" />
-                        <span className="font-extrabold text-slate-200 uppercase tracking-wider text-[11px]">Filing Preferences & Sandbox Settings</span>
-                      </div>
-                      <button 
-                        onClick={() => setIsSettingsOpen(false)}
-                        className="p-1 hover:bg-white/[0.04] rounded text-slate-500 hover:text-white cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="space-y-4">
-
-
-                      {/* Store settings */}
-                      <div className="space-y-1.5">
-                        <span className="font-bold text-slate-300 block">ITR Filing Rules</span>
-                        <div className="grid grid-cols-2 gap-3 pt-1">
-                          <label className="flex items-center gap-2.5 p-2 bg-slate-950/40 border border-slate-850 rounded-xl cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={formType === 'ITR-2'} 
-                              onChange={(e) => setFormType(e.target.checked ? 'ITR-2' : 'ITR-1')} 
-                              className="rounded border-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
-                            />
-                            <span className="font-semibold text-slate-400">ITR-2 Form</span>
-                          </label>
-                          <label className="flex items-center gap-2.5 p-2 bg-slate-950/40 border border-slate-850 rounded-xl cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={multiHouse} 
-                              onChange={(e) => setMultiHouse(e.target.checked)} 
-                              className="rounded border-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
-                            />
-                            <span className="font-semibold text-slate-400">Multi House Property</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Sidebar Behavior Settings */}
-                      <div className="space-y-1.5 pt-4 border-t border-slate-800/80">
-                        <span className="font-bold text-slate-300 block">Sidebar Behavior</span>
-                        <div className="flex flex-col gap-2 pt-1">
-                          <div className="grid grid-cols-3 gap-2">
-                            {(['pinned', 'collapsed', 'auto_hover'] as const).map((behavior) => {
-                              const isSelected = sidebarBehavior === behavior;
-                              const label = behavior === 'pinned' ? 'Pinned' : behavior === 'collapsed' ? 'Collapsed' : 'Auto Hover';
-                              return (
-                                <button
-                                  key={behavior}
-                                  type="button"
-                                  onClick={() => setSidebarBehavior(behavior)}
-                                  className={`py-2 px-2.5 rounded-xl border text-center font-bold text-[9.5px] uppercase tracking-wider transition-all duration-150 cursor-pointer ${
-                                    isSelected 
-                                      ? 'bg-blue-600/10 text-blue-400 border-blue-500/30' 
-                                      : 'bg-slate-950/20 border-slate-850 text-slate-500 hover:text-slate-200 hover:bg-slate-900/40'
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <p className="text-[10px] text-slate-550 font-normal leading-normal pl-1">
-                            {sidebarBehavior === 'pinned' && 'Sidebar is locked open.'}
-                            {sidebarBehavior === 'collapsed' && 'Sidebar remains minimized (hover disabled).'}
-                            {sidebarBehavior === 'auto_hover' && 'Hovering the collapsed sidebar expands it.'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2.5 pt-4 border-t border-slate-800/80">
-                        <span className="font-bold text-slate-400 block uppercase tracking-wider text-[9px] font-mono">Support & Documentation</span>
-                        <div className="flex flex-col gap-2 font-semibold text-slate-450 pl-1">
-                          <a href="#" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 w-fit">
-                            <span>Privacy Sandbox Policy</span>
-                            <ArrowRight className="w-3 h-3 text-slate-600" />
-                          </a>
-                          <a href="#" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 w-fit">
-                            <span>Section 139(1) Filing Guide</span>
-                            <ArrowRight className="w-3 h-3 text-slate-600" />
-                          </a>
-                          <a href="#" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 w-fit">
-                            <span>Income Tax Department APIs documentation</span>
-                            <ArrowRight className="w-3 h-3 text-slate-600" />
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5 pt-4 border-t border-slate-800/80">
-                        <span className="font-bold text-red-400 block">Danger Zone</span>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => {
-                              clearFilingHistory();
-                              setIsSettingsOpen(false);
-                            }}
-                            className="flex-1 py-2 bg-red-950/20 hover:bg-red-900/30 border border-red-500/20 hover:border-red-500/40 text-red-400 font-bold rounded-xl cursor-pointer text-center select-none active:scale-95 transition-all"
-                          >
-                            Clear archives history
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
+                  <Sparkles className="w-5 h-5 text-white transition-transform group-hover:rotate-12 duration-300" />
+                </button>
               )}
-            </AnimatePresence>
 
-            {/* Filing Completion Celebration Overlay Modal */}
-            <AnimatePresence>
-              {showCelebration && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/90 backdrop-blur-md"
-                >
+              {/* Settings Dialog Panel Overlay */}
+              <AnimatePresence>
+                {isSettingsOpen && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="text-center space-y-6 max-w-md w-full p-8 bg-slate-905 border border-slate-850 rounded-3xl relative overflow-hidden shadow-2xl"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
                   >
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none" />
-                    
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-455 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2 animate-bounce">
-                      <CheckCircle className="w-9 h-9 text-emerald-400" />
-                    </div>
-
-                    <div className="space-y-2 z-10 relative">
-                      <h2 className="text-xl font-bold tracking-tight text-white">ITR Return Logged Successfully!</h2>
-                      <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                        Your filing draft has been compiled, audited against AY 2026-27 rules, and logged to your local sandbox archives database.
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setShowCelebration(false);
-                        setGuidedFilingStep(1);
-                        setActiveStep(10); // Route directly to Timeline Archives (Stage 10)
-                      }}
-                      className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 select-none active:scale-95 block z-10 relative"
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative z-50 space-y-5 text-xs font-sans text-left text-slate-700 dark:text-slate-300"
                     >
-                      View Timeline history
-                    </button>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <Settings className="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" />
+                          <span className="font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px]">Filing Preferences & Sandbox Settings</span>
+                        </div>
+                        <button
+                          onClick={() => setIsSettingsOpen(false)}
+                          className="p-1 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
 
-          </div>
-        );
-      })()}
+                      <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
+                        {/* Preset Profiles Section */}
+                        <div className="space-y-1.5">
+                          <span className="font-bold text-slate-900 dark:text-slate-200 block">Load Mock Filing Presets</span>
+                          <div className="grid grid-cols-3 gap-2.5 pt-1">
+                            {[
+                              { id: 'developer', name: 'Salaried Developer', desc: '₹14.5L Salary + 80C' },
+                              { id: 'freelancer', name: 'IT Freelancer', desc: '₹7.5L Gross, no HRA' },
+                              { id: 'executive', name: 'Corporate Exec', desc: '₹45L HNW + Gains' }
+                            ].map((preset) => (
+                              <button
+                                key={preset.id}
+                                onClick={() => handleLoadPreset(preset.id as any)}
+                                className="p-2.5 bg-slate-50 hover:bg-slate-105 dark:bg-slate-950/40 dark:hover:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer text-left transition-all duration-150 active:scale-95 flex flex-col justify-between h-20 w-full"
+                              >
+                                <span className="font-bold text-[10px] text-slate-850 dark:text-slate-250 leading-tight">{preset.name}</span>
+                                <span className="text-[8.5px] text-slate-500 dark:text-slate-500 mt-1 leading-snug">{preset.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Slab compliance selection */}
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                          <div className="space-y-1.5">
+                            <span className="font-bold text-slate-900 dark:text-slate-200 block">Assessment Compliance Year</span>
+                            <select
+                              value={complianceYear}
+                              onChange={(e) => {
+                                setComplianceYear(e.target.value);
+                                localStorage.setItem('taxsense_compliance_year', e.target.value);
+                                showToast(`Switched compliance rules to ${e.target.value}`, 'info');
+                              }}
+                              className="w-full bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer font-medium"
+                            >
+                              <option value="AY 2026-27 (New regime focus)">AY 2026-27 (New slab rules)</option>
+                              <option value="AY 2025-26 (Standard slabs)">AY 2025-26 (Standard old slabs)</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <span className="font-bold text-slate-900 dark:text-slate-200 block">ITR Filing Rules</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <label className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={formType === 'ITR-2'}
+                                  onChange={(e) => setFormType(e.target.checked ? 'ITR-2' : 'ITR-1')}
+                                  className="rounded border-slate-300 dark:border-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
+                                />
+                                <span className="font-semibold text-slate-600 dark:text-slate-400 text-[10px]">ITR-2 Form</span>
+                              </label>
+                              <label className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={multiHouse}
+                                  onChange={(e) => setMultiHouse(e.target.checked)}
+                                  className="rounded border-slate-300 dark:border-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
+                                />
+                                <span className="font-semibold text-slate-600 dark:text-slate-400 text-[10px]">Multi House</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* AI Engine & Temperature */}
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-200 dark:border-slate-800/80">
+                          <div className="space-y-1.5">
+                            <span className="font-bold text-slate-900 dark:text-slate-200 block">AI Copilot Brain</span>
+                            <select
+                              value={aiModel}
+                              onChange={(e) => {
+                                setAiModel(e.target.value);
+                                localStorage.setItem('taxsense_ai_model', e.target.value);
+                                showToast(`AI Copilot engine upgraded to ${e.target.value}`, 'success');
+                              }}
+                              className="w-full bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer font-medium"
+                            >
+                              <option value="Gemini 1.5 Pro">Gemini 1.5 Pro (Default)</option>
+                              <option value="Gemini 1.5 Flash">Gemini 1.5 Flash (Ultra Fast)</option>
+                              <option value="Gemini 2.0 Flash (Experimental)">Gemini 2.0 Flash (Advanced)</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-slate-900 dark:text-slate-200">AI Temperature</span>
+                              <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400 font-bold">{aiTemperature}</span>
+                            </div>
+                            <div className="flex items-center gap-2 pt-2">
+                              <input
+                                type="range"
+                                min="0.1"
+                                max="1.0"
+                                step="0.1"
+                                value={aiTemperature}
+                                onChange={(e) => {
+                                  const temp = parseFloat(e.target.value);
+                                  setAiTemperature(temp);
+                                  localStorage.setItem('taxsense_ai_temp', temp.toString());
+                                }}
+                                className="w-full accent-blue-650 dark:accent-blue-500 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg cursor-pointer"
+                              />
+                            </div>
+                            <div className="flex justify-between text-[8px] text-slate-550 pl-0.5">
+                              <span>Precise</span>
+                              <span>Creative</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sidebar Behavior Settings */}
+                        <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-slate-800/80">
+                          <span className="font-bold text-slate-900 dark:text-slate-200 block">Sidebar Behavior</span>
+                          <div className="flex flex-col gap-2 pt-1">
+                            <div className="grid grid-cols-3 gap-2">
+                              {(['pinned', 'collapsed', 'auto_hover'] as const).map((behavior) => {
+                                const isSelected = sidebarBehavior === behavior;
+                                const label = behavior === 'pinned' ? 'Pinned' : behavior === 'collapsed' ? 'Collapsed' : 'Auto Hover';
+                                return (
+                                  <button
+                                    key={behavior}
+                                    type="button"
+                                    onClick={() => setSidebarBehavior(behavior)}
+                                    className={`py-2 px-2.5 rounded-xl border text-center font-bold text-[9.5px] uppercase tracking-wider transition-all duration-150 cursor-pointer ${isSelected
+                                        ? 'bg-blue-600/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                                        : 'bg-slate-50 dark:bg-slate-950/20 border-slate-200 dark:border-slate-850 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900/40'
+                                      }`}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-500 font-normal leading-normal pl-1">
+                              {sidebarBehavior === 'pinned' && 'Sidebar is locked open.'}
+                              {sidebarBehavior === 'collapsed' && 'Sidebar remains minimized (hover disabled).'}
+                              {sidebarBehavior === 'auto_hover' && 'Hovering the collapsed sidebar expands it.'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2.5 pt-3 border-t border-slate-200 dark:border-slate-800/80">
+                          <span className="font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider text-[9px] font-mono">Support & Documentation</span>
+                          <div className="flex flex-col gap-2 font-semibold pl-1">
+                            <a href="#" className="text-slate-650 dark:text-slate-450 hover:text-emerald-650 dark:hover:text-emerald-450 transition-colors flex items-center gap-1.5 w-fit">
+                              <span>Privacy Sandbox Policy</span>
+                              <ArrowRight className="w-3 h-3 text-slate-400 dark:text-slate-600" />
+                            </a>
+                            <a href="#" className="text-slate-650 dark:text-slate-450 hover:text-emerald-650 dark:hover:text-emerald-450 transition-colors flex items-center gap-1.5 w-fit">
+                              <span>Section 139(1) Filing Guide</span>
+                              <ArrowRight className="w-3 h-3 text-slate-400 dark:text-slate-600" />
+                            </a>
+                            <a href="#" className="text-slate-650 dark:text-slate-450 hover:text-emerald-650 dark:hover:text-emerald-450 transition-colors flex items-center gap-1.5 w-fit">
+                              <span>Income Tax Department APIs documentation</span>
+                              <ArrowRight className="w-3 h-3 text-slate-400 dark:text-slate-600" />
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-slate-800/80">
+                          <span className="font-bold text-red-650 dark:text-red-400 block">Danger Zone</span>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => {
+                                clearFilingHistory();
+                                setIsSettingsOpen(false);
+                              }}
+                              className="flex-1 py-2 bg-red-50 hover:bg-red-105 dark:bg-red-950/20 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-500/20 hover:border-red-300 dark:hover:border-red-500/40 text-red-600 dark:text-red-400 font-bold rounded-xl cursor-pointer text-center select-none active:scale-95 transition-all text-[11px]"
+                            >
+                              Clear archives history
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Filing Completion Celebration Overlay Modal */}
+              <AnimatePresence>
+                {showCelebration && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.25 }}
+                      className="text-center space-y-6 max-w-md w-full p-8 bg-slate-900 border border-slate-800 rounded-3xl relative overflow-hidden shadow-2xl"
+                    >
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none" />
+
+                      <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-455 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2 animate-bounce">
+                        <CheckCircle className="w-9 h-9 text-emerald-400" />
+                      </div>
+
+                      <div className="space-y-2 z-10 relative">
+                        <h2 className="text-xl font-bold tracking-tight text-white">ITR Return Logged Successfully!</h2>
+                        <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                          Your filing draft has been compiled, audited against AY 2026-27 rules, and logged to your local sandbox archives database.
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setShowCelebration(false);
+                          setGuidedFilingStep(1);
+                          setActiveStep(10); // Route directly to Timeline Archives (Stage 10)
+                        }}
+                        className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 select-none active:scale-95 block z-10 relative"
+                      >
+                        View Timeline history
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+            </div>
+          );
+        })()}
 
       </Suspense>
 
@@ -1507,9 +1757,9 @@ export default function App() {
       </AnimatePresence>
 
       <FilingGuide isOpen={isFilingGuideOpen} onClose={() => setIsFilingGuideOpen(false)} />
-      
+
       {/* Ledger document preview modal */}
-      <DocumentPreviewModal 
+      <DocumentPreviewModal
         isOpen={activePreviewDoc !== null}
         onClose={() => setActivePreviewDoc(null)}
         document={activePreviewDoc || {}}

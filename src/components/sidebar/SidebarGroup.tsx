@@ -25,10 +25,10 @@ export const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, isExpanded, c
       {/* Category Toggle Row */}
       <button
         onClick={() => toggleGroup(title)}
-        className="w-full flex items-center justify-between px-3 mt-2.5 mb-1.5 text-[8.5px] text-slate-500 hover:text-slate-350 font-bold uppercase tracking-[0.15em] select-none cursor-pointer focus:outline-none group/group-btn"
+        className="w-full flex items-center justify-between px-3 mt-2.5 mb-1.5 text-[8.5px] text-slate-550 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-350 font-bold uppercase tracking-[0.15em] select-none cursor-pointer focus:outline-none group/group-btn"
       >
         <span>{title}</span>
-        <ChevronRight className={`w-3 h-3 text-slate-600 group-hover/group-btn:text-slate-400 transition-transform duration-200 ${
+        <ChevronRight className={`w-3 h-3 text-slate-500 dark:text-slate-600 group-hover/group-btn:text-slate-700 dark:group-hover/group-btn:text-slate-400 transition-transform duration-200 ${
           isOpen ? 'rotate-90' : ''
         }`} />
       </button>

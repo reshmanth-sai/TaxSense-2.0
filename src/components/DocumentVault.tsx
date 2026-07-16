@@ -525,9 +525,9 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
 
   const renderHeader = () => (
     <div className="space-y-2 py-4 text-left">
-      <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider font-mono block">AY 2026-27 Secure Workspace</span>
-      <h1 className="text-3xl font-black tracking-tight text-white">Document Vault</h1>
-      <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+      <span className="text-[10px] text-blue-600 dark:text-blue-500 font-bold uppercase tracking-wider font-mono block">AY 2026-27 Secure Workspace</span>
+      <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Document Vault</h1>
+      <p className="text-xs text-slate-650 dark:text-slate-400 max-w-2xl leading-relaxed">
         Upload your Form 16 securely. We'll automatically extract, verify, and prepare your return.
       </p>
     </div>
@@ -573,7 +573,7 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
                       value={manualRawText}
                       onChange={(e) => setManualRawText(e.target.value)}
                       placeholder="Paste the raw text content of your Form 16 here..."
-                      className="w-full h-48 bg-slate-955 border border-slate-805 rounded-xl p-3 text-xs text-slate-300 font-mono focus:outline-none focus:border-blue-500/50 placeholder-slate-600 resize-none"
+                      className="w-full h-48 bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 font-mono focus:outline-none focus:border-blue-500/50 placeholder-slate-600 resize-none"
                       autoFocus
                     />
                     <div className="flex justify-end gap-3">
@@ -650,7 +650,7 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
                         value={manualRawText}
                         onChange={(e) => setManualRawText(e.target.value)}
                         placeholder="Paste the raw text content of your Form 16 here..."
-                        className="w-full h-48 bg-slate-955 border border-slate-805 rounded-xl p-3 text-xs text-slate-300 font-mono focus:outline-none focus:border-blue-500/50 placeholder-slate-600 resize-none"
+                        className="w-full h-48 bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 font-mono focus:outline-none focus:border-blue-500/50 placeholder-slate-600 resize-none"
                         autoFocus
                       />
                       <div className="flex justify-end gap-3">
@@ -765,14 +765,14 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
         className="space-y-6 py-2 text-left"
       >
         {/* 1. Success Hero (Cohesive Verification Report Card) */}
-        <div className="bg-[#0f172a]/20 border border-slate-800 rounded-[24px] p-6 backdrop-blur-md relative overflow-hidden flex flex-col sm:flex-row sm:items-center gap-6">
+        <div className="bg-white dark:bg-[#0f172a]/20 border border-slate-200 dark:border-slate-800 rounded-[24px] p-6 shadow-sm backdrop-blur-md relative overflow-hidden flex flex-col sm:flex-row sm:items-center gap-6">
           <div className="absolute inset-0 bg-radial-at-t from-emerald-500/[0.01] to-transparent pointer-events-none" />
           
           <AnimatedSuccessCheckmark />
           
           <div className="space-y-1">
-            <h3 className="text-lg font-black text-slate-100 font-sans tracking-tight">Your Form 16 is ready</h3>
-            <p className="text-xs text-slate-400 font-semibold leading-relaxed font-sans">
+            <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 font-sans tracking-tight">Your Form 16 is ready</h3>
+            <p className="text-xs text-slate-650 dark:text-slate-400 font-semibold leading-relaxed font-sans">
               We’ve securely verified your salary, deductions, and tax information. Your return is now ready for review.
             </p>
             <div className="flex items-center gap-2 pt-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono select-none">
@@ -836,16 +836,16 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
           />
 
           {/* Advanced Actions and Payload Details Panel */}
-          <div className="p-5 bg-slate-900/20 border border-white/[0.03] rounded-2xl flex flex-col justify-between gap-4 text-left">
+          <div className="p-5 bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-white/[0.03] rounded-2xl flex flex-col justify-between gap-4 text-left shadow-xs">
             <div className="space-y-2">
-              <h5 className="text-[10px] font-bold text-slate-505 uppercase tracking-wider font-mono">Parsed Details</h5>
-              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+              <h5 className="text-[10px] font-bold text-slate-550 dark:text-slate-550 uppercase tracking-wider font-mono">Parsed Details</h5>
+              <p className="text-xs text-slate-650 dark:text-slate-400 font-semibold leading-relaxed">
                 Advanced users can inspect the raw text records and key-value mapping resolved during OCR extraction.
               </p>
             </div>
             <button
               onClick={onViewExtractedFields}
-              className="w-full py-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.04] hover:border-white/[0.08] text-slate-300 hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer text-center select-none active:scale-98"
+              className="w-full py-3 bg-slate-100/50 dark:bg-white/[0.02] hover:bg-slate-200/50 dark:hover:bg-white/[0.05] border border-slate-200 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer text-center select-none active:scale-98"
             >
               View Extracted Data
             </button>
@@ -893,7 +893,7 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
         )}
 
         {/* 5. Bottom Guidance Action Buttons Footer */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-slate-900/60 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-900/60 w-full">
           <PrimaryCTA onClick={() => setActiveStep?.(4)}>
             Continue to AI Recommendations
           </PrimaryCTA>
@@ -905,7 +905,7 @@ export default function DocumentVault({ onFileUpload, setActiveStep, onViewExtra
               setBackgroundProcessing(false);
               clearUploadedFiles();
             }}
-            className="px-5 py-2.5 bg-transparent hover:bg-white/5 border border-white/[0.04] text-slate-450 hover:text-slate-200 font-semibold text-xs rounded-xl transition-all duration-200 active:scale-98 select-none focus:outline-none"
+            className="px-5 py-2.5 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 border border-slate-200 dark:border-white/[0.04] text-slate-600 dark:text-slate-450 hover:text-slate-900 dark:hover:text-slate-200 font-semibold text-xs rounded-xl transition-all duration-200 active:scale-98 select-none focus:outline-none cursor-pointer"
           >
             Clear & Upload New File
           </button>

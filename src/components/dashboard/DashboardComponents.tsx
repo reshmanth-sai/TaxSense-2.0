@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  FileText, 
-  Cpu, 
-  TrendingUp, 
-  Sparkles, 
-  FolderOpen, 
-  ArrowRight, 
-  Download, 
-  Eye, 
-  ShieldCheck, 
-  ChevronDown, 
-  ChevronUp, 
+import {
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  Cpu,
+  TrendingUp,
+  Sparkles,
+  FolderOpen,
+  ArrowRight,
+  Download,
+  Eye,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
   Info,
   Clock,
   Settings,
@@ -29,11 +29,11 @@ interface ComponentProps {
 }
 
 // 1. Primary Action Button (Blue)
-export const PrimaryButton: React.FC<ComponentProps & { disabled?: boolean }> = ({ 
-  children, 
-  className = '', 
-  onClick, 
-  disabled = false 
+export const PrimaryButton: React.FC<ComponentProps & { disabled?: boolean }> = ({
+  children,
+  className = '',
+  onClick,
+  disabled = false
 }) => {
   return (
     <motion.button
@@ -50,11 +50,11 @@ export const PrimaryButton: React.FC<ComponentProps & { disabled?: boolean }> = 
 };
 
 // 2. Secondary Ghost Button (Glass border)
-export const SecondaryButton: React.FC<ComponentProps & { disabled?: boolean }> = ({ 
-  children, 
-  className = '', 
-  onClick, 
-  disabled = false 
+export const SecondaryButton: React.FC<ComponentProps & { disabled?: boolean }> = ({
+  children,
+  className = '',
+  onClick,
+  disabled = false
 }) => {
   return (
     <motion.button
@@ -70,48 +70,48 @@ export const SecondaryButton: React.FC<ComponentProps & { disabled?: boolean }> 
 };
 
 // 3. Premium Glass Card Container
-export const DashboardCard: React.FC<ComponentProps & { 
+export const DashboardCard: React.FC<ComponentProps & {
   variant?: 'primary' | 'secondary' | 'accent-purple' | 'accent-amber';
   interactive?: boolean;
-}> = ({ 
-  children, 
-  className = '', 
-  onClick, 
-  variant = 'primary', 
-  interactive = false 
+}> = ({
+  children,
+  className = '',
+  onClick,
+  variant = 'primary',
+  interactive = false
 }) => {
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'secondary':
-        return 'bg-white/[0.01] border-white/[0.015] shadow-xs';
-      case 'accent-purple':
-        return 'bg-gradient-to-b from-slate-900/40 to-slate-950/30 border-purple-500/15 shadow-[0_8px_32px_0_rgba(168,85,247,0.015)]';
-      case 'accent-amber':
-        return 'bg-slate-900/30 border-amber-500/15 shadow-[0_8px_32px_0_rgba(245,158,11,0.015)]';
-      case 'primary':
-      default:
-        return 'bg-slate-900/35 border-white/[0.04] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]';
-    }
+    const getVariantStyles = () => {
+      switch (variant) {
+        case 'secondary':
+          return 'bg-white/40 dark:bg-white/[0.01] border-slate-200/50 dark:border-white/[0.015] shadow-xs';
+        case 'accent-purple':
+          return 'bg-gradient-to-b from-purple-50/50 to-purple-100/30 dark:from-slate-900/40 dark:to-slate-950/30 border-purple-200/40 dark:border-purple-500/15 shadow-[0_8px_32px_0_rgba(168,85,247,0.015)]';
+        case 'accent-amber':
+          return 'bg-gradient-to-b from-amber-50/50 to-amber-100/30 dark:from-slate-900/30 dark:to-slate-950/20 border-amber-200/40 dark:border-amber-500/15 shadow-[0_8px_32px_0_rgba(245,158,11,0.015)]';
+        case 'primary':
+        default:
+          return 'bg-white/40 dark:bg-slate-900/35 border-slate-200/50 dark:border-white/[0.04] shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.3)]';
+      }
+    };
+
+    const cardProps = interactive ? {
+      whileHover: { scale: 1.01, y: -4 },
+      transition: { type: 'spring' as const, stiffness: 350, damping: 30 }
+    } : {};
+
+    return (
+      <motion.div
+        {...cardProps}
+        onClick={onClick}
+        className={`backdrop-blur-md border rounded-[24px] p-6 relative overflow-hidden transition-shadow duration-300 ${getVariantStyles()} ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      >
+        {variant === 'accent-purple' && (
+          <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-purple-500/[0.03] blur-[60px] rounded-full pointer-events-none" />
+        )}
+        {children}
+      </motion.div>
+    );
   };
-
-  const cardProps = interactive ? {
-    whileHover: { scale: 1.01, y: -4 },
-    transition: { type: 'spring' as const, stiffness: 350, damping: 30 }
-  } : {};
-
-  return (
-    <motion.div
-      {...cardProps}
-      onClick={onClick}
-      className={`backdrop-blur-md border rounded-[24px] p-6 relative overflow-hidden transition-shadow duration-300 ${getVariantStyles()} ${onClick ? 'cursor-pointer' : ''} ${className}`}
-    >
-      {variant === 'accent-purple' && (
-        <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-purple-500/[0.03] blur-[60px] rounded-full pointer-events-none" />
-      )}
-      {children}
-    </motion.div>
-  );
-};
 
 // 4. Section Header with Icon
 export const SectionHeader: React.FC<{
@@ -125,11 +125,11 @@ export const SectionHeader: React.FC<{
     <div className="flex items-center justify-between gap-4 mb-4 select-none">
       <div className="space-y-0.5 text-left">
         {subtitle && (
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono block">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider font-mono block">
             {subtitle}
           </span>
         )}
-        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
           {Icon && <Icon className={`w-4 h-4 ${iconColor}`} />}
           {title}
         </h3>
@@ -197,7 +197,7 @@ export const ProgressWidget: React.FC<{
             cx="18"
             cy="18"
             r="15.915"
-            className="text-slate-800/40"
+            className="text-slate-200/50 dark:text-slate-800/40"
             strokeWidth="2.5"
             stroke="currentColor"
             fill="transparent"
@@ -214,11 +214,11 @@ export const ProgressWidget: React.FC<{
             fill="transparent"
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-900 dark:text-white">
           <span className="text-base font-extrabold font-mono leading-none tracking-tight">
             {percentage}%
           </span>
-          <span className="text-[7px] text-slate-500 uppercase tracking-widest font-bold mt-1">
+          <span className="text-[7px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mt-1">
             Complete
           </span>
         </div>
@@ -227,12 +227,12 @@ export const ProgressWidget: React.FC<{
       <div className="relative mt-3.5 flex flex-col items-center">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="text-[10px] text-slate-400 hover:text-emerald-400 font-semibold tracking-normal cursor-pointer transition-colors flex items-center gap-1 focus:outline-none"
+          className="text-[10px] text-slate-650 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 font-semibold tracking-normal cursor-pointer transition-colors flex items-center gap-1 focus:outline-none"
         >
           <span>{stepsRemaining} Steps Remaining</span>
           <ChevronDown className={`w-3 h-3 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
-        <span className="text-[8.5px] text-slate-500 font-mono mt-0.5">Est. {estimatedMinutes} mins left</span>
+        <span className="text-[8.5px] text-slate-550 dark:text-slate-400 font-mono mt-0.5">Est. {estimatedMinutes} mins left</span>
 
         {/* Hover/Click Checklist Panel */}
         <AnimatePresence>
@@ -242,20 +242,20 @@ export const ProgressWidget: React.FC<{
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 5, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full mt-2 w-56 p-4 bg-slate-950/95 border border-slate-800 rounded-2xl shadow-2xl z-50 text-left space-y-3 backdrop-blur-md"
+              className="absolute top-full mt-2 w-56 p-4 bg-white/95 dark:bg-slate-950/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 text-left space-y-3 backdrop-blur-md"
             >
-              <span className="text-[8px] text-slate-500 font-black uppercase tracking-wider font-mono block">
+              <span className="text-[8px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider font-mono block">
                 ITR-1 Checklist
               </span>
-              <div className="space-y-2 text-[10.5px] font-semibold text-slate-300">
+              <div className="space-y-2 text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">
                 {checklist.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2.5">
                     {item.completed ? (
                       <span className="w-4 h-4 rounded-full border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-[7px] text-emerald-400">✓</span>
                     ) : (
-                      <span className="w-4 h-4 rounded-full border border-slate-800 bg-slate-900 flex items-center justify-center text-[8px] text-slate-550 font-mono">{item.stepNum}</span>
+                      <span className="w-4 h-4 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-[8px] text-slate-600 dark:text-slate-400 font-mono">{item.stepNum}</span>
                     )}
-                    <span className={item.completed ? 'line-through text-slate-500 font-normal' : 'text-slate-300'}>
+                    <span className={item.completed ? 'line-through text-slate-400 dark:text-slate-500 font-normal' : 'text-slate-700 dark:text-slate-300'}>
                       {item.label}
                     </span>
                   </div>
@@ -277,42 +277,42 @@ export const RecommendationCard: React.FC<{
   difficulty: 'Easy' | 'Medium' | 'Hard';
   time: string;
   documents: string[];
-  confidence: 'High' | 'Medium' | 'Low';
+  confidence: number | string;
   onAction: () => void;
 }> = ({ title, description, savings, difficulty, time, documents, confidence, onAction }) => {
   return (
-    <div className="relative bg-slate-900/30 border border-white/[0.03] shadow-[inset_0_1px_1px_rgba(255,255,255,0.015)] rounded-[20px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden group hover:scale-[1.01] hover:border-blue-500/20 hover:bg-slate-900/40 transition-all duration-300">
+    <div className="relative bg-white/40 dark:bg-slate-900/30 border border-slate-200/50 dark:border-white/[0.03] shadow-[inset_0_1px_1px_rgba(255,255,255,0.015)] rounded-[20px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden group hover:scale-[1.01] hover:border-blue-500/20 hover:bg-white/60 dark:hover:bg-slate-900/40 transition-all duration-300">
       {/* Spotlight Ambient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/[0.01] via-transparent to-transparent pointer-events-none group-hover:from-blue-500/[0.02]" />
-      
+
       <div className="space-y-3.5 z-10 text-left flex-1">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] text-emerald-450 font-bold uppercase tracking-wider font-mono">
+            <span className="text-[9px] text-emerald-600 dark:text-emerald-450 font-bold uppercase tracking-wider font-mono">
               Next Highest Impact Action
             </span>
             <StatusBadge type="success" text={`Save ${savings}`} pulsing={true} />
           </div>
-          <h4 className="text-[14px] font-semibold text-white tracking-tight font-sans">
+          <h4 className="text-[14px] font-semibold text-slate-900 dark:text-white tracking-tight font-sans">
             {title}
           </h4>
         </div>
-        <p className="text-[11.5px] text-slate-450 leading-[1.6] font-normal">
+        <p className="text-[11.5px] text-slate-600 dark:text-slate-400 leading-[1.6] font-normal">
           {description}
         </p>
         <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          <span className="text-[9.5px] bg-white/[0.01] text-slate-400 border border-white/[0.02] px-2.5 py-0.5 rounded-full font-medium">
+          <span className="inline-flex items-center justify-center text-[9.5px] leading-none bg-slate-100/50 dark:bg-white/[0.01] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.02] px-2.5 py-1 rounded-full font-medium h-5">
             Time: {time}
           </span>
-          <span className="text-[9.5px] bg-white/[0.01] text-slate-400 border border-white/[0.02] px-2.5 py-0.5 rounded-full font-medium">
+          <span className="inline-flex items-center justify-center text-[9.5px] leading-none bg-slate-100/50 dark:bg-white/[0.01] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.02] px-2.5 py-1 rounded-full font-medium h-5">
             Difficulty: {difficulty}
           </span>
-          <span className="text-[9.5px] bg-purple-500/10 text-purple-400 border border-purple-500/15 px-2.5 py-0.5 rounded-full font-bold">
-            Confidence: {confidence}
+          <span className="inline-flex items-center justify-center text-[9.5px] leading-none bg-purple-500/10 text-purple-655 dark:text-purple-400 border border-purple-500/15 px-2.5 py-1 rounded-full font-bold h-5">
+            Confidence: {typeof confidence === 'number' ? `${confidence}%` : confidence}
           </span>
           {documents.length > 0 && (
-            <span className="text-[9.5px] bg-white/[0.01] text-slate-400 border border-white/[0.02] px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1.5">
-              <FileText className="w-2.5 h-2.5 text-slate-500" />
+            <span className="inline-flex items-center justify-center text-[9.5px] leading-none bg-slate-100/50 dark:bg-white/[0.01] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.02] px-2.5 py-1 rounded-full font-medium gap-1.5 h-5">
+              <FileText className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
               Requires: {documents.join(', ')}
             </span>
           )}
@@ -322,7 +322,7 @@ export const RecommendationCard: React.FC<{
         whileHover={{ scale: 1.03, y: -0.5 }}
         whileTap={{ scale: 0.98 }}
         onClick={onAction}
-        className="px-4.5 py-2.5 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.12] text-white font-semibold text-xs rounded-full transition-all duration-200 cursor-pointer shrink-0 select-none flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+        className="px-4.5 py-2.5 bg-slate-100/50 dark:bg-white/[0.02] hover:bg-slate-250/60 dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] hover:border-slate-350 dark:hover:border-white/[0.12] text-slate-700 dark:text-white font-semibold text-xs rounded-full transition-all duration-200 cursor-pointer shrink-0 select-none flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
       >
         <span>Continue</span>
         <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
@@ -335,16 +335,31 @@ export const RecommendationCard: React.FC<{
 export const AlertCard: React.FC<{
   title: string;
   message: string;
-  type?: 'warning' | 'info';
+  type?: 'warning' | 'info' | 'insight';
 }> = ({ title, message, type = 'warning' }) => {
   const isWarning = type === 'warning';
+  const isInsight = type === 'insight';
+  const Icon = isInsight ? Sparkles : AlertCircle;
+
+  const borderClass = isWarning
+    ? 'border-l-alert'
+    : isInsight
+      ? 'border-l-ai-brand'
+      : 'border-l-primary-action';
+
+  const textClass = isWarning
+    ? 'text-alert'
+    : isInsight
+      ? 'text-ai-brand'
+      : 'text-primary-action';
+
   return (
-    <div className={`p-4 bg-slate-950/30 border border-white/[0.03] border-l-2 ${isWarning ? 'border-l-amber-500' : 'border-l-blue-500'} rounded-xl space-y-1.5 hover:border-white/[0.06] transition-all`}>
-      <div className={`flex items-center gap-1.5 text-[9px] font-bold ${isWarning ? 'text-amber-500' : 'text-blue-400'} uppercase tracking-wider`}>
-        <AlertCircle className={`w-3.5 h-3.5 ${isWarning ? 'text-amber-500' : 'text-blue-455'} shrink-0`} />
+    <div className={`p-4 bg-white/40 dark:bg-slate-950/30 border border-slate-200/50 dark:border-white/[0.03] border-l-2 ${borderClass} rounded-xl space-y-1.5 hover:border-slate-300 dark:hover:border-white/[0.06] transition-all`}>
+      <div className={`flex items-center gap-1.5 text-[9px] font-bold ${textClass} uppercase tracking-wider`}>
+        <Icon className="w-3.5 h-3.5 shrink-0" />
         {title}
       </div>
-      <p className="text-[10px] text-slate-400 leading-normal font-medium text-left">
+      <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-normal font-medium text-left">
         {message}
       </p>
     </div>
@@ -360,16 +375,16 @@ export const MetricCard: React.FC<{
   badgeType?: 'success' | 'warning' | 'info' | 'ai' | 'neutral';
 }> = ({ title, value, maxVal, badgeText, badgeType = 'success' }) => {
   return (
-    <div className="border-l border-white/[0.04] pl-6 shrink-0 flex flex-col justify-center space-y-1 text-left">
-      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-mono">
+    <div className="border-l border-slate-200/50 dark:border-white/[0.04] pl-6 shrink-0 flex flex-col justify-center space-y-1 text-left">
+      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block font-mono">
         {title}
       </span>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-4xl font-extrabold text-white font-mono tracking-tighter leading-none">
+        <span className="text-4xl font-extrabold text-slate-900 dark:text-white font-mono tracking-tighter leading-none">
           {value}
         </span>
         {maxVal && (
-          <span className="text-[11px] text-slate-500 font-bold font-mono">/ {maxVal}</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold font-mono">/ {maxVal}</span>
         )}
       </div>
       {badgeText && (
@@ -392,14 +407,14 @@ export const TimelineItem: React.FC<{
   return (
     <div className="relative text-xs space-y-0.5 group/node">
       {/* Node Bullet */}
-      <div className="absolute -left-[27px] top-0.5 w-6 h-6 rounded-full bg-slate-950 border border-white/[0.08] shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center z-10 group-hover/node:border-blue-500/20 transition-all duration-300">
+      <div className="absolute -left-[27px] top-0.5 w-6 h-6 rounded-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/[0.08] shadow-[0_0_10px_rgba(0,0,0,0.05)] dark:shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center z-10 group-hover/node:border-blue-500/20 transition-all duration-300">
         <IconComp className={`w-3 h-3 ${iconColor}`} />
       </div>
       <div className="pl-3">
-        <span className="block font-semibold text-slate-200 font-sans tracking-tight">
+        <span className="block font-semibold text-slate-850 dark:text-slate-200 font-sans tracking-tight">
           {label}
         </span>
-        <span className="block text-[9.5px] text-slate-450 leading-relaxed font-normal">
+        <span className="block text-[9.5px] text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
           {desc}
         </span>
         <span className="block text-[8px] text-slate-500/80 font-mono mt-0.5">
@@ -434,7 +449,7 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         {/* Backdrop Blur */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -448,14 +463,14 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-          className="relative bg-slate-900/95 border border-white/[0.08] rounded-[24px] w-full max-w-lg p-6 overflow-hidden shadow-2xl z-10"
+          className="relative bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-white/[0.08] rounded-[24px] w-full max-w-lg p-6 overflow-hidden shadow-2xl z-10"
         >
           {/* Top Header bar */}
-          <div className="flex items-center justify-between border-b border-white/[0.05] pb-4 mb-4">
+          <div className="flex items-center justify-between border-b border-slate-200/55 dark:border-white/[0.05] pb-4 mb-4">
             <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-blue-400" />
+              <FileText className="w-5 h-5 text-blue-500" />
               <div className="text-left">
-                <h3 className="text-sm font-semibold text-white truncate max-w-[280px]">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[280px]">
                   {doc.name}
                 </h3>
                 <p className="text-[10px] text-slate-500">
@@ -463,9 +478,9 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
                 </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
             >
               ✕
             </button>
@@ -478,7 +493,7 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
                 <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider block">
                   Employer Entity
                 </span>
-                <span className="text-xs text-slate-200 font-medium">
+                <span className="text-xs text-slate-800 dark:text-slate-200 font-medium">
                   {doc.employer || 'Acme Corp Technologies'}
                 </span>
               </div>
@@ -486,7 +501,7 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
                 <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider block">
                   Financial Year
                 </span>
-                <span className="text-xs text-slate-200 font-medium">
+                <span className="text-xs text-slate-800 dark:text-slate-200 font-medium">
                   {doc.financialYear || 'FY 2025-26'}
                 </span>
               </div>
@@ -494,7 +509,7 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
                 <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider block">
                   Total Pages
                 </span>
-                <span className="text-xs text-slate-200 font-medium">
+                <span className="text-xs text-slate-800 dark:text-slate-200 font-medium">
                   {doc.pages || 3} pages
                 </span>
               </div>
@@ -502,33 +517,33 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
                 <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider block">
                   OCR Accuracy
                 </span>
-                <span className="text-xs text-purple-400 font-bold font-mono">
+                <span className="text-xs text-purple-650 dark:text-purple-400 font-bold font-mono">
                   {doc.confidence || 99}% Confidence
                 </span>
               </div>
             </div>
 
             {/* Simulated Extracted Form Fields */}
-            <div className="border border-white/[0.04] bg-slate-950/40 rounded-xl p-3.5 space-y-2">
+            <div className="border border-slate-200/50 dark:border-white/[0.04] bg-slate-50/50 dark:bg-slate-900/40 rounded-xl p-3.5 space-y-2">
               <span className="text-[8px] text-slate-500 font-black uppercase tracking-wider font-mono block">
                 Extracted Payload Fields
               </span>
-              <div className="space-y-1.5 font-mono text-[10px] text-slate-300">
-                <div className="flex justify-between border-b border-white/[0.02] pb-1">
-                  <span className="text-slate-450">Gross Salary (Section 17)</span>
-                  <span className="text-emerald-400 font-bold">₹8,50,000</span>
+              <div className="space-y-1.5 font-mono text-[10px] text-slate-700 dark:text-slate-300">
+                <div className="flex justify-between border-b border-slate-200/30 dark:border-white/[0.02] pb-1">
+                  <span className="text-slate-650 dark:text-slate-450">Gross Salary (Section 17)</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">₹8,50,000</span>
                 </div>
-                <div className="flex justify-between border-b border-white/[0.02] pb-1">
-                  <span className="text-slate-450">Standard Deduction</span>
-                  <span className="text-slate-100">₹75,000</span>
+                <div className="flex justify-between border-b border-slate-200/30 dark:border-white/[0.02] pb-1">
+                  <span className="text-slate-650 dark:text-slate-450">Standard Deduction</span>
+                  <span className="text-slate-800 dark:text-slate-100">₹75,000</span>
                 </div>
-                <div className="flex justify-between border-b border-white/[0.02] pb-1">
-                  <span className="text-slate-450">PF Contribution (80C)</span>
-                  <span className="text-emerald-400">₹40,800</span>
+                <div className="flex justify-between border-b border-slate-200/30 dark:border-white/[0.02] pb-1">
+                  <span className="text-slate-650 dark:text-slate-450">PF Contribution (80C)</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">₹40,800</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-450">TDS Deducted (Employer)</span>
-                  <span className="text-emerald-400 font-bold">₹15,000</span>
+                  <span className="text-slate-650 dark:text-slate-450">TDS Deducted (Employer)</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">₹15,000</span>
                 </div>
               </div>
             </div>
@@ -538,18 +553,18 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
               <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider font-mono block">
                 Processing History
               </span>
-              <div className="flex items-center gap-1.5 text-[10.5px] text-slate-400 font-medium">
-                <div className="flex items-center gap-1 text-emerald-450">
+              <div className="flex items-center gap-1.5 text-[10.5px] text-slate-650 dark:text-slate-400 font-medium">
+                <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-450">
                   <CheckCircle className="w-3.5 h-3.5" />
                   <span>OCR Ingested</span>
                 </div>
-                <span className="text-slate-600">→</span>
-                <div className="flex items-center gap-1 text-emerald-450">
+                <span className="text-slate-400 dark:text-slate-600">→</span>
+                <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-450">
                   <CheckCircle className="w-3.5 h-3.5" />
                   <span>Payload Extracted</span>
                 </div>
-                <span className="text-slate-600">→</span>
-                <div className="flex items-center gap-1 text-emerald-450">
+                <span className="text-slate-400 dark:text-slate-600">→</span>
+                <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-450">
                   <CheckCircle className="w-3.5 h-3.5" />
                   <span>Verified OK</span>
                 </div>
@@ -557,7 +572,7 @@ export const DocumentPreviewModal: React.FC<PreviewProps> = ({ isOpen, onClose, 
             </div>
           </div>
 
-          <div className="flex justify-end gap-2.5 border-t border-white/[0.05] pt-4 mt-5">
+          <div className="flex justify-end gap-2.5 border-t border-slate-200/55 dark:border-white/[0.05] pt-4 mt-5">
             <SecondaryButton onClick={onClose}>Close</SecondaryButton>
             <PrimaryButton className="flex items-center gap-1.5">
               <Download className="w-3.5 h-3.5" />
@@ -579,29 +594,29 @@ export const CopilotDetailsDrawer: React.FC<{
   const [showConfidenceDetail, setShowConfidenceDetail] = useState(false);
 
   return (
-    <div className="mt-3.5 border-t border-white/[0.04] pt-3.5 text-left">
+    <div className="mt-3.5 border-t border-slate-200/50 dark:border-white/[0.04] pt-3.5 text-left">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {/* Interactive Confidence Badge */}
           <button
             onClick={() => setShowConfidenceDetail(!showConfidenceDetail)}
-            className="flex items-center gap-1.5 text-[10px] text-slate-300 hover:text-white font-medium bg-purple-500/10 hover:bg-purple-500/15 px-2 py-1 rounded-md border border-purple-500/20 cursor-pointer focus:outline-none"
+            className="flex items-center gap-1.5 text-[10px] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium bg-purple-500/10 hover:bg-purple-500/15 px-2 py-1 rounded-md border border-purple-250 dark:border-purple-500/20 cursor-pointer focus:outline-none"
             title="Click to view confidence calculation explanation"
           >
             <span>Confidence</span>
-            <span className="text-purple-400 font-bold font-mono">{confidence}%</span>
-            <Info className="w-3 h-3 text-purple-400" />
+            <span className="text-purple-650 dark:text-purple-400 font-bold font-mono">{confidence}%</span>
+            <Info className="w-3 h-3 text-purple-650 dark:text-purple-400" />
           </button>
 
           {/* Quick Stats */}
-          <span className="text-[10px] text-slate-500 font-medium">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
             AI Engine: Gemini Pro 1.5
           </span>
         </div>
 
         <button
           onClick={onToggle}
-          className="text-[11px] text-purple-400 hover:text-purple-300 font-semibold transition-colors flex items-center gap-1 cursor-pointer focus:outline-none"
+          className="text-[11px] text-purple-655 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold transition-colors flex items-center gap-1 cursor-pointer focus:outline-none"
         >
           <span>{isOpen ? 'Collapse Panel' : 'Explain Savings'}</span>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -615,9 +630,9 @@ export const CopilotDetailsDrawer: React.FC<{
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mt-3 p-3 bg-purple-950/20 border border-purple-900/30 rounded-xl space-y-2 text-[10.5px] leading-relaxed text-purple-200"
+            className="mt-3 p-3 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/50 dark:border-purple-900/30 rounded-xl space-y-2 text-[10.5px] leading-relaxed text-purple-800 dark:text-purple-200"
           >
-            <div className="flex items-center gap-1.5 font-bold text-purple-300 uppercase text-[9px] tracking-wider">
+            <div className="flex items-center gap-1.5 font-bold text-purple-700 dark:text-purple-300 uppercase text-[9px] tracking-wider">
               <Sparkles className="w-3.5 h-3.5" />
               Confidence Metric Breakdown
             </div>
@@ -644,25 +659,25 @@ export const CopilotDetailsDrawer: React.FC<{
           >
             {/* Why recommendation was made */}
             <div className="space-y-1.5">
-              <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider block">
+              <span className="text-[8.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
                 Why was this recommendation made?
               </span>
-              <p className="text-[11.5px] text-slate-355 leading-relaxed">
+              <p className="text-[11.5px] text-slate-650 dark:text-slate-300 leading-relaxed">
                 Our analysis of your Form 16 detected that while you have a gross salary of ₹8,50,000 and ₹40,800 deducted as employee PF contribution under Section 80C, your **Section 80D health insurance** allocation is currently ₹0. A typical salaried profile with this income range actively optimizes ₹25,000 in personal medical premiums, resulting in an immediate direct tax reduction of ₹5,200.
               </p>
             </div>
 
             {/* Documents analyzed */}
             <div className="space-y-1.5">
-              <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider block">
+              <span className="text-[8.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
                 Source Materials Analyzed
               </span>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-white/[0.04] rounded-lg text-[10.5px] text-slate-300">
-                  <FileText className="w-3.5 h-3.5 text-blue-400" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100/50 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.04] rounded-lg text-[10.5px] text-slate-700 dark:text-slate-300">
+                  <FileText className="w-3.5 h-3.5 text-blue-500" />
                   <span>Form_16_Mohit_FY25-26.pdf</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-white/[0.04] rounded-lg text-[10.5px] text-slate-300">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100/50 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.04] rounded-lg text-[10.5px] text-slate-700 dark:text-slate-300">
                   <ExternalLink className="w-3 h-3 text-slate-500" />
                   <span>Income Tax Rules API Portal</span>
                 </div>
@@ -671,17 +686,17 @@ export const CopilotDetailsDrawer: React.FC<{
 
             {/* Tax Rules Applied */}
             <div className="space-y-1.5">
-              <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider block">
+              <span className="text-[8.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
                 Income Tax Rules Applied
               </span>
-              <div className="space-y-2 text-[10.5px] text-slate-355 leading-relaxed bg-slate-950/30 p-3 rounded-xl border border-white/[0.02]">
-                <div className="flex justify-between border-b border-white/[0.02] pb-1.5">
-                  <span className="font-semibold text-slate-200">Section 80D</span>
-                  <span className="text-slate-400">Deduction for Medical Insurance Premium paid up to ₹25,000.</span>
+              <div className="space-y-2 text-[10.5px] text-slate-650 dark:text-slate-300 leading-relaxed bg-slate-100/50 dark:bg-slate-950/30 p-3 rounded-xl border border-slate-200 dark:border-white/[0.02]">
+                <div className="flex justify-between border-b border-slate-200/30 dark:border-white/[0.02] pb-1.5">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">Section 80D</span>
+                  <span className="text-slate-500 dark:text-slate-400">Deduction for Medical Insurance Premium paid up to ₹25,000.</span>
                 </div>
                 <div className="flex justify-between pt-0.5">
-                  <span className="font-semibold text-slate-200">AY 2026-27 (New Regime)</span>
-                  <span className="text-slate-400">Under the default New Regime, deductions are limited. Old Regime requires full filing confirmation.</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">AY 2026-27 (New Regime)</span>
+                  <span className="text-slate-500 dark:text-slate-400">Under the default New Regime, deductions are limited. Old Regime requires full filing confirmation.</span>
                 </div>
               </div>
             </div>
@@ -707,15 +722,15 @@ export const LedgerRow: React.FC<{
   const [hovered, setHovered] = useState(false);
 
   return (
-    <div 
+    <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex items-center justify-between p-3.5 bg-white/[0.01] hover:bg-white/[0.03] border border-white/[0.04] hover:border-white/[0.08] rounded-xl text-xs text-left relative transition-all group"
+      className="flex items-center justify-between p-3.5 bg-white/40 hover:bg-white/60 dark:bg-white/[0.01] dark:hover:bg-white/[0.03] border border-slate-200/50 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] rounded-xl text-xs text-left relative transition-all group"
     >
       <div className="flex items-center gap-3">
-        <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-400 transition-colors shrink-0" />
+        <FileText className="w-4 h-4 text-slate-450 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors shrink-0" />
         <div className="flex flex-col">
-          <span className="font-bold text-slate-200 group-hover:text-white transition-colors">
+          <span className="font-bold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
             {doc.name}
           </span>
           <span className="text-[8.5px] text-slate-500 font-mono">

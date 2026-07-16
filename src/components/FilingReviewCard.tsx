@@ -64,17 +64,17 @@ const ChecklistRow: React.FC<ChecklistRowProps> = React.memo(({
   onToggle 
 }) => {
   return (
-    <div className="border-b border-white/[0.03] last:border-b-0 py-3 text-left">
+    <div className="border-b border-slate-200 dark:border-white/[0.03] last:border-b-0 py-3 text-left">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between py-2 text-xs md:text-sm font-semibold text-slate-200 hover:text-white transition-colors cursor-pointer select-none"
+        className="w-full flex items-center justify-between py-2 text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer select-none"
       >
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-450 shrink-0" />
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450 shrink-0" />
           <span>{label}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-slate-400">{valueText}</span>
+          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">{valueText}</span>
           {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
         </div>
       </button>
@@ -89,8 +89,8 @@ const ChecklistRow: React.FC<ChecklistRowProps> = React.memo(({
             className="overflow-hidden"
           >
             <div className="mt-1 pb-3 pl-6 space-y-2">
-              <span className="text-[10px] text-emerald-450 uppercase font-bold tracking-wider block">Why this recommendation?</span>
-              <p className="text-xs text-slate-405 leading-relaxed bg-[#0E131B] border border-white/[0.02] p-4 rounded-xl">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-450 uppercase font-bold tracking-wider block">Why this recommendation?</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.02] p-4 rounded-xl">
                 {explanation}
               </p>
             </div>
@@ -167,39 +167,39 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
   }, []);
 
   return (
-    <div className="space-y-8 max-w-[1000px] mx-auto text-slate-100 py-4">
+    <div className="space-y-8 max-w-[1000px] mx-auto text-slate-800 dark:text-slate-100 py-4">
       
       {/* Centered Review Hero */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-400 text-[10px] font-bold uppercase tracking-wider mb-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider mb-2">
           <Sparkles className="h-3 w-3" />
           <span>Filing Audited & Verified</span>
         </div>
-        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-100">Everything looks ready.</h1>
-        <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Everything looks ready.</h1>
+        <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
           We've reviewed your salary, deductions, exemptions and filing profile. Everything has been verified against AY 2026–27 rules.
         </p>
       </div>
 
       {/* Estimated Savings Card with soft glow */}
-      <div className="relative max-w-lg mx-auto bg-[#0E131B] border border-white/[0.04] rounded-3xl p-8 text-center shadow-xl overflow-hidden group">
+      <div className="relative max-w-lg mx-auto bg-slate-50 dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.04] rounded-3xl p-8 text-center shadow-sm dark:shadow-xl overflow-hidden group">
         <div className="absolute inset-0 bg-emerald-500/[0.02] pointer-events-none" />
         <div className="absolute -top-12 -left-12 w-24 h-24 rounded-full bg-emerald-500/5 blur-2xl pointer-events-none" />
         
-        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Estimated Tax Savings</span>
+        <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">Estimated Tax Savings</span>
         <div className="my-3">
-          <span className="text-3xl md:text-4xl font-black text-emerald-400 tracking-tight">
+          <span className="text-3xl md:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
             <AnimatedCounter value={savingsAmount} />
           </span>
         </div>
-        <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
           Compared to filing without optimization
         </span>
       </div>
 
       {/* Verification Shield (Individual Chips) */}
-      <div className="bg-slate-900/10 border border-white/[0.03] rounded-3xl p-6 text-left max-w-2xl mx-auto space-y-3">
-        <span className="text-[10px] font-bold text-slate-405 uppercase tracking-wider block">Exemption Verification Shield</span>
+      <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-200 dark:border-white/[0.03] rounded-3xl p-6 text-left max-w-2xl mx-auto space-y-3 shadow-sm">
+        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wider block">Exemption Verification Shield</span>
         <div className="flex flex-wrap gap-2.5">
           {[
             'Form 16 Verified',
@@ -209,8 +209,8 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
             'Deductions Validated',
             'AY 2026–27 Rules Applied'
           ].map((chip) => (
-            <span key={chip} className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wider bg-[#0E131B] border border-white/[0.04] px-3 py-1.5 rounded-lg text-slate-300">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-450 shrink-0" />
+            <span key={chip} className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wider bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.04] px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 shadow-sm dark:shadow-none">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-455 shrink-0" />
               <span>{chip}</span>
             </span>
           ))}
@@ -218,7 +218,7 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
       </div>
 
       {/* Filing Summary Checklist */}
-      <div className="max-w-2xl mx-auto bg-[#0A0D14] border border-white/[0.04] rounded-3xl p-6 space-y-1">
+      <div className="max-w-2xl mx-auto bg-white dark:bg-[#0A0D14] border border-slate-200 dark:border-white/[0.04] rounded-3xl p-6 space-y-1 shadow-sm">
         <ChecklistRow 
           label="Personal Information" 
           valueText="Verified" 
@@ -264,10 +264,10 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
       </div>
 
       {/* Compliance Success Banner */}
-      <div className="max-w-2xl mx-auto bg-emerald-500/[0.02] border border-emerald-500/10 rounded-2xl p-4 flex items-start gap-3 text-left">
-        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-450 shrink-0 mt-0.5" />
-        <div className="space-y-0.5 text-xs text-slate-400 font-semibold">
-          <p className="text-emerald-400 font-bold uppercase tracking-wider text-[9.5px]">Filing Compliance Status</p>
+      <div className="max-w-2xl mx-auto bg-emerald-500/5 dark:bg-emerald-500/[0.02] border border-emerald-500/20 dark:border-emerald-500/10 rounded-2xl p-4 flex items-start gap-3 text-left">
+        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-455 shrink-0 mt-0.5" />
+        <div className="space-y-0.5 text-xs text-slate-600 dark:text-slate-400 font-semibold">
+          <p className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-[9.5px]">Filing Compliance Status</p>
           <p className="leading-relaxed text-[11px] pt-0.5">Your filing complies with current Income Tax rules. No issues detected.</p>
         </div>
       </div>
@@ -276,7 +276,7 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
       <div className="text-center pt-2">
         <button
           onClick={() => setIsDrawerOpen(true)}
-          className="text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300 transition-colors cursor-pointer border border-white/[0.04] bg-[#0E131B] px-5 py-2.5 rounded-xl hover:bg-slate-900"
+          className="text-xs font-bold uppercase tracking-wider text-blue-600 hover:text-blue-750 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer border border-slate-200 dark:border-white/[0.04] bg-white dark:bg-[#0E131B] px-5 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900"
         >
           Review Calculation Details
         </button>
@@ -286,7 +286,7 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
       <div className="max-w-2xl mx-auto pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
         <button
           onClick={onBack}
-          className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+          className="h-12 px-6 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
         >
           Back to Deductions
         </button>
@@ -316,17 +316,17 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 350 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-[#0A0D14] border-l border-white/[0.08] p-8 shadow-2xl z-50 flex flex-col justify-between overflow-y-auto text-left"
+              className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-white dark:bg-[#0A0D14] border-l border-slate-205 dark:border-white/[0.08] p-8 shadow-2xl z-50 flex flex-col justify-between overflow-y-auto text-left"
             >
               <div className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-white/[0.04]">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-white/[0.04]">
                   <div className="flex items-center gap-2">
-                    <FileCheck2 className="h-5 w-5 text-blue-400" />
-                    <span className="text-sm font-bold text-slate-100">Verification Ledger Details</span>
+                    <FileCheck2 className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Verification Ledger Details</span>
                   </div>
                   <button
                     onClick={() => setIsDrawerOpen(false)}
-                    className="p-2 hover:bg-white/[0.04] rounded-full text-slate-400 hover:text-slate-205 transition-colors cursor-pointer"
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-full text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-205 transition-colors cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -339,14 +339,14 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-900/60 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                  <Lock className="w-3.5 h-3.5 text-slate-650" />
+              <div className="pt-6 border-t border-slate-200 dark:border-slate-900/60 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-[10px] text-slate-550 dark:text-slate-500 font-bold uppercase tracking-wider">
+                  <Lock className="w-3.5 h-3.5 text-slate-550 dark:text-slate-650" />
                   <span>Encrypted Local Sandboxed Calculations</span>
                 </div>
                 <button
                   onClick={() => setIsDrawerOpen(false)}
-                  className="h-10 px-5 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-98"
+                  className="h-10 px-5 bg-slate-105 hover:bg-slate-200 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-98"
                 >
                   Close
                 </button>

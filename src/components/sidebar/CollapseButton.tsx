@@ -23,7 +23,7 @@ export const CollapseButton: React.FC = () => {
       onClick={handleClick}
       aria-label={isPinned ? "Collapse Sidebar" : "Pin Sidebar"}
       title={isPinned ? "Collapse Sidebar" : "Pin Sidebar"}
-      className="w-7 h-7 bg-slate-900 hover:bg-slate-800 text-slate-450 hover:text-white rounded-full border border-white/[0.08] shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50 shrink-0 select-none"
+      className="w-7 h-7 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-450 hover:text-slate-900 dark:hover:text-white rounded-full border border-slate-200 dark:border-white/[0.08] shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50 shrink-0 select-none"
     >
       {isPinned ? (
         <ChevronLeft className="w-3.5 h-3.5" />

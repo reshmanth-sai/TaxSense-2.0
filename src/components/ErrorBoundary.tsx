@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-xs text-slate-400 leading-relaxed font-semibold">
                 We ran into an unexpected problem while processing your document or loading the workspace.
               </p>
-              <p className="text-[10px] bg-slate-955 border border-slate-850 rounded-xl p-3 text-red-400 font-mono text-left leading-normal break-all max-h-32 overflow-y-auto">
+              <p className="text-[10px] bg-slate-950 border border-slate-800 rounded-xl p-3 text-red-400 font-mono text-left leading-normal break-all max-h-32 overflow-y-auto">
                 {this.state.error?.toString() || 'Unknown runtime exception'}
               </p>
             </div>

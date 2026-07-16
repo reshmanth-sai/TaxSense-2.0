@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Video Test</title>
+</head>
+<body style="background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px;">
+  <h1>Video Inspection</h1>
+  <!-- Serve from workspace root via http server -->
+  <video id="vid" src="/Screen_Recording_Converted.mp4" controls style="max-width: 90%; border: 2px solid #555;"></video>
+  <div style="margin-top: 20px;">
+    <button id="btn-start" onclick="seekTo(0)">Start</button>
+    <button id="btn-2" onclick="seekTo(2)">2s</button>
+    <button id="btn-4" onclick="seekTo(4)">4s</button>
+    <button id="btn-6" onclick="seekTo(6)">6s</button>
+    <button id="btn-8" onclick="seekTo(8)">8s</button>
+    <button id="btn-10" onclick="seekTo(10)">10s</button>
+    <button id="btn-12" onclick="seekTo(12)">12s</button>
+    <p>Current Time: <span id="time">0</span>s</p>
+  </div>
+  <script>
+    const vid = document.getElementById('vid');
+    vid.addEventListener('timeupdate', () => {
+      document.getElementById('time').innerText = vid.currentTime.toFixed(2);
+    });
+    function seekTo(sec) {
+      vid.currentTime = sec;
+      vid.play();
+    }
+  </script>
+</body>
+</html>

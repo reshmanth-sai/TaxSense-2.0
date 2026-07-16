@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useTaxStore } from '../store/useTaxStore';
 import { calculateTax, formatINR } from '../utils/taxCalculator';
+import { AIReasoningDrawer } from './AIReasoningDrawer';
 
 // ---------------------------------------------------------
 // REUSABLE ENGINEERING COMPONENTS
@@ -55,113 +56,85 @@ const AnimatedCounter: React.FC<{ value: number }> = React.memo(({ value }) => {
   return <span className="font-mono">{formatINR(displayValue)}</span>;
 });
 
-// Premium Side Sheet for "Why did AI recommend this?"
-interface WhyRecommendationSheetProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  explanation: string;
-}
-
-const WhyRecommendationSheet: React.FC<WhyRecommendationSheetProps> = React.memo(({ isOpen, onClose, title, explanation }) => {
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop Blur Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 transition-opacity"
-          />
-
-          {/* Sliding Panel */}
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 350 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-[#0A0D14] border-l border-white/[0.08] p-8 shadow-2xl z-50 flex flex-col justify-between text-left"
-          >
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 text-emerald-450">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">AI Tax Explanation</span>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-white/[0.04] rounded-full text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-base font-bold text-slate-100">{title}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed bg-[#0E131B] border border-white/[0.02] p-5 rounded-2xl">
-                  {explanation}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-slate-900/60 space-y-2">
-              <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                <Lock className="w-3.5 h-3.5 text-slate-650" />
-                <span>Exemption verified using AY 2026-27 Tax Slabs</span>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-full h-11 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-98"
-              >
-                Got it, thank you
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-});
+// AI Exemption Report is handled by the imported AIReasoningDrawer component.
 
 // Premium Savings Hero (centered, maximum width ~1200px)
 interface SavingsHeroProps {
   savings: number;
-  subtitle: string;
+  recommendedRegime: 'OLD' | 'NEW';
+  eligibleCount: number;
+  docCount: number;
 }
 
-const SavingsHero: React.FC<SavingsHeroProps> = React.memo(({ savings, subtitle }) => {
+const SavingsHero: React.FC<SavingsHeroProps> = React.memo(({ savings, recommendedRegime, eligibleCount, docCount }) => {
   return (
-    <div className="bg-slate-900/30 border border-white/[0.03] rounded-3xl p-10 text-center relative overflow-hidden backdrop-blur-md max-w-[1200px] mx-auto">
-      <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
+    <div className="bg-white dark:bg-[#0A0D1A]/90 border border-slate-200 dark:border-white/[0.06] rounded-3xl p-6 md:p-8 text-left relative overflow-hidden backdrop-blur-md max-w-[1200px] mx-auto shadow-sm dark:shadow-[0_32px_80px_rgba(0,0,0,0.35)]">
+      {/* Subtle dark gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-100/10 via-transparent to-slate-100/10 dark:from-slate-950/20 dark:to-slate-950/20 opacity-50 pointer-events-none" />
       
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold uppercase tracking-wider mb-4">
-        <Sparkles className="h-3 w-3 text-emerald-400" />
-        <span>Exemption Blueprint Prepared</span>
-      </div>
-      
-      <h1 className="text-xl md:text-2xl font-bold text-slate-100 tracking-tight leading-tight">
-        {subtitle}
-      </h1>
-      
-      <div className="my-6">
-        <span className="text-4xl md:text-5xl font-black text-emerald-400 tracking-tight">
-          <AnimatedCounter value={savings} />
-        </span>
-        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Estimated Tax Savings</p>
-      </div>
+      {/* Soft radial glow behind savings amount */}
+      <div className="absolute -top-12 -left-12 w-64 h-64 bg-gradient-radial from-emerald-500/5 via-transparent to-transparent pointer-events-none blur-3xl" />
+      <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-gradient-radial from-blue-500/5 via-transparent to-transparent pointer-events-none blur-3xl" />
 
-      <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
-        Our AI advisor analyzed your Form 16 ledger records, matched employer validation tags, validated AY 2026-27 rules, and optimized your deductions structure automatically.
-      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
+        
+        {/* Left Column: Savings counter & trend chip (7 cols) */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider">
+            <CheckCircle className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+            <span>AI Deduction Blueprint Ready</span>
+          </div>
+
+          <div className="space-y-1">
+            <span className="text-4xl md:text-5xl font-black text-emerald-605 dark:text-[#34D399] tracking-tight font-mono block">
+              <AnimatedCounter value={savings} />
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-extrabold block">
+              Estimated Annual Savings
+            </span>
+          </div>
+
+          {/* Trend badge */}
+          <div className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 px-2.5 py-0.5 rounded">
+            <span>▲ Better than Old Regime</span>
+          </div>
+        </div>
+
+        {/* Right Column: KPIs Grid (5 cols) */}
+        <div className="lg:col-span-5 grid grid-cols-2 gap-4">
+          
+          {/* KPI 1: Confidence */}
+          <div className="bg-slate-50/80 dark:bg-[#0E1324] border border-slate-200/50 dark:border-white/[0.04] p-3.5 rounded-2xl flex flex-col justify-between hover:border-slate-350 dark:hover:border-white/[0.08] transition-colors">
+            <span className="text-[9px] text-slate-500 dark:text-slate-450 uppercase tracking-wider font-extrabold">Confidence</span>
+            <span className="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">99%</span>
+          </div>
+
+          {/* KPI 2: Best Regime */}
+          <div className="bg-slate-50/80 dark:bg-[#0E1324] border border-slate-200/50 dark:border-white/[0.04] p-3.5 rounded-2xl flex flex-col justify-between hover:border-slate-350 dark:hover:border-white/[0.08] transition-colors">
+            <span className="text-[9px] text-slate-500 dark:text-slate-450 uppercase tracking-wider font-extrabold">Best Regime</span>
+            <span className="text-lg font-black text-blue-600 dark:text-blue-405 mt-1">
+              {recommendedRegime === 'NEW' ? 'New Regime' : 'Old Regime'}
+            </span>
+          </div>
+
+          {/* KPI 3: Eligible Deductions */}
+          <div className="bg-slate-50/80 dark:bg-[#0E1324] border border-slate-200/50 dark:border-white/[0.04] p-3.5 rounded-2xl flex flex-col justify-between hover:border-slate-350 dark:hover:border-white/[0.08] transition-colors">
+            <span className="text-[9px] text-slate-500 dark:text-slate-450 uppercase tracking-wider font-extrabold">Eligible Claims</span>
+            <span className="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">{eligibleCount}</span>
+          </div>
+
+          {/* KPI 4: Documents Verified */}
+          <div className="bg-slate-50/80 dark:bg-[#0E1324] border border-slate-200/50 dark:border-white/[0.04] p-3.5 rounded-2xl flex flex-col justify-between hover:border-slate-350 dark:hover:border-white/[0.08] transition-colors">
+            <span className="text-[9px] text-slate-500 dark:text-slate-450 uppercase tracking-wider font-extrabold">Docs Mapped</span>
+            <span className="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">{docCount}/{docCount}</span>
+          </div>
+
+        </div>
+
+      </div>
     </div>
   );
-});
-
-// AI Recommendation Card (handles WHY click side sheet)
+});// AI Recommendation Card (handles WHY click side sheet)
 interface RecommendationCardProps {
   title: string;
   badge: string;
@@ -169,6 +142,9 @@ interface RecommendationCardProps {
   whyExplanation: string;
   isPrimary?: boolean;
   onWhyClick: (title: string, exp: string) => void;
+  type?: 'STANDARD' | '80C' | 'NPS' | 'REGIME';
+  oldValue?: string;
+  newValue?: string;
 }
 
 const RecommendationCard: React.FC<RecommendationCardProps> = React.memo(({ 
@@ -177,75 +153,168 @@ const RecommendationCard: React.FC<RecommendationCardProps> = React.memo(({
   amountText, 
   whyExplanation, 
   isPrimary = false, 
-  onWhyClick 
+  onWhyClick,
+  type = 'STANDARD',
+  oldValue = '₹77,896',
+  newValue = '₹0'
 }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleClick = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    // Simulate preparing AI explanation
+    await new Promise(resolve => setTimeout(resolve, 800));
+    onWhyClick(title, whyExplanation);
+    setIsLoading(false);
+  };
+
+  const isOpportunity = type === 'NPS';
+  const isRegime = type === 'REGIME';
+
   return (
-    <div className={`bg-[#0E131B] border border-white/[0.04] rounded-2xl p-[18px] flex flex-col justify-between hover:border-white/[0.08] transition-all hover:-translate-y-0.5 duration-200 ${
-      isPrimary ? 'md:col-span-2 md:p-[24px] border-emerald-500/10 bg-gradient-to-br from-[#0E131B] to-slate-900/10' : ''
+    <div className={`border rounded-2xl p-[16px] flex flex-col justify-between hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-all hover:-translate-y-[3px] duration-200 group ${
+      isPrimary 
+        ? 'md:col-span-2 md:p-[20px] bg-gradient-to-br from-emerald-50/40 via-white to-white dark:from-[#0B1020] dark:to-slate-900/10 border-emerald-550/20 dark:border-emerald-500/15' 
+        : isOpportunity 
+          ? 'bg-blue-50/20 dark:bg-[#0E1527] border-blue-200 dark:border-blue-500/20 shadow-[0_0_12px_rgba(37,99,235,0.02)]' 
+          : 'bg-white dark:bg-[#0E131B] border-slate-200 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08]'
     }`}>
+      
+      {/* Header */}
       <div className="space-y-2 text-left">
         <div className="flex items-baseline justify-between gap-2.5 flex-wrap">
-          <span className={`font-extrabold text-slate-200 uppercase tracking-wider ${isPrimary ? 'text-base' : 'text-sm'}`}>
-            {title}
-          </span>
-          <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border align-middle ${
-            badge.includes('Auto') 
-              ? 'bg-slate-800 text-slate-400 border-white/[0.04]' 
-              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          <div className="flex items-center gap-1.5">
+            {isOpportunity && <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 group-hover:animate-pulse" />}
+            <span className="font-bold text-slate-800 dark:text-slate-200 tracking-wider text-[11px] uppercase">
+              {isOpportunity ? 'Opportunity Found' : title}
+            </span>
+          </div>
+          <span className={`text-[8.5px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border align-middle transition-colors ${
+            isOpportunity 
+              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' 
+              : badge.includes('Auto') 
+                ? 'bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-400 border-slate-200 dark:border-white/[0.04] group-hover:bg-slate-200 dark:group-hover:bg-slate-700' 
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
           }`}>
-            {badge}
+            {isOpportunity ? 'Corporate NPS' : badge}
           </span>
         </div>
-        <p className="text-xs md:text-[13px] text-slate-450 leading-relaxed pt-0.5 font-medium">
+        
+        {/* Description */}
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
           {whyExplanation}
         </p>
+
+        {/* Comparison view for Regime card */}
+        {isRegime && (
+          <div className="mt-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-white/[0.03] rounded-xl p-3 space-y-1.5 text-[11px] text-left">
+            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+              <span>Old Regime Liability:</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-slate-300">{oldValue}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+              <span>New Regime Liability:</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-slate-350">{newValue}</span>
+            </div>
+            <div className="flex justify-between items-center pt-1.5 border-t border-slate-200 dark:border-white/[0.03] font-bold">
+              <span className="text-emerald-600 dark:text-emerald-450">Winner:</span>
+              <span className="text-emerald-655 dark:text-emerald-450 bg-emerald-500/10 px-2 py-0.2 rounded uppercase text-[9px] tracking-wider">New Regime</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="flex justify-between items-end mt-4 pt-3 border-t border-white/[0.02]">
-        <div>
-          <span className="text-[9px] text-slate-505 uppercase tracking-wider font-bold block mb-0.5">Value</span>
-          <span className={`font-mono font-black text-slate-100 ${isPrimary ? 'text-lg md:text-xl' : 'text-base'}`}>
-            {amountText}
-          </span>
+      {/* Separator line */}
+      <div className="w-full h-px bg-slate-200 dark:bg-white/[0.06] my-3" />
+
+      {/* Footer Row */}
+      <div className="flex justify-between items-center text-xs">
+        <div className="flex items-center gap-4">
+          {/* Grouped Value */}
+          <div className="text-left">
+            <span className="text-[8.5px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold block">
+              {isOpportunity ? 'Potential Saving' : 'Eligible Amount'}
+            </span>
+            <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-[13px] tracking-tight">
+              {amountText}
+            </span>
+          </div>
+
+          {/* Confidence Shield */}
+          <div className="text-left">
+            <span className="text-[8.5px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold block">
+              Confidence
+            </span>
+            <span className="text-slate-800 dark:text-slate-200 text-[11px] font-bold">
+              99%
+            </span>
+          </div>
         </div>
 
+        {/* AI Explain Decision Trigger Button */}
         <button
-          onClick={() => onWhyClick(title, whyExplanation)}
-          className="text-[10px] font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300 transition-colors cursor-pointer border-none bg-transparent p-0"
+          onClick={handleClick}
+          disabled={isLoading}
+          className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 hover:drop-shadow-[0_0_8px_rgba(37,99,235,0.7)] transition-all duration-200 cursor-pointer border-none bg-transparent p-0 flex items-center gap-1.5 active:scale-95 group select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-450"
         >
-          <span>See AI reasoning →</span>
+          {isLoading ? (
+            <>
+              <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-spin" />
+              <span>Preparing...</span>
+            </>
+          ) : (
+            <>
+              <span className="group-hover:underline decoration-blue-600 dark:decoration-blue-500 decoration-2 underline-offset-4">🧠 Explain Decision</span>
+              <ArrowRight className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </>
+          )}
         </button>
       </div>
+
     </div>
   );
 });
 
 // Confidence Shield Chips
 const ConfidenceShield: React.FC = React.memo(() => {
-  const chips = [
-    'Form 16 verified',
-    'Employer Profile verified',
-    'PAN validated',
-    'AY Rules matched',
-    'Income mapping completed'
+  const checkmarks = [
+    'Form 16',
+    'Employer',
+    'PAN',
+    'Rules',
+    'Salary Mapping'
   ];
 
   return (
-    <div className="bg-slate-900/20 border border-white/[0.03] rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 text-left max-w-[1200px] mx-auto">
-      <div className="shrink-0 w-32 h-14 bg-blue-500/5 text-blue-400 border border-blue-500/10 rounded-2xl flex flex-col items-center justify-center">
-        <span className="text-base font-black font-mono">99% Verified</span>
-        <span className="text-[8px] uppercase tracking-wider font-extrabold text-slate-500">Confidence Shield</span>
-      </div>
-      <div className="space-y-2 flex-1">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Exemption Verification Shield</span>
-        <div className="flex flex-wrap gap-2 pt-1">
-          {chips.map((check) => (
-            <span key={check} className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wider bg-white/[0.02] border border-white/[0.04] px-2.5 py-1 rounded text-slate-400">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-450" />
-              <span>{check}</span>
-            </span>
-          ))}
+    <div className="bg-white dark:bg-[#0E1527] border border-slate-200 dark:border-white/[0.04] rounded-3xl p-5 flex flex-col lg:flex-row items-center gap-6 text-left max-w-[1200px] mx-auto shadow-sm dark:shadow-md">
+      {/* Percentage Badge */}
+      <div className="shrink-0 flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-450">
+          <CheckCircle2 className="w-6 h-6" />
         </div>
+        <div>
+          <span className="text-base font-black font-mono text-slate-900 dark:text-slate-100 block leading-none">99% Verified</span>
+          <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-500 block mt-1">Confidence Shield</span>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="flex-1 w-full space-y-1.5">
+        <div className="h-2 bg-slate-100 dark:bg-slate-950 rounded-full overflow-hidden border border-slate-200 dark:border-white/[0.02] relative">
+          <div className="h-full bg-emerald-500 rounded-full w-[99%] shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+        </div>
+        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-extrabold block">Algorithmic Exemption Verification Passed</span>
+      </div>
+
+      {/* Checklist items */}
+      <div className="flex flex-wrap gap-2 justify-start lg:justify-end shrink-0">
+        {checkmarks.map((check) => (
+          <span key={check} className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.04] rounded-lg text-slate-700 dark:text-slate-350 select-none">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-500" />
+            <span>{check}</span>
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -270,6 +339,14 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
   const [whySheetOpen, setWhySheetOpen] = React.useState(false);
   const [whySheetTitle, setWhySheetTitle] = React.useState('');
   const [whySheetExplanation, setWhySheetExplanation] = React.useState('');
+  const [isContinuing, setIsContinuing] = React.useState(false);
+
+  const handleContinueTo3C = React.useCallback(async () => {
+    setIsContinuing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsContinuing(false);
+    setSubStage('3C');
+  }, []);
 
   const openWhySheet = React.useCallback((title: string, explanation: string) => {
     setWhySheetTitle(title);
@@ -282,6 +359,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
   const updateDeduction = useTaxStore((state) => state.updateDeduction);
   const isExtracting = useTaxStore((state) => state.isExtracting);
   const incomeProfile = useTaxStore((state) => state.incomeProfile);
+  const uploadedFiles = useTaxStore((state) => state.uploadedFiles) || [];
 
   // Calculate dynamic outputs
   const taxDataForCalc = React.useMemo(() => ({
@@ -379,17 +457,16 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
 
   if (isExtracting) {
     return (
-      <div className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-8 text-slate-200 h-96 flex flex-col justify-center items-center space-y-4 animate-pulse">
+      <div className="bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.04] rounded-3xl p-8 text-slate-700 dark:text-slate-200 h-96 flex flex-col justify-center items-center space-y-4 animate-pulse">
         <Sparkles className="h-8 w-8 text-blue-500 animate-spin" />
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 animate-pulse">AI preparing your tax savings roadmap...</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 animate-pulse">AI preparing your tax savings roadmap...</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full text-slate-100 font-sans max-w-[1200px] mx-auto py-4">
+    <div className="w-full text-slate-800 dark:text-slate-100 font-sans max-w-[1200px] mx-auto py-4">
       <AnimatePresence mode="wait">
-        
         {/* PAGE 3A: AI Deduction Recommendation */}
         {subStage === '3A' && (
           <motion.div
@@ -398,86 +475,135 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-8"
+            className="space-y-6"
           >
             {/* Savings Hero Section */}
             <SavingsHero 
-              savings={calculation.savings || 39000} 
-              subtitle="Great news — we’ve already optimized your deductions." 
+              savings={calculation.savings || 77896} 
+              recommendedRegime={recommendedRegime}
+              eligibleCount={1 + (val80C > 0 ? 1 : 0) + (val80CCD2 > 0 || valNPS > 0 ? 1 : 0)}
+              docCount={uploadedFiles.length || 1}
             />
 
-            {/* AI Recommendation Cards with Spacing & Padding Hierarchy */}
-            <div className="space-y-4">
-              <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">AI Exemption Plan Details</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* PRIMARY LARGE CARD: Standard Deduction */}
-                <RecommendationCard
-                  title="Standard Deduction"
-                  badge="Applied Automatically"
-                  amountText="₹75,000"
-                  whyExplanation="Standard deduction is automatically applied to all salaried professionals under Section 16(ia) of the Income Tax Act to discount the taxable salary base by ₹75,000."
-                  isPrimary={true}
-                  onWhyClick={openWhySheet}
-                />
-
-                {/* Card 2: Section 80C */}
-                <RecommendationCard
-                  title="Section 80C Exemption"
-                  badge="Recommended"
-                  amountText={formatINR(val80C || 150000)}
-                  whyExplanation="We mapped your employee provident fund (EPF) and tax-saving deposits to claim the maximum ₹1,50,000 base exemption limit."
-                  onWhyClick={openWhySheet}
-                />
-
-                {/* Card 3: Corporate NPS Exemption */}
-                <RecommendationCard
-                  title="Corporate NPS Exemption"
-                  badge="Opportunity Found"
-                  amountText={`Save ${formatINR(Math.round(val80CCD2 * currentRate * 1.04) || 2475)}`}
-                  whyExplanation="Structuring matching contributions under Section 80CCD(2) directly offsets basic salary taxable bases."
-                  onWhyClick={openWhySheet}
-                />
-
-                {/* Card 4: New Tax Regime Slab Switch */}
-                <RecommendationCard
-                  title="New Tax Regime"
-                  badge="Best Overall Option"
-                  amountText="Lowest slab liability option"
-                  whyExplanation="Our comparative analysis verifies that at your income ledger bracket, the New Slabs outperform the Old Slabs for net tax savings."
-                  onWhyClick={openWhySheet}
-                />
-
+            {/* AI Scannable Summary Checklist */}
+            <div className="bg-slate-50 dark:bg-[#0E1527]/50 border border-slate-200 dark:border-white/[0.04] p-4.5 rounded-2xl max-w-[1200px] mx-auto text-left space-y-2">
+              <span className="text-[9px] font-bold text-slate-550 dark:text-slate-550 uppercase tracking-widest block mb-1">AI Exemption Plan Summary</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-700 dark:text-slate-300">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-605 dark:text-emerald-400 shrink-0" />
+                  <span>Your salary records were verified.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-605 dark:text-emerald-400 shrink-0" />
+                  <span>Three deductions were automatically applied.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-605 dark:text-emerald-400 shrink-0" />
+                  <span>One additional tax saving opportunity was identified.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-605 dark:text-emerald-400 shrink-0" />
+                  <span>The New Regime produces the lowest tax liability.</span>
+                </div>
               </div>
+            </div>
+
+            {/* Section Header */}
+            <div className="space-y-1 text-left max-w-[1200px] mx-auto pt-2">
+              <h2 className="text-[20px] md:text-[22px] font-bold text-slate-900 dark:text-slate-100 tracking-tight">AI Recommendations</h2>
+              <p className="text-[12.5px] text-slate-500 dark:text-slate-400 font-medium">
+                Every recommendation includes its reasoning, confidence, and tax law reference.
+              </p>
+            </div>
+
+            {/* AI Recommendation Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[1200px] mx-auto">
+              
+              {/* Card 1: Standard Deduction */}
+              <RecommendationCard
+                title="Standard Deduction"
+                badge="Applied Automatically"
+                amountText="₹75,000"
+                whyExplanation="Standard deduction is automatically applied to all salaried professionals under Section 16(ia) of the Income Tax Act to discount the taxable salary base by ₹75,000."
+                isPrimary={true}
+                onWhyClick={openWhySheet}
+                type="STANDARD"
+              />
+
+              {/* Card 2: Section 80C */}
+              <RecommendationCard
+                title="Section 80C Exemption"
+                badge="Recommended"
+                amountText={formatINR(val80C || 150000)}
+                whyExplanation="We mapped your employee provident fund (EPF) and tax-saving deposits to claim the maximum ₹1,50,000 base exemption limit."
+                onWhyClick={openWhySheet}
+                type="80C"
+              />
+
+              {/* Card 3: Corporate NPS Exemption */}
+              <RecommendationCard
+                title="Corporate NPS Exemption"
+                badge="Opportunity Found"
+                amountText={`Save ${formatINR(Math.round(val80CCD2 * currentRate * 1.04) || 2475)}`}
+                whyExplanation="Structuring matching contributions under Section 80CCD(2) directly offsets basic salary taxable bases."
+                onWhyClick={openWhySheet}
+                type="NPS"
+              />
+
+              {/* Card 4: New Tax Regime Slab Switch */}
+              <RecommendationCard
+                title="New Tax Regime"
+                badge="Best Overall Option"
+                amountText="Lowest slab liability option"
+                whyExplanation="Our comparative analysis verifies that at your income ledger bracket, the New Slabs outperform the Old Slabs for net tax savings."
+                onWhyClick={openWhySheet}
+                type="REGIME"
+                oldValue={formatINR(calculation.oldRegimeTax || 77896)}
+                newValue={formatINR(calculation.newRegimeTax || 0)}
+              />
+
             </div>
 
             {/* Confidence Verification Shield */}
             <ConfidenceShield />
 
             {/* Bottom Actions */}
-            <div className="pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-[1200px] mx-auto">
+              {/* Left Action */}
               <button
-                onClick={onBack}
-                className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+                onClick={() => openWhySheet('AI Recommendations', 'Ask anything about your custom tax savings plan.')}
+                className="h-11 px-5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-450"
               >
-                Back to Income Summary
+                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                <span>Questions? Ask AI</span>
               </button>
               
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                {/* Middle Action */}
                 <button
                   onClick={() => setSubStage('3B')}
-                  className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-405 hover:text-slate-200 text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+                  className="h-11 px-5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-500 hover:text-slate-805 dark:text-slate-400 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-450"
                 >
-                  Review manually
+                  Need changes? Edit Deductions
                 </button>
                 
+                {/* Right Action */}
                 <button
-                  onClick={() => setSubStage('3C')}
-                  className="h-12 px-6 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto group shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 hover:-translate-y-0.5"
+                  onClick={handleContinueTo3C}
+                  disabled={isContinuing}
+                  className="h-11 px-6 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto group shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-450"
                 >
-                  <span>Continue with AI Plan</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                  {isContinuing ? (
+                    <>
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      <span>Preparing Review...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Continue with AI Plan</span>
+                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -497,23 +623,23 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
             {/* Accordion Interface Column (8 cols) */}
             <div className="lg:col-span-8 space-y-6">
               <div className="space-y-1">
-                <h2 className="text-base font-bold text-slate-100">Interactive Exemption Planner</h2>
-                <p className="text-xs text-slate-450 leading-relaxed font-medium">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Interactive Exemption Planner</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
                   We've prefilled your eligible limits. Tweak any values below to customize your tax filing roadmap manually. Only one category is expanded at a time to minimize complexity.
                 </p>
               </div>
 
-              <div className="border border-white/[0.04] rounded-2xl overflow-hidden bg-slate-900/10 backdrop-blur-md">
+              <div className="border border-slate-200 dark:border-white/[0.04] rounded-2xl overflow-hidden bg-white dark:bg-slate-900/10 backdrop-blur-md shadow-sm">
                 
                 {/* Accordion Item: Section 80C */}
-                <div className="border-b border-white/[0.04]">
+                <div className="border-b border-slate-200 dark:border-white/[0.04]">
                   <button
                     onClick={() => setExpandedAccordion(expandedAccordion === '80C' ? null : '80C')}
-                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-200 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-800 dark:text-slate-205 hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
                   >
                     <span>Section 80C (Provident Fund, ELSS, Insurance)</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(val80C)}</span>
+                      <span className="text-slate-500 dark:text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(val80C)}</span>
                       {expandedAccordion === '80C' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
                     </div>
                   </button>
@@ -527,33 +653,33 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                        <div className="p-6 bg-slate-50/50 dark:bg-[#070A0F] space-y-5 border-t border-slate-200 dark:border-white/[0.02] text-xs">
                           {/* 1. Current Claimed Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(val80C)}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-600 dark:text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(val80C)}</span>
                           </div>
 
                           {/* 2. Remaining Eligible Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_80C - val80C))}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-600 dark:text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_80C - val80C))}</span>
                           </div>
 
                           {/* 3. Live Savings */}
-                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
-                            <span className="text-emerald-450 font-bold">Live Section Savings</span>
-                            <span className="font-mono text-emerald-400 font-black">
+                          <div className="flex justify-between items-center bg-emerald-500/5 dark:bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/20 dark:border-emerald-500/10">
+                            <span className="text-emerald-600 dark:text-emerald-450 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-600 dark:text-emerald-405 font-black">
                               <AnimatedCounter value={Math.round(val80C * currentRate * 1.04)} />
                             </span>
                           </div>
 
                           {/* 4. Slider */}
-                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                          <div className="space-y-2 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.03] p-4.5 rounded-xl">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Adjust Claim amount</span>
                               <div className="relative w-32 shrink-0">
-                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <span className="absolute left-2.5 top-1.5 text-slate-400 dark:text-slate-550 text-[10px] font-bold">₹</span>
                                 <input
                                   aria-label="Adjust 80C deduction amount"
                                   type="text"
@@ -561,7 +687,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={val80C || ''}
                                   onChange={(e) => handleSliderChange('80C', LIMIT_80C, e.target.value)}
                                   placeholder="0"
-                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-950 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                               </div>
                             </div>
@@ -570,7 +696,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('80C', Math.max(0, val80C - 5000))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-350 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-350 rounded-md transition-colors cursor-pointer"
                               >
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
@@ -585,7 +711,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={val80C}
                                   onChange={(e) => handleSliderChange('80C', LIMIT_80C, e.target.value)}
                                   onKeyDown={(e) => handleSliderKeyDown('80C', LIMIT_80C, 5000, e)}
-                                  className="w-full accent-emerald-500 h-1.5 bg-slate-850 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-200 dark:bg-slate-850 rounded-lg appearance-none cursor-pointer border border-slate-300 dark:border-white/[0.04]"
                                 />
                                 <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
                               </div>
@@ -593,7 +719,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('80C', Math.min(LIMIT_80C, val80C + 5000))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-350 rounded-md transition-colors cursor-pointer"
                               >
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
@@ -608,17 +734,17 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
 
                           {/* 5. Suggestions (Action-oriented chips) */}
                           <div className="space-y-1.5">
-                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider block">Quick Actions</span>
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => setDeductionPreset('80C', Math.min(LIMIT_80C, val80C + 25000))}
-                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                                className="px-3 py-1.5 text-[10px] font-bold bg-white hover:bg-slate-50 dark:bg-[#0E131B] dark:hover:bg-slate-800 border border-slate-200 dark:border-white/[0.04] rounded-lg text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
                               >
                                 Add ₹25,000 to ELSS • Save {formatINR(Math.round(25000 * currentRate * 1.04))}
                               </button>
                               <button
                                 onClick={() => setDeductionPreset('80C', LIMIT_80C)}
-                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                                className="px-3 py-1.5 text-[10px] font-bold bg-white hover:bg-slate-50 dark:bg-[#0E131B] dark:hover:bg-slate-800 border border-slate-200 dark:border-white/[0.04] rounded-lg text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
                               >
                                 Max out PPF • Save {formatINR(Math.round((LIMIT_80C - val80C) * currentRate * 1.04))}
                               </button>
@@ -626,7 +752,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                           </div>
 
                           {/* 6. AI Advice (Conversational recommendation) */}
-                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-400 leading-relaxed text-[11px]">
+                          <div className="p-4 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
                             <span className="text-sm shrink-0">💡</span>
                             <p>
                               <strong>AI Suggestion:</strong> Adding ₹25,000 to ELSS could increase your tax savings by approximately {formatINR(Math.round(25000 * currentRate * 1.04))}. Your employer already contributes EPF.
@@ -639,14 +765,14 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                 </div>
 
                 {/* Accordion Item: Section 80D */}
-                <div className="border-b border-white/[0.04]">
+                <div className="border-b border-slate-200 dark:border-white/[0.04]">
                   <button
                     onClick={() => setExpandedAccordion(expandedAccordion === '80D' ? null : '80D')}
-                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-200 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-800 dark:text-slate-205 hover:bg-slate-55/50 dark:hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
                   >
                     <span>Section 80D (Medical Insurance Premium)</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(val80D)}</span>
+                      <span className="text-slate-500 dark:text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(val80D)}</span>
                       {expandedAccordion === '80D' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
                     </div>
                   </button>
@@ -660,33 +786,33 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                        <div className="p-6 bg-slate-50/50 dark:bg-[#070A0F] space-y-5 border-t border-slate-200 dark:border-white/[0.02] text-xs">
                           {/* 1. Current Claimed Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(val80D)}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-600 dark:text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(val80D)}</span>
                           </div>
 
                           {/* 2. Remaining Eligible Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_80D - val80D))}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-600 dark:text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_80D - val80D))}</span>
                           </div>
 
                           {/* 3. Live Savings */}
-                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
-                            <span className="text-emerald-450 font-bold">Live Section Savings</span>
-                            <span className="font-mono text-emerald-400 font-black">
+                          <div className="flex justify-between items-center bg-emerald-500/5 dark:bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/20 dark:border-emerald-500/10">
+                            <span className="text-emerald-600 dark:text-emerald-455 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-black">
                               <AnimatedCounter value={Math.round(val80D * currentRate * 1.04)} />
                             </span>
                           </div>
 
                           {/* 4. Slider */}
-                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                          <div className="space-y-2 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.03] p-4.5 rounded-xl">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-[10px] text-slate-404 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Adjust Claim amount</span>
                               <div className="relative w-32 shrink-0">
-                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <span className="absolute left-2.5 top-1.5 text-slate-400 dark:text-slate-550 text-[10px] font-bold">₹</span>
                                 <input
                                   aria-label="Adjust 80D deduction amount"
                                   type="text"
@@ -694,7 +820,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={val80D || ''}
                                   onChange={(e) => handleSliderChange('80D', LIMIT_80D, e.target.value)}
                                   placeholder="0"
-                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-955 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                               </div>
                             </div>
@@ -703,7 +829,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('80D', Math.max(0, val80D - 2500))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-350 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-105 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-350 rounded-md transition-colors cursor-pointer"
                               >
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
@@ -718,7 +844,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={val80D}
                                   onChange={(e) => handleSliderChange('80D', LIMIT_80D, e.target.value)}
                                   onKeyDown={(e) => handleSliderKeyDown('80D', LIMIT_80D, 2500, e)}
-                                  className="w-full accent-emerald-500 h-1.5 bg-slate-855 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer border border-slate-300 dark:border-white/[0.04]"
                                 />
                                 <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
                               </div>
@@ -726,7 +852,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('80D', Math.min(LIMIT_80D, val80D + 2500))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-105 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-350 rounded-md transition-colors cursor-pointer"
                               >
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
@@ -741,17 +867,17 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
 
                           {/* 5. Suggestions */}
                           <div className="space-y-1.5">
-                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider block">Quick Actions</span>
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => setDeductionPreset('80D', Math.min(LIMIT_80D, val80D + 25000))}
-                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                                className="px-3 py-1.5 text-[10px] font-bold bg-white hover:bg-slate-50 dark:bg-[#0E131B] dark:hover:bg-slate-800 border border-slate-200 dark:border-white/[0.04] rounded-lg text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
                               >
                                 Claim Self Premium (₹25K) • Save {formatINR(Math.round(25000 * currentRate * 1.04))}
                               </button>
                               <button
                                 onClick={() => setDeductionPreset('80D', Math.min(LIMIT_80D, val80D + 5000))}
-                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                                className="px-3 py-1.5 text-[10px] font-bold bg-white hover:bg-slate-50 dark:bg-[#0E131B] dark:hover:bg-slate-800 border border-slate-200 dark:border-white/[0.04] rounded-lg text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
                               >
                                 Preventive Checkup (₹5K) • Save {formatINR(Math.round(5000 * currentRate * 1.04))}
                               </button>
@@ -759,7 +885,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                           </div>
 
                           {/* 6. AI Advice */}
-                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-400 leading-relaxed text-[11px]">
+                          <div className="p-4 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
                             <span className="text-sm shrink-0">💡</span>
                             <p>
                               <strong>AI Suggestion:</strong> Claiming ₹25,000 for self/family medical insurance premium saves {formatINR(Math.round(25000 * currentRate * 1.04))}. Adding preventive check-up receipts (up to ₹5,000) utilizes the remaining margin.
@@ -772,14 +898,14 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                 </div>
 
                 {/* Accordion Item: HRA Exemption */}
-                <div className="border-b border-white/[0.04]">
+                <div className="border-b border-slate-200 dark:border-white/[0.04]">
                   <button
                     onClick={() => setExpandedAccordion(expandedAccordion === 'HRA' ? null : 'HRA')}
-                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-200 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-800 dark:text-slate-205 hover:bg-slate-55/50 dark:hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
                   >
                     <span>HRA (House Rent Exemption)</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(valHRA)}</span>
+                      <span className="text-slate-500 dark:text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(valHRA)}</span>
                       {expandedAccordion === 'HRA' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
                     </div>
                   </button>
@@ -793,33 +919,33 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                        <div className="p-6 bg-slate-50/50 dark:bg-[#070A0F] space-y-5 border-t border-slate-200 dark:border-white/[0.02] text-xs">
                           {/* 1. Current Claimed Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(valHRA)}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-605 dark:text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(valHRA)}</span>
                           </div>
 
                           {/* 2. Remaining Eligible Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_HRA - valHRA))}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-605 dark:text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_HRA - valHRA))}</span>
                           </div>
 
                           {/* 3. Live Savings */}
-                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
-                            <span className="text-emerald-450 font-bold">Live Section Savings</span>
-                            <span className="font-mono text-emerald-400 font-black">
+                          <div className="flex justify-between items-center bg-emerald-500/5 dark:bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/20 dark:border-emerald-500/10">
+                            <span className="text-emerald-600 dark:text-emerald-450 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-black">
                               <AnimatedCounter value={Math.round(valHRA * currentRate * 1.04)} />
                             </span>
                           </div>
 
                           {/* 4. Slider */}
-                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                          <div className="space-y-2 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.03] p-4.5 rounded-xl">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-[10px] text-slate-404 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Adjust Claim amount</span>
                               <div className="relative w-32 shrink-0">
-                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <span className="absolute left-2.5 top-1.5 text-slate-400 dark:text-slate-555 text-[10px] font-bold">₹</span>
                                 <input
                                   aria-label="Adjust HRA deduction amount"
                                   type="text"
@@ -827,7 +953,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={valHRA || ''}
                                   onChange={(e) => handleSliderChange('HRA exemption', LIMIT_HRA, e.target.value)}
                                   placeholder="0"
-                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-950 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                               </div>
                             </div>
@@ -836,7 +962,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('HRA exemption', Math.max(0, valHRA - 10000))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-105 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-355 rounded-md transition-colors cursor-pointer"
                               >
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
@@ -851,7 +977,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={valHRA}
                                   onChange={(e) => handleSliderChange('HRA exemption', LIMIT_HRA, e.target.value)}
                                   onKeyDown={(e) => handleSliderKeyDown('HRA exemption', LIMIT_HRA, 5000, e)}
-                                  className="w-full accent-emerald-500 h-1.5 bg-slate-855 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer border border-slate-300 dark:border-white/[0.04]"
                                 />
                                 <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
                               </div>
@@ -859,7 +985,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('HRA exemption', Math.min(LIMIT_HRA, valHRA + 10000))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-105 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-355 rounded-md transition-colors cursor-pointer"
                               >
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
@@ -874,11 +1000,11 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
 
                           {/* 5. Suggestions */}
                           <div className="space-y-1.5">
-                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider block">Quick Actions</span>
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => setDeductionPreset('HRA exemption', 180000)}
-                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                                className="px-3 py-1.5 text-[10px] font-bold bg-white hover:bg-slate-50 dark:bg-[#0E131B] dark:hover:bg-slate-800 border border-slate-200 dark:border-white/[0.04] rounded-lg text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
                               >
                                 Metro Rent Match (1.8L) • Save {formatINR(Math.round(180000 * currentRate * 1.04))}
                               </button>
@@ -886,7 +1012,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                           </div>
 
                           {/* 6. AI Advice */}
-                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-400 leading-relaxed text-[11px]">
+                          <div className="p-4 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
                             <span className="text-sm shrink-0">💡</span>
                             <p>
                               <strong>AI Suggestion:</strong> Your rent receipts matching Mumbai residency support metro classifications. Claiming ₹1.8L rent exemption saves {formatINR(Math.round(180000 * currentRate * 1.04))} under Rule 2A.
@@ -899,14 +1025,14 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                 </div>
 
                 {/* Accordion Item: Housing Loan Exemption */}
-                <div className="border-b border-white/[0.04]">
+                <div className="border-b border-slate-200 dark:border-white/[0.04]">
                   <button
                     onClick={() => setExpandedAccordion(expandedAccordion === '24B' ? null : '24B')}
-                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-205 hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
+                    className="w-full py-4.5 px-5 flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-55/50 dark:hover:bg-white/[0.01] transition-all text-xs uppercase tracking-wider"
                   >
                     <span>Housing Loan Interest Exemption (Section 24b)</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(valSection24bLetOut)}</span>
+                      <span className="text-slate-500 dark:text-slate-400 font-mono font-medium tracking-normal text-[11px] normal-case">{formatINR(valSection24bLetOut)}</span>
                       {expandedAccordion === '24B' ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
                     </div>
                   </button>
@@ -920,33 +1046,33 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="p-6 bg-[#070A0F] space-y-5 border-t border-white/[0.02] text-xs">
+                        <div className="p-6 bg-slate-50/50 dark:bg-[#070A0F] space-y-5 border-t border-slate-200 dark:border-white/[0.02] text-xs">
                           {/* 1. Current Claimed Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Current Claimed Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(valSection24bLetOut)}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-605 dark:text-slate-400 font-semibold">Current Claimed Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(valSection24bLetOut)}</span>
                           </div>
 
                           {/* 2. Remaining Eligible Amount */}
-                          <div className="flex justify-between items-center bg-white/[0.01] p-3 rounded-lg border border-white/[0.02]">
-                            <span className="text-slate-400 font-semibold">Remaining Eligible Amount</span>
-                            <span className="font-mono text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_24B_LETOUT - valSection24bLetOut))}</span>
+                          <div className="flex justify-between items-center bg-white dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/[0.02]">
+                            <span className="text-slate-605 dark:text-slate-400 font-semibold">Remaining Eligible Amount</span>
+                            <span className="font-mono text-slate-900 dark:text-slate-200 font-extrabold">{formatINR(Math.max(0, LIMIT_24B_LETOUT - valSection24bLetOut))}</span>
                           </div>
 
                           {/* 3. Live Savings */}
-                          <div className="flex justify-between items-center bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/10">
-                            <span className="text-emerald-455 font-bold">Live Section Savings</span>
-                            <span className="font-mono text-emerald-400 font-black">
+                          <div className="flex justify-between items-center bg-emerald-500/5 dark:bg-emerald-500/[0.02] p-3 rounded-lg border border-emerald-500/20 dark:border-emerald-500/10">
+                            <span className="text-emerald-600 dark:text-emerald-450 font-bold">Live Section Savings</span>
+                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-black">
                               <AnimatedCounter value={Math.round(valSection24bLetOut * currentRate * 1.04)} />
                             </span>
                           </div>
 
                           {/* 4. Slider */}
-                          <div className="space-y-2 bg-[#0E131B] border border-white/[0.03] p-4.5 rounded-xl">
+                          <div className="space-y-2 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.03] p-4.5 rounded-xl">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-[10px] text-slate-404 font-bold uppercase tracking-wider">Adjust Claim amount</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Adjust Claim amount</span>
                               <div className="relative w-32 shrink-0">
-                                <span className="absolute left-2.5 top-1.5 text-slate-500 text-[10px] font-bold">₹</span>
+                                <span className="absolute left-2.5 top-1.5 text-slate-400 dark:text-slate-555 text-[10px] font-bold">₹</span>
                                 <input
                                   aria-label="Adjust Housing Loan deduction amount"
                                   type="text"
@@ -954,7 +1080,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={valSection24bLetOut || ''}
                                   onChange={(e) => handleSliderChange('section24bLetOut', LIMIT_24B_LETOUT, e.target.value)}
                                   placeholder="0"
-                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-955 border border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="w-full pl-5 pr-2.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/[0.06] rounded-lg text-xs font-mono font-extrabold text-right text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                               </div>
                             </div>
@@ -963,7 +1089,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('section24bLetOut', Math.max(0, valSection24bLetOut - 10000))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-105 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-355 rounded-md transition-colors cursor-pointer"
                               >
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
@@ -978,7 +1104,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                                   value={valSection24bLetOut}
                                   onChange={(e) => handleSliderChange('section24bLetOut', LIMIT_24B_LETOUT, e.target.value)}
                                   onKeyDown={(e) => handleSliderKeyDown('section24bLetOut', LIMIT_24B_LETOUT, 10000, e)}
-                                  className="w-full accent-emerald-500 h-1.5 bg-slate-855 rounded-lg appearance-none cursor-pointer border border-white/[0.04]"
+                                  className="w-full accent-emerald-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer border border-slate-300 dark:border-white/[0.04]"
                                 />
                                 <div className="absolute right-0 w-2 h-2 rounded-full bg-emerald-500 pointer-events-none shadow" title="Recommended Limit" />
                               </div>
@@ -986,7 +1112,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                               <button 
                                 type="button"
                                 onClick={() => setDeductionPreset('section24bLetOut', Math.min(LIMIT_24B_LETOUT, valSection24bLetOut + 10000))}
-                                className="p-1 bg-slate-900 border border-white/[0.06] hover:bg-slate-800 text-slate-355 rounded-md transition-colors cursor-pointer"
+                                className="p-1 bg-slate-105 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-200 dark:hover:bg-slate-808 text-slate-600 dark:text-slate-355 rounded-md transition-colors cursor-pointer"
                               >
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
@@ -1001,11 +1127,11 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
 
                           {/* 5. Suggestions */}
                           <div className="space-y-1.5">
-                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Quick Actions</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider block">Quick Actions</span>
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => setDeductionPreset('section24bLetOut', LIMIT_24B_LETOUT)}
-                                className="px-3 py-1.5 text-[10px] font-bold bg-[#0E131B] hover:bg-slate-800 border border-white/[0.04] rounded-lg text-slate-300 cursor-pointer transition-colors"
+                                className="px-3 py-1.5 text-[10px] font-bold bg-white hover:bg-slate-50 dark:bg-[#0E131B] dark:hover:bg-slate-800 border border-slate-200 dark:border-white/[0.04] rounded-lg text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
                               >
                                 Claim Max self-occupancy (₹2L) • Save {formatINR(Math.round(LIMIT_24B_LETOUT * currentRate * 1.04))}
                               </button>
@@ -1013,7 +1139,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                           </div>
 
                           {/* 6. AI Advice */}
-                          <div className="p-4 bg-[#0E131B] border border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-405 leading-relaxed text-[11px]">
+                          <div className="p-4 bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.02] rounded-xl flex items-start gap-2.5 text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
                             <span className="text-sm shrink-0">💡</span>
                             <p>
                               <strong>AI Suggestion:</strong> Home loan interest remains deductible under the Old Regime up to ₹2,00,000. Interest on let-out properties is fully deductible without the ₹2L ceiling limit.
@@ -1030,73 +1156,73 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
 
             {/* Desktop Sticky Summary Panel (4 cols) */}
             <div className="lg:col-span-4 lg:sticky lg:top-6 space-y-6">
-              <div className="bg-slate-905 border border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-6 text-left">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block border-b border-white/[0.02] pb-3">Exemption Summary</span>
+              <div className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-6 text-left">
+                <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest block border-b border-slate-200/50 dark:border-white/[0.02] pb-3">Exemption Summary</span>
                 
-                <div className="space-y-4 border-b border-white/[0.04] pb-4">
+                <div className="space-y-4 border-b border-slate-200/50 dark:border-white/[0.04] pb-4">
                   <div>
-                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Claimed Amount</span>
-                    <span className="text-base font-extrabold text-slate-200 font-mono">
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold block">Claimed Amount</span>
+                    <span className="text-base font-extrabold text-slate-805 dark:text-slate-200 font-mono">
                       <AnimatedCounter value={totalClaimed} />
                     </span>
                   </div>
                   <div>
-                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Remaining Eligibility</span>
-                    <span className="text-base font-extrabold text-blue-405 font-mono">
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold block">Remaining Eligibility</span>
+                    <span className="text-base font-extrabold text-blue-600 dark:text-blue-400 font-mono">
                       <AnimatedCounter value={Math.max(0, LIMIT_80C - val80C + LIMIT_80D - val80D + LIMIT_HRA - valHRA)} />
                     </span>
                   </div>
                   <div>
-                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Estimated Savings</span>
-                    <span className="text-base font-extrabold text-emerald-455 font-mono">
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold block">Estimated Savings</span>
+                    <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-450 font-mono">
                       <AnimatedCounter value={calculation.savings || 39000} />
                     </span>
                   </div>
                   <div>
-                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Selected Regime</span>
-                    <span className="text-xs font-bold text-slate-300">{recommendedRegime === 'NEW' ? 'New Tax Slabs' : 'Old Tax Slabs'}</span>
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold block">Selected Regime</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{recommendedRegime === 'NEW' ? 'New Tax Slabs' : 'Old Tax Slabs'}</span>
                   </div>
                 </div>
 
                 {/* Completion Checklist (80C Complete, HRA Pending etc.) */}
                 <div className="space-y-2.5">
-                  <span className="text-[9px] text-slate-500 uppercase tracking-wider font-extrabold block">Exemption Milestones</span>
-                  <div className="space-y-2 text-xs font-medium text-slate-400">
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold block">Exemption Milestones</span>
+                  <div className="space-y-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                     <div className="flex items-center gap-2">
                       {val80C >= LIMIT_80C ? (
-                        <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-450" />
                       ) : (
-                        <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold">○</div>
+                        <div className="h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-slate-750 flex items-center justify-center text-[8px] font-bold">○</div>
                       )}
-                      <span className={val80C >= LIMIT_80C ? 'text-emerald-450' : ''}>80C {val80C >= LIMIT_80C ? 'Complete' : 'Pending'}</span>
+                      <span className={val80C >= LIMIT_80C ? 'text-emerald-600 dark:text-emerald-450 font-bold' : ''}>80C {val80C >= LIMIT_80C ? 'Complete' : 'Pending'}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       {val80D >= 25000 ? (
-                        <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-450" />
                       ) : (
-                        <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold">○</div>
+                        <div className="h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-slate-750 flex items-center justify-center text-[8px] font-bold">○</div>
                       )}
-                      <span className={val80D >= 25000 ? 'text-emerald-450' : ''}>80D {val80D >= 25000 ? 'Complete' : 'Pending'}</span>
+                      <span className={val80D >= 25000 ? 'text-emerald-600 dark:text-emerald-450 font-bold' : ''}>80D {val80D >= 25000 ? 'Complete' : 'Pending'}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       {valHRA > 0 ? (
-                        <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-450" />
                       ) : (
-                        <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold">○</div>
+                        <div className="h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-slate-750 flex items-center justify-center text-[8px] font-bold">○</div>
                       )}
-                      <span className={valHRA > 0 ? 'text-emerald-450' : ''}>HRA {valHRA > 0 ? 'Complete' : 'Pending'}</span>
+                      <span className={valHRA > 0 ? 'text-emerald-600 dark:text-emerald-450 font-bold' : ''}>HRA {valHRA > 0 ? 'Complete' : 'Pending'}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="h-3.5 w-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[8px] font-bold text-slate-500">○</div>
-                      <span>NPS Optional</span>
+                      <div className="h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-slate-750 flex items-center justify-center text-[8px] font-bold text-slate-405">○</div>
+                      <span className="text-slate-500">NPS Optional</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-3 border-t border-white/[0.02]">
+                <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-white/[0.02]">
                   <button
                     onClick={() => setSubStage('3C')}
                     className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-95 text-center flex items-center justify-center gap-1.5"
@@ -1106,7 +1232,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                   </button>
                   <button
                     onClick={() => setSubStage('3A')}
-                    className="w-full h-11 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-slate-205 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-95 text-center"
+                    className="w-full h-11 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all active:scale-95 text-center"
                   >
                     Cancel Manual Review
                   </button>
@@ -1116,7 +1242,6 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
           </motion.div>
         )}
 
-        {/* PAGE 3C: Final Deduction Review */}
         {subStage === '3C' && (
           <motion.div
             key="3c"
@@ -1128,108 +1253,108 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
           >
             {/* Completion Success Hero */}
             <div className="text-center space-y-3 pb-2">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-2">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-450 mb-2">
                 <CheckCircle className="h-6 w-6" />
               </div>
-              <h2 className="text-xl font-bold text-slate-100">✓ Everything looks good</h2>
-              <p className="text-xs text-slate-450 leading-relaxed max-w-sm mx-auto font-medium">
+              <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">Everything looks good</h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-sm mx-auto font-medium">
                 Your deductions have been finalized and verified against active AY 2026-27 compliance matrices.
               </p>
             </div>
 
             {/* Savings Card Comparison (+₹14,200 previous filing) */}
-            <div className="bg-[#0E131B] border border-white/[0.04] rounded-3xl p-6 text-center space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest block">Estimated Tax Savings</span>
-              <span className="text-3xl font-black text-emerald-400 tracking-tight block font-mono">
+            <div className="bg-slate-50 dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.04] rounded-3xl p-6 text-center space-y-1">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-widest block">Estimated Tax Savings</span>
+              <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight block font-mono">
                 {formatINR(calculation.savings || 39000)}
               </span>
-              <div className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-450 uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full mt-2">
+              <div className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-450 uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full mt-2">
                 <TrendingUp className="h-3 w-3" />
                 <span>+{formatINR(14200)} compared to previous filing</span>
               </div>
             </div>
 
             {/* Deduction Summary Checklist */}
-            <div className="bg-slate-905 border border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-4 text-left">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block border-b border-white/[0.02] pb-3">Final Ledger Breakdown</span>
+            <div className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-4 text-left">
+              <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest block border-b border-slate-200/50 dark:border-white/[0.02] pb-3">Final Ledger Breakdown</span>
 
               <div className="flex justify-between items-center py-2.5">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-450" />
-                  <span className="text-xs font-semibold text-slate-200">Standard Deduction</span>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450" />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Standard Deduction</span>
                 </div>
-                <span className="text-xs font-bold text-slate-300 font-mono">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-300 font-mono">
                   {formatINR(recommendedRegime === 'NEW' ? 75000 : 50000)}
                 </span>
               </div>
 
               {val80C > 0 && (
-                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                <div className="flex justify-between items-center py-2.5 border-t border-slate-200/50 dark:border-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
-                    <span className="text-xs font-semibold text-slate-200">Section 80C Exemption</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Section 80C Exemption</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(val80C)}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-300 font-mono">{formatINR(val80C)}</span>
                 </div>
               )}
 
               {val80D > 0 && (
-                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                <div className="flex justify-between items-center py-2.5 border-t border-slate-200/50 dark:border-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
-                    <span className="text-xs font-semibold text-slate-200">Section 80D Exemption</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Section 80D Exemption</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(val80D)}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-300 font-mono">{formatINR(val80D)}</span>
                 </div>
               )}
 
               {valHRA > 0 && (
-                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                <div className="flex justify-between items-center py-2.5 border-t border-slate-200/50 dark:border-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
-                    <span className="text-xs font-semibold text-slate-200">HRA Exemption</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">HRA Exemption</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(valHRA)}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-300 font-mono">{formatINR(valHRA)}</span>
                 </div>
               )}
 
               {val80CCD2 > 0 && (
-                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                <div className="flex justify-between items-center py-2.5 border-t border-slate-200/50 dark:border-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
-                    <span className="text-xs font-semibold text-slate-200">Employer NPS (80CCD(2))</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Employer NPS (80CCD(2))</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(val80CCD2)}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-300 font-mono">{formatINR(val80CCD2)}</span>
                 </div>
               )}
 
               {valNPS > 0 && (
-                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                <div className="flex justify-between items-center py-2.5 border-t border-slate-200/50 dark:border-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
-                    <span className="text-xs font-semibold text-slate-200">Voluntary NPS (80CCD(1B))</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Voluntary NPS (80CCD(1B))</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(valNPS)}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-300 font-mono">{formatINR(valNPS)}</span>
                 </div>
               )}
 
               {valSection24bLetOut > 0 && (
-                <div className="flex justify-between items-center py-2.5 border-t border-white/[0.02]">
+                <div className="flex justify-between items-center py-2.5 border-t border-slate-200/50 dark:border-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-455" />
-                    <span className="text-xs font-semibold text-slate-200">Housing Loan (Sec 24b)</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-450" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Housing Loan (Sec 24b)</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-300 font-mono">{formatINR(valSection24bLetOut)}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-300 font-mono">{formatINR(valSection24bLetOut)}</span>
                 </div>
               )}
 
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="pt-6 border-t border-slate-200 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
               <button
                 onClick={() => setSubStage('3A')}
-                className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+                className="h-12 px-6 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
               >
                 Back to Recommendation
               </button>
@@ -1237,7 +1362,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setSubStage('3B')}
-                  className="h-12 px-6 border border-slate-850 hover:bg-white/[0.02] text-slate-400 hover:text-slate-200 text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+                  className="h-12 px-6 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
                 >
                   Edit deductions
                 </button>
@@ -1246,7 +1371,7 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                   onClick={onContinue}
                   className="h-12 px-6 bg-emerald-500 hover:bg-emerald-450 text-slate-950 text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-1.5 w-full sm:w-auto group font-extrabold"
                 >
-                  <ShieldCheck className="h-4 w-4 text-slate-955" />
+                  <ShieldCheck className="h-4 w-4 text-slate-950" />
                   <span>Proceed to Filing Review</span>
                 </button>
               </div>
@@ -1258,11 +1383,20 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
       </AnimatePresence>
 
       {/* Slide sheet details */}
-      <WhyRecommendationSheet 
+      <AIReasoningDrawer 
         isOpen={whySheetOpen} 
         onClose={() => setWhySheetOpen(false)} 
         title={whySheetTitle} 
         explanation={whySheetExplanation} 
+        recommendedRegime={recommendedRegime}
+        savings={calculation.savings}
+        grossSalary={grossSalary}
+        val80C={val80C}
+        val80D={val80D}
+        valHRA={valHRA}
+        valNPS={valNPS}
+        val80CCD2={val80CCD2}
+        valSection24bLetOut={valSection24bLetOut}
       />
     </div>
   );

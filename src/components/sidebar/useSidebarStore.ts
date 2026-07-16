@@ -31,7 +31,9 @@ export const useSidebarStore = create<SidebarState>()(
   persist(
     (set) => ({
       isCollapsed: false,
-      sidebarBehavior: 'pinned',
+      // Keep the rail calm by default; desktop users can still pin it from the
+      // header control when they need labels visible all the time.
+      sidebarBehavior: 'auto_hover',
       preferredCollapsedBehavior: 'auto_hover',
       collapsedGroups: {},
       favorites: [],

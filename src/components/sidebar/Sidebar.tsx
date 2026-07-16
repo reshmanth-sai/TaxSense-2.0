@@ -1,24 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Award, 
-  ListTodo, 
-  FileUp, 
-  BrainCircuit, 
-  History, 
-  Settings, 
-  Cpu, 
-  CheckCircle, 
-  AlertCircle, 
-  Sun, 
-  Moon, 
+import {
+  LayoutDashboard,
+  Award,
+  ListTodo,
+  FileUp,
+  BrainCircuit,
+  History,
+  Settings,
+  AlertCircle,
+  Sun,
+  Moon,
   Laptop
 } from 'lucide-react';
 import { useSidebarStore, SidebarTheme } from './useSidebarStore';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarItem } from './SidebarItem';
-import { SidebarGroup } from './SidebarGroup';
 import { UserProfile } from './UserProfile';
 import { SearchModal } from './SearchModal';
 
@@ -37,6 +34,7 @@ interface SidebarProps {
   isSettingsOpen: boolean;
   setIsSettingsOpen: (open: boolean) => void;
   onLogout: () => void;
+  onGoogleSignIn: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -53,15 +51,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   incomeProfile,
   isSettingsOpen,
   setIsSettingsOpen,
-  onLogout
+  onLogout,
+  onGoogleSignIn
 }) => {
   const isCollapsed = useSidebarStore((state) => state.isCollapsed);
   const sidebarBehavior = useSidebarStore((state) => state.sidebarBehavior);
   const setCollapsed = useSidebarStore((state) => state.setCollapsed);
   const toggleCollapsed = useSidebarStore((state) => state.toggleCollapsed);
-  const setSearchOpen = useSidebarStore((state) => state.setSearchOpen);
-  const favorites = useSidebarStore((state) => state.favorites);
-  const recentlyVisited = useSidebarStore((state) => state.recentlyVisited);
   const theme = useSidebarStore((state) => state.theme);
   const setTheme = useSidebarStore((state) => state.setTheme);
 
@@ -136,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
       }
     };
-    
+
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -164,17 +160,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleNavKeyDown = (e: React.KeyboardEvent) => {
     const active = document.activeElement;
     if (!active) return;
-    
+
     const container = active.closest('.sidebar-nav-container');
     if (!container) return;
-    
+
     const items = Array.from(
       container.querySelectorAll('button, [tabIndex="0"]')
     ) as HTMLElement[];
-    
+
     if (items.length === 0) return;
     const index = items.indexOf(active as HTMLElement);
-    
+
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       const nextIndex = (index + 1) % items.length;
@@ -186,104 +182,68 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // Map label to matching step values and icons
-  interface NavConfigItem {
-    step: number;
-    icon: React.ComponentType<any>;
-    isPrimary?: boolean;
-    savings?: number;
-    completed?: boolean;
-    badge?: string;
-  }
-
-  const navigationConfig: Record<string, NavConfigItem> = {
-    'Dashboard': { step: 11, icon: LayoutDashboard, isPrimary: true },
-    'Optimize': { step: 5, icon: Award, isPrimary: true, savings: taxCalculationResult.savings },
-    'Tax Return': { step: 6, icon: ListTodo, isPrimary: true },
-    'Document Vault': { step: 3, icon: FileUp, completed: taxData.grossSalary !== 850000 || taxData.tdsDeducted !== 15000 },
-    'AI Analysis': { step: 4, icon: BrainCircuit, badge: 'Gemini' },
-    'History & Archive': { step: 10, icon: History }
-  };
-
   // Visual expansion state (Unifies manual collapse/expand with hover expansion)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isExpandedVisual = isMobile 
-    ? !isCollapsed 
+  const isExpandedVisual = isMobile
+    ? !isCollapsed
     : (sidebarBehavior === 'pinned' || (sidebarBehavior === 'auto_hover' && isHoverActive));
 
   return (
     <>
       {/* Spacer to reserve layout space on desktop and prevent layout shifts on hover */}
       {!isMobile && (
-        <div 
-          className="hidden md:block shrink-0 transition-all duration-300 ease-out" 
-          style={{ width: sidebarBehavior === 'pinned' ? 216 : 56 }} 
+        <motion.div
+          className="hidden md:block shrink-0"
+          animate={{ width: sidebarBehavior === 'pinned' ? 228 : 68 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 26 }}
         />
       )}
 
       {/* Mobile Backdrop Overlay */}
       <AnimatePresence>
         {isMobile && !isCollapsed && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setCollapsed(true)} 
+            onClick={() => setCollapsed(true)}
             className="fixed inset-0 bg-[#060A10]/70 backdrop-blur-sm z-30 md:hidden"
           />
         )}
       </AnimatePresence>
 
       {/* Main Collapsible Sidebar Panel */}
-      <motion.aside 
+      <motion.aside
         initial={false}
-        animate={{ 
+        animate={{
           width: isExpandedVisual ? 216 : 56,
           // Slide completely off-screen on mobile when collapsed
           x: isMobile && isCollapsed ? -216 : 0
         }}
-        transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+        transition={{ type: 'spring', stiffness: 220, damping: 26 }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        style={{ background: 'linear-gradient(to bottom, #101722, #0B111A)' }}
-        className="border-r border-white/[0.04] backdrop-blur-md flex flex-col justify-between shrink-0 z-40 fixed inset-y-0 left-0 h-screen overflow-y-auto overflow-x-hidden font-sans"
+        className="bg-white/8 dark:bg-slate-950/10 border border-slate-200/15 dark:border-white/[0.015] backdrop-blur-xl flex flex-col justify-between shrink-0 z-40 fixed top-3 bottom-3 left-3 h-[calc(100vh-24px)] rounded-3xl overflow-hidden font-sans shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
       >
-        <div className="flex flex-col">
+        {/* Top Scrollable Navigation Section */}
+        <div className="flex flex-col flex-1 min-h-0">
           {/* Header & Logo Section */}
           <SidebarHeader isExpanded={isExpandedVisual} />
 
           {/* Collapsible Groups & Navigation */}
           <div 
-            onKeyDown={handleNavKeyDown}
-            className="p-3 space-y-3.5 sidebar-nav-container"
+            onKeyDown={handleNavKeyDown} 
+            className={`flex-1 ${isExpandedVisual ? 'overflow-y-auto' : 'overflow-hidden'} overflow-x-hidden p-2.5 space-y-4 sidebar-nav-container scrollbar-none`}
           >
-            {/* 1. FAVORITES Section (Dynamic) */}
-            {favorites.length > 0 && isExpandedVisual && (
-              <SidebarGroup title="Favorites" isExpanded={true}>
-                {favorites.map((favLabel) => {
-                  const config = navigationConfig[favLabel as keyof typeof navigationConfig];
-                  if (!config) return null;
-                  return (
-                    <SidebarItem
-                      key={`fav-${favLabel}`}
-                      label={favLabel}
-                      icon={config.icon}
-                      isActive={activeStep === config.step}
-                      isExpanded={true}
-                      onClick={() => setActiveStep(config.step)}
-                      savings={config.savings}
-                      completed={config.completed}
-                      badge={config.badge}
-                      isPrimary={config.isPrimary}
-                      showFavoriteOption={true}
-                    />
-                  );
-                })}
-              </SidebarGroup>
-            )}
-
-            {/* 2. MAIN Section */}
-            <SidebarGroup title="Main" isExpanded={isExpandedVisual}>
+            <nav aria-label="Primary navigation" className="space-y-1">
+              <motion.span
+                initial={false}
+                animate={{ opacity: isExpandedVisual ? 1 : 0, height: isExpandedVisual ? 'auto' : 0 }}
+                transition={{ duration: 0.15 }}
+                className="block px-3 pb-1 text-[8.5px] font-bold uppercase tracking-[0.16em] text-slate-500/75 overflow-hidden whitespace-nowrap"
+              >
+                Workspace
+              </motion.span>
               <SidebarItem
                 label="Dashboard"
                 icon={LayoutDashboard}
@@ -309,13 +269,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => setActiveStep(6)}
                 isPrimary={true}
               />
-            </SidebarGroup>
+            </nav>
 
-            {/* Divider */}
-            <div className="h-px bg-white/[0.015] mx-2" />
+            <div className="mx-2 h-px bg-slate-200 dark:bg-white/[0.045]" />
 
-            {/* 3. TOOLS Section */}
-            <SidebarGroup title="Tools" isExpanded={isExpandedVisual}>
+            <nav aria-label="Tools" className="space-y-1">
+              <motion.span
+                initial={false}
+                animate={{ opacity: isExpandedVisual ? 1 : 0, height: isExpandedVisual ? 'auto' : 0 }}
+                transition={{ duration: 0.15 }}
+                className="block px-3 pb-1 text-[8.5px] font-bold uppercase tracking-[0.16em] text-slate-500/75 overflow-hidden whitespace-nowrap"
+              >
+                Tools
+              </motion.span>
               <SidebarItem
                 label="Document Vault"
                 icon={FileUp}
@@ -339,119 +305,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 isExpanded={isExpandedVisual}
                 onClick={() => setActiveStep(10)}
               />
-            </SidebarGroup>
-
-            {/* 4. RECENT VISITED Section (Dynamic) */}
-            {recentlyVisited.length > 0 && isExpandedVisual && (
-              <SidebarGroup title="Recent" isExpanded={true}>
-                {recentlyVisited.map((recentLabel) => {
-                  const config = navigationConfig[recentLabel as keyof typeof navigationConfig];
-                  if (!config) return null;
-                  // Don't duplicate if active or pinned
-                  if (activeStep === config.step || favorites.includes(recentLabel)) return null;
-                  
-                  return (
-                    <SidebarItem
-                      key={`recent-${recentLabel}`}
-                      label={recentLabel}
-                      icon={config.icon}
-                      isActive={false}
-                      isExpanded={true}
-                      onClick={() => setActiveStep(config.step)}
-                      savings={config.savings}
-                      completed={config.completed}
-                      badge={config.badge}
-                      showFavoriteOption={false}
-                    />
-                  );
-                })}
-              </SidebarGroup>
-            )}
+            </nav>
           </div>
         </div>
 
-        {/* Sidebar Footer Section */}
-        <div className="p-3 border-t border-white/[0.04] space-y-3.5">
-          {/* AI Ingestion progress card */}
-          {ingestionState !== 'IDLE' && (
-            <div 
-              title={`${backgroundStatusMessage} (${backgroundProgress}%)`}
-              className={`p-3 bg-white/[0.01] border border-white/[0.015] rounded-xl transition-all ${
-                isExpandedVisual ? 'space-y-2' : 'flex justify-center items-center'
-              }`}
-            >
-              {!isExpandedVisual ? (
-                <div className="relative">
-                  {ingestionState === 'COMPLETED' ? (
-                    <CheckCircle className="w-4 h-4 text-[#16E27A]" />
-                  ) : (
-                    <>
-                      <Cpu className="w-4 h-4 text-[#16E27A] animate-spin" />
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#16E27A] rounded-full animate-ping" />
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2 text-left w-full">
-                  <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-emerald-500/80">
-                    <span className="flex items-center gap-1.5">
-                      {ingestionState === 'COMPLETED' ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-500/80 animate-pulse" />
-                      ) : (
-                        <Cpu className="w-3.5 h-3.5 text-emerald-455 animate-pulse" /> 
-                      )}
-                      Form 16 Verified
-                    </span>
-                    <span className="font-mono text-emerald-450/90">{ingestionState === 'COMPLETED' ? '100%' : `${backgroundProgress}%`}</span>
-                  </div>
-                  <div className="h-[2px] w-full bg-slate-955/80 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-emerald-500/40 rounded-full transition-all duration-300" 
-                      style={{ width: `${ingestionState === 'COMPLETED' ? 100 : backgroundProgress}%` }} 
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Guest Sandbox details */}
+        {/* Bottom Panel (Fixed in place, never cut off) */}
+        <div className="p-2.5 space-y-2.5 bg-transparent shrink-0">
+          {/* Guest Session Status Widget */}
           {authMode === 'GUEST' && (
-            !isExpandedVisual ? (
-              <div className="relative group/guest-item w-full flex justify-center py-1 select-none">
+            isCollapsed && !isExpandedVisual ? (
+              <div className="relative group/guest-item flex justify-center py-1">
                 <button
-                  onClick={() => {
-                    (window as any)._migrationRedirectStep = activeStep;
-                    setActiveStep(2);
-                  }}
-                  className="w-8 h-8 flex items-center justify-center bg-white/[0.01] border border-white/[0.03] hover:bg-white/[0.05] rounded-xl text-slate-400 hover:text-slate-205 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  onClick={onGoogleSignIn}
+                  className="w-8 h-8 flex items-center justify-center bg-slate-100/30 dark:bg-white/[0.01] border border-slate-200 dark:border-white/[0.03] hover:bg-slate-200/40 dark:hover:bg-white/[0.05] rounded-xl text-slate-550 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                 >
-                  <AlertCircle className="w-4 h-4 text-slate-500" />
+                  <AlertCircle className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 </button>
-                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 border border-white/[0.08] backdrop-blur-md text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/guest-item:opacity-100 group-hover/guest-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.08] backdrop-blur-md text-slate-900 dark:text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/guest-item:opacity-100 group-hover/guest-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
                   Guest Session - Click to Sign In
                 </div>
               </div>
             ) : (
-              <div className="p-3 bg-white/[0.01] border border-white/[0.015] shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)] rounded-xl space-y-2.5 text-left relative overflow-hidden flex flex-col">
-                <div className="space-y-1">
-                  <div className="text-[8.5px] font-bold text-slate-400/80 uppercase tracking-widest flex items-center gap-1.5 font-sans">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+              <div className="flex items-center gap-2.5 rounded-xl border border-slate-205 dark:border-white/[0.04] bg-slate-100/30 dark:bg-white/[0.015] px-2.5 py-2.5 text-left">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[8.5px] font-bold text-slate-500 dark:text-slate-400/80 uppercase tracking-widest leading-none">
                     Guest Session
                   </div>
-                  <div className="text-[8.5px] text-slate-500/80 font-semibold leading-normal">
-                    Temporary workspace
-                  </div>
-                  <div className="text-[8.5px] text-slate-500/60 font-semibold leading-none pt-0.5">
-                    Expires in <span className="font-mono text-slate-400 font-bold">{Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}</span>
+                  <div className="mt-1 text-[9px] text-slate-600 dark:text-slate-505/80 font-semibold leading-none">
+                    Expires in <span className="font-mono text-slate-700 dark:text-slate-400 font-bold">{Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}</span>
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    (window as any)._migrationRedirectStep = activeStep;
-                    setActiveStep(2);
-                  }}
-                  className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-950 font-bold rounded-lg text-[8.5px] uppercase tracking-wider cursor-pointer transition-colors shadow-sm self-start"
+                  onClick={onGoogleSignIn}
+                  className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold rounded-lg text-[8px] uppercase tracking-wider cursor-pointer transition-colors shadow-sm"
                 >
                   Sign In
                 </button>
@@ -462,11 +349,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* System settings and theme switcher group */}
           <div className="space-y-1">
             {/* Collapsed Group title */}
-            {isExpandedVisual && (
-              <span className="text-[8.5px] text-slate-500/70 font-bold uppercase tracking-[0.15em] block px-3 mb-1.5 select-none">
-                System
-              </span>
-            )}
+            <motion.span
+              initial={false}
+              animate={{ opacity: isExpandedVisual ? 1 : 0, height: isExpandedVisual ? 'auto' : 0 }}
+              transition={{ duration: 0.15 }}
+              className="text-[8.5px] text-slate-500 dark:text-slate-550 font-bold uppercase tracking-[0.15em] block px-3 mb-1.5 select-none overflow-hidden whitespace-nowrap"
+            >
+              System
+            </motion.span>
 
             {/* Settings Trigger Item */}
             <SidebarItem
@@ -479,10 +369,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
 
             {/* Dynamic Inline Theme Switcher */}
-            {isExpandedVisual && (
-              <div className="flex items-center justify-between px-3 py-2.5 mt-1.5 bg-white/[0.01] border border-white/[0.015] rounded-xl text-[10px] text-slate-400 select-none">
+            <motion.div
+              initial={false}
+              animate={{ opacity: isExpandedVisual ? 1 : 0, height: isExpandedVisual ? 'auto' : 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-3 py-2.5 mt-1.5 bg-slate-100/30 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/[0.015] rounded-xl text-[10px] text-slate-650 dark:text-slate-450 select-none">
                 <span className="font-semibold">Interface Theme</span>
-                <div className="flex items-center gap-1 bg-slate-950/40 p-0.5 border border-white/[0.03] rounded-lg">
+                <div className="flex items-center gap-1 bg-slate-200/50 dark:bg-slate-905/40 p-0.5 border border-slate-300/50 dark:border-white/[0.03] rounded-lg">
                   {(['light', 'dark', 'system'] as SidebarTheme[]).map((t) => {
                     const isSelected = theme === t;
                     const Icon = t === 'light' ? Sun : t === 'dark' ? Moon : Laptop;
@@ -491,11 +386,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         key={t}
                         onClick={() => setTheme(t)}
                         title={`Select ${t} theme`}
-                        className={`p-1 rounded cursor-pointer transition-all duration-150 focus:outline-none ${
-                          isSelected 
-                            ? 'bg-blue-600/10 text-blue-400 border border-blue-500/15' 
-                            : 'text-slate-500 hover:text-slate-350'
-                        }`}
+                        className={`p-1 rounded cursor-pointer transition-all duration-155 focus:outline-none ${isSelected
+                            ? 'bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-500/15'
+                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-355'
+                          }`}
                       >
                         <Icon className="w-3 h-3" />
                       </button>
@@ -503,11 +397,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   })}
                 </div>
               </div>
-            )}
+            </motion.div>
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-white/[0.015] mx-2" />
+          <div className="h-px bg-slate-250 dark:bg-white/[0.015] mx-0.5" />
 
           {/* User profile section */}
           <UserProfile
@@ -521,7 +415,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </motion.aside>
 
       {/* Ctrl+K Search Overlay Modal */}
-      <SearchModal 
+      <SearchModal
         activeStep={activeStep}
         setActiveStep={setActiveStep}
         setIsSettingsOpen={setIsSettingsOpen}
