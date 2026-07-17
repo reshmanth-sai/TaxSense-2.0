@@ -558,8 +558,8 @@ export const DeductionCard: React.FC<DeductionCardProps> = React.memo(({ onConti
                 whyExplanation="Our comparative analysis verifies that at your income ledger bracket, the New Slabs outperform the Old Slabs for net tax savings."
                 onWhyClick={openWhySheet}
                 type="REGIME"
-                oldValue={formatINR(calculation.oldRegimeTax || 77896)}
-                newValue={formatINR(calculation.newRegimeTax || 0)}
+                oldValue={formatINR(calculation.oldRegime.totalTaxPayable)}
+                newValue={formatINR(calculation.newRegime.totalTaxPayable)}
               />
 
             </div>

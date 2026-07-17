@@ -321,50 +321,59 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
         initial={prefersReducedMotion ? {} : { opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={SPRING_GENTLE}
-        className="space-y-6 z-10 max-w-3xl mx-auto"
+        className="space-y-6 z-10 max-w-4xl mx-auto"
       >
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-600 dark:bg-[#10B981]/10 dark:border-[#10B981]/25 dark:text-[#34D399] text-[10px] font-bold tracking-wider uppercase">
           <Sparkles className="w-3.5 h-3.5" />
           <span>AI Tax Ingestion Platform AY 2026-27</span>
         </div>
 
-        {/* Enforced Typography Hierarchy (36px -> 18px -> 13px baseline) */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[64px] font-black tracking-tight text-slate-900 font-serif dark:text-white dark:font-sans leading-[1.1]">
+        {/* Enforced Typography Hierarchy (72px -> 18px -> 13px baseline) */}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[72px] font-bold tracking-tight text-slate-900 font-sans dark:text-white leading-[1.05]">
           Know your best tax regime <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400 dark:from-[#34D399] dark:to-blue-400">before you file.</span>
         </h1>
-        <p className="text-[16px] md:text-[18px] leading-[1.5] text-slate-600 dark:text-slate-400 max-w-xl mx-auto font-medium">
+        <p className="text-[16px] md:text-[18px] leading-[1.6] text-slate-650/90 dark:text-slate-400/80 max-w-[620px] mx-auto font-medium">
           Upload your Form 16. Leave with the best filing strategy. Our secure AI parses your profile and finds every tax saving before you submit.
         </p>
 
-        <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
-          <button
-            onClick={onStart}
-            className="group relative overflow-hidden px-8 py-4 bg-primary-action hover:bg-primary-action/90 text-white font-bold text-[13px] uppercase tracking-wider rounded-full transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] active:scale-[0.97] flex items-center justify-center gap-2"
-          >
-            <RollingText text="Start Sandbox Workspace" />
-            <ArrowRight className="w-4 h-4 text-white" />
-          </button>
-          <div className="flex gap-2">
-            <button className="group relative overflow-hidden px-8 py-4 bg-white/60 hover:bg-white text-slate-800 border border-slate-200/50 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] dark:text-white dark:border-slate-800 font-bold text-[13px] uppercase tracking-wider rounded-full transition-all flex items-center gap-1.5 shadow-sm dark:shadow-none backdrop-blur-md">
-              <RollingText text="Explore Platform" />
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            </button>
+        <div className="pt-4 flex flex-col items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             <button
-              onClick={() => {
-                setIsPlaying(false);
-                setTime(0);
-                setTimeout(() => setIsPlaying(true), 600);
-              }}
-              className="px-4 py-4 bg-white/60 hover:bg-white text-slate-600 border border-slate-200/50 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] dark:text-slate-400 dark:border-slate-800 rounded-full transition-all flex items-center justify-center shadow-sm dark:shadow-none backdrop-blur-md"
-              title="Replay Story"
+              onClick={onStart}
+              className="group relative overflow-hidden px-8 py-[18px] bg-primary-action hover:bg-primary-action/90 text-white font-bold text-[13px] uppercase tracking-wider rounded-[14px] transition-all shadow-[0_0_20px_rgba(37,99,235,0.15)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RollingText text="Calculate My Tax Savings" />
+              <ArrowRight className="w-4 h-4 text-white" />
             </button>
+            <div className="flex gap-2">
+              <button className="group relative overflow-hidden px-8 py-[18px] bg-white/60 hover:bg-white text-slate-800 border border-slate-200/50 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] dark:text-white dark:border-slate-800 font-bold text-[13px] uppercase tracking-wider rounded-[14px] transition-all flex items-center gap-1.5 shadow-sm dark:shadow-none backdrop-blur-md cursor-pointer">
+                <RollingText text="Explore Platform" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              </button>
+              <button
+                onClick={() => {
+                  setIsPlaying(false);
+                  setTime(0);
+                  setTimeout(() => setIsPlaying(true), 600);
+                }}
+                className="px-5 py-[18px] bg-white/60 hover:bg-white text-slate-600 border border-slate-200/50 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] dark:text-slate-400 dark:border-slate-800 rounded-[14px] transition-all flex items-center justify-center shadow-sm dark:shadow-none backdrop-blur-md cursor-pointer"
+                title="Replay Story"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-[11px] font-mono text-slate-500 dark:text-slate-400 tracking-wider">
+            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-500" /> NO ACCOUNT REQUIRED</span>
+            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-500" /> 100% FREE CALCULATOR</span>
+            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-500" /> PRIVACY FIRST</span>
           </div>
         </div>
       </motion.div>
 
-      {/* THE BROWSER STAGE */}
+      {/* THE BROWSER STAGE - Scaled up 20% to max-w-[960px] */}
       <motion.div
         animate={{
           scale: isZoomingForward ? 1.3 : 1,
@@ -372,9 +381,9 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           filter: isMorphing ? 'blur(4px)' : 'blur(0px)'
         }}
         transition={{ duration: isZoomingForward ? 0.5 : 0.3 }}
-        className="mt-16 w-full max-w-[800px] border border-white/60 dark:border-white/[0.06] bg-white/40 dark:bg-[#0c101a]/85 backdrop-blur-[24px] rounded-[24px] p-2 relative z-10 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.15)] dark:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.7)] animate-browser-breathe"
+        className="mt-16 w-full max-w-[960px] border border-white/60 dark:border-white/[0.06] bg-white/40 dark:bg-[#0c101a]/85 backdrop-blur-[24px] rounded-[20px] p-2 relative z-10 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.15)] dark:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.7)] animate-browser-breathe"
       >
-        <div className="absolute inset-0 overflow-hidden rounded-[24px] pointer-events-none z-20">
+        <div className="absolute inset-0 overflow-hidden rounded-[20px] pointer-events-none z-20">
           <div className="w-1/2 h-[200%] bg-gradient-to-r from-transparent via-white/40 dark:via-white/[0.015] to-transparent absolute animate-glass-sweep" />
         </div>
 
