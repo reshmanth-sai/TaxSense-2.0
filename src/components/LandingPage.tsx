@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useScroll, useSpring, useTransform, motion, AnimatePresence, useInView, useMotionValue } from 'motion/react';
+import { useScroll, useSpring, useTransform, motion, AnimatePresence, useInView, useMotionValue, useReducedMotion } from 'motion/react';
 import { ShieldCheck, Sun, Moon } from 'lucide-react';
 import { useSidebarStore } from './sidebar/useSidebarStore';
 import HeroSection from './HeroSection';
@@ -40,13 +40,32 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   // Scroll Rail Navigation Data & State
   const [activeSection, setActiveSection] = useState('hero');
   const [hoveredDot, setHoveredDot] = useState<string | null>(null);
+  
+  const prefersReducedMotion = useReducedMotion();
+  const [isPillHovered, setIsPillHovered] = useState(false);
+  const [showMobileLabel, setShowMobileLabel] = useState(false);
+  const mobileTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerMobileLabel = () => {
+    setShowMobileLabel(true);
+    if (mobileTimeoutRef.current) clearTimeout(mobileTimeoutRef.current);
+    mobileTimeoutRef.current = setTimeout(() => {
+      setShowMobileLabel(false);
+    }, 1200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (mobileTimeoutRef.current) clearTimeout(mobileTimeoutRef.current);
+    };
+  }, []);
 
   const theme = useSidebarStore((state) => state.theme);
   const setTheme = useSidebarStore((state) => state.setTheme);
 
   const sections = [
     { id: 'hero', label: 'Hero' },
-    { id: 'journey', label: 'Tax Journey' },
+    { id: 'journey', label: 'How It Works' },
     { id: 'interactive-showcase', label: 'Dashboard Showcase' },
     { id: 'comparison', label: 'Regime Comparison' },
     { id: 'copilot', label: 'AI Copilot' },
@@ -60,6 +79,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   const scrollProgressMV = useMotionValue(0);
   const scaleY = useSpring(scrollProgressMV, { stiffness: 100, damping: 30, restDelta: 0.001 });
   const progressHeight = useTransform(scaleY, [0, 1], ["0%", "100%"]);
+  const transformY = useTransform(scaleY, [0, 1], ["0%", "100%"]);
+  const progressGlowY = useTransform(scaleY, [0, 1], [4, 266]);
 
   // Navbar dynamic scroll transparency state
   const [isScrolled, setIsScrolled] = useState(false);
@@ -210,19 +231,54 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
       {/* LEFT SCROLL RAIL (Desktop only) */}
       <motion.div
+        onMouseEnter={() => setIsPillHovered(true)}
+        onMouseLeave={() => setIsPillHovered(false)}
+        onFocus={() => setIsPillHovered(true)}
+        onBlur={() => setIsPillHovered(false)}
+        onTouchStart={triggerMobileLabel}
+        onClick={triggerMobileLabel}
         animate={{ opacity: activeSection === 'journey' ? 0.15 : 1.0 }}
         transition={{ duration: 0.4 }}
-        className="fixed left-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-5 select-none w-12 py-6 bg-white/50 dark:bg-slate-950/20 border border-slate-200/40 dark:border-white/[0.03] backdrop-blur-[16px] rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.03)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
+        whileHover={{
+          scale: prefersReducedMotion ? 1.0 : 1.015,
+          borderColor: "rgba(148, 163, 184, 0.35)",
+          boxShadow: theme === 'dark' 
+            ? "0 20px 56px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05)" 
+            : "0 20px 48px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.4)"
+        }}
+        className="fixed left-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-6 select-none w-12 pt-8 pb-6 bg-gradient-to-b from-white/60 to-white/35 dark:from-slate-950/25 dark:to-slate-950/10 border border-slate-200/40 dark:border-white/[0.03] border-t-white/20 dark:border-t-white/10 backdrop-blur-[18px] rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.03)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.55)] transition-all duration-300"
       >
-        <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">
-          {activeStepText}
-        </span>
+        {/* Typographically Optimized Counter */}
+        <div className="flex items-baseline justify-center gap-0.5 font-mono">
+          <span className="text-[12px] font-bold text-slate-800 dark:text-slate-100 leading-none">
+            {activeIndex + 1}
+          </span>
+          <span className="text-[9.5px] text-slate-400 dark:text-slate-600 font-semibold leading-none px-[0.5px]">
+            /
+          </span>
+          <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-medium leading-none">
+            {sections.length}
+          </span>
+        </div>
 
-        <div className="h-[240px] w-[2px] bg-slate-100 dark:bg-white/[0.04] relative flex flex-col justify-between items-center py-1">
-          {/* Dynamic Fill line with vertical gradient */}
+        {/* Integrated Vertical Track and Dots */}
+        <div className="h-[270px] w-5 relative flex flex-col justify-between items-center py-1">
+          {/* Track Line Background */}
+          <div className="absolute top-0 bottom-0 w-[2px] bg-slate-100 dark:bg-white/[0.04] overflow-hidden rounded-full left-1/2 -translate-x-1/2">
+            {/* Static full-height gradient line */}
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-500 via-[#10B981] to-[#16E27A]" />
+            
+            {/* Dynamic Cover overlay that translates down to reveal the gradient track */}
+            <motion.div
+              style={{ y: transformY }}
+              className="absolute inset-0 bg-slate-100 dark:bg-[#070a12] origin-bottom"
+            />
+          </div>
+
+          {/* Glowing active point following the progress indicator */}
           <motion.div
-            style={{ height: progressHeight as any }}
-            className="absolute top-0 left-0 right-0 bg-gradient-to-b from-blue-500 to-[#16E27A] w-full rounded-full"
+            style={{ y: progressGlowY, x: "-50%" }}
+            className="absolute top-0 left-1/2 w-1.5 h-1.5 bg-[#16E27A] rounded-full blur-[2px] pointer-events-none z-30 animate-pulse"
           />
 
           {sections.map((s, idx) => {
@@ -232,25 +288,47 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             return (
               <div
                 key={s.id}
+                tabIndex={0}
                 onMouseEnter={() => setHoveredDot(s.id)}
                 onMouseLeave={() => setHoveredDot(null)}
+                onFocus={() => setHoveredDot(s.id)}
+                onBlur={() => setHoveredDot(null)}
                 onClick={() => handleScrollTo(s.id)}
-                className="relative flex items-center justify-center w-5 h-5 cursor-pointer z-20"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleScrollTo(s.id);
+                  }
+                }}
+                className="relative flex items-center justify-center w-5 h-5 cursor-pointer z-20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16E27A] rounded-full"
               >
-                <motion.div
-                  animate={{
-                    scale: isActive ? 1.25 : (hoveredDot === s.id ? 1.15 : 1),
-                    backgroundColor: isActive 
-                      ? '#16E27A' 
-                      : (isCompleted ? '#10B981' : (hoveredDot === s.id ? 'rgba(16, 185, 129, 0.4)' : 'rgba(148, 163, 184, 0.2)'))
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`rounded-full border transition-all duration-300 ${
-                    isActive 
-                      ? 'border-white dark:border-[#050607] w-2.5 h-2.5 shadow-[0_0_12px_rgba(22,226,122,0.6)]' 
-                      : 'border-transparent w-2 h-2'
-                  }`}
-                />
+                {isActive ? (
+                  <motion.div
+                    animate={prefersReducedMotion ? {} : {
+                      scale: [1, 1.05, 1],
+                      boxShadow: [
+                        "0 0 8px rgba(22,226,122,0.4)",
+                        "0 0 16px rgba(22,226,122,0.7)",
+                        "0 0 8px rgba(22,226,122,0.4)"
+                      ]
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 2.8,
+                      ease: "easeInOut"
+                    }}
+                    className="w-2.5 h-2.5 bg-[#16E27A] rounded-full border border-white dark:border-[#050607] z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)]"
+                  />
+                ) : isCompleted ? (
+                  <div className="w-2 h-2 bg-[#10B981] dark:bg-[#16E27A] rounded-full z-20 shadow-[0_0_6px_rgba(16,185,129,0.3)] transition-all duration-300 flex items-center justify-center">
+                    {/* Tiny completed marker checkmark */}
+                    <svg className="w-1 h-1 text-white stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-2 h-2 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 rounded-full z-20 opacity-40 transition-all duration-300" />
+                )}
 
                 {/* Pulsing outer ring with soft outer glow for active dot */}
                 {isActive && (
@@ -268,7 +346,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 8 }}
                       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute left-10 px-3 py-1.5 bg-slate-900/90 dark:bg-[#0E131B]/95 backdrop-blur-md border border-slate-700/30 dark:border-white/[0.08] text-white text-[9px] font-bold uppercase tracking-wider rounded-lg whitespace-nowrap shadow-xl"
+                      className="absolute left-10 px-3 py-1.5 bg-slate-900/90 dark:bg-[#0E131B]/95 backdrop-blur-md border border-slate-700/30 dark:border-white/[0.08] text-white text-[9px] font-bold uppercase tracking-wider rounded-lg whitespace-nowrap shadow-xl pointer-events-none"
                     >
                       {s.label}
                     </motion.div>
@@ -279,14 +357,21 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           })}
         </div>
 
-        {/* Vertical text layout for "JOURNEY" to fit inside slim pill */}
-        <div className="flex flex-col items-center gap-[2px] pt-1">
-          {"JOURNEY".split("").map((char, index) => (
-            <span key={index} className="text-[7.5px] font-black text-slate-400 dark:text-slate-500 font-sans tracking-none leading-none">
-              {char}
-            </span>
-          ))}
-        </div>
+        {/* Continuous rotated side label */}
+        <AnimatePresence>
+          {(isPillHovered || showMobileLabel) && (
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: "15%", rotate: -90 }}
+              animate={prefersReducedMotion ? { opacity: 0.75 } : { opacity: 0.75, y: "-50%", rotate: -90 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: "15%", rotate: -90 }}
+              whileHover={{ opacity: 1.0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute left-10 top-1/2 origin-center text-[9.5px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.25em] select-none pointer-events-none whitespace-nowrap"
+            >
+              Journey
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* 2% Opacity Film Grain Overlay */}
