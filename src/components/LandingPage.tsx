@@ -240,7 +240,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         onBlur={() => setIsPillHovered(false)}
         onTouchStart={triggerMobileLabel}
         onClick={triggerMobileLabel}
-        animate={{ opacity: activeSection === 'journey' ? 0.15 : 1.0 }}
+        animate={{ opacity: 1.0 }}
         transition={{ duration: 0.4 }}
         whileHover={{
           scale: prefersReducedMotion ? 1.0 : 1.015,
