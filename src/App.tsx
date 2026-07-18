@@ -520,9 +520,14 @@ export default function App() {
       // Setup interval to check inactivity
       const interval = setInterval(checkExpiry, 30000); // Check every 30 seconds
 
-      // Listen to user interaction events to refresh inactivity timer
+      // Listen to user interaction events to refresh inactivity timer (throttled to once per 5s)
+      let lastWrite = 0;
       const refreshActivity = () => {
-        localStorage.setItem('taxsense_last_active', Date.now().toString());
+        const now = Date.now();
+        if (now - lastWrite > 5000) {
+          localStorage.setItem('taxsense_last_active', now.toString());
+          lastWrite = now;
+        }
       };
 
       window.addEventListener('mousemove', refreshActivity);

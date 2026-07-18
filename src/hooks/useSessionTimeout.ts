@@ -17,8 +17,13 @@ export function useSessionTimeout(timeoutMs: number = 30 * 60 * 1000) { // 30 mi
       sessionStorage.setItem('taxsense_last_active', lastActive.toString());
     }
 
+    let lastWrite = 0;
     const resetTimer = () => {
-      sessionStorage.setItem('taxsense_last_active', Date.now().toString());
+      const now = Date.now();
+      if (now - lastWrite > 5000) {
+        sessionStorage.setItem('taxsense_last_active', now.toString());
+        lastWrite = now;
+      }
     };
 
     // Events to track user activity

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform, animate } from 'motion/react';
 import {
   FileText, Sparkles, ArrowRight, RotateCcw, Volume2, VolumeX, ArrowUpRight,
-  Check, ShieldCheck, Cpu, MousePointer2, Info, CheckCircle2, Lock
+  Check, ShieldCheck, Cpu, MousePointer2, Info, CheckCircle2, Lock, Upload
 } from 'lucide-react';
+import { audioPool } from '../utils/audioPool';
 
 // ----------------------------------------------------------------------
 // PHYSICS & CONSTRAINTS (V4 Master Spec)
@@ -122,34 +123,110 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
   const prefersReducedMotion = useReducedMotion();
   const heroRef = useRef<HTMLDivElement>(null);
 
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [isInView, setIsInView] = useState(true);
 
-  // Continuous Timeline State (0 to 13500ms for V4)
-  const [time, setTime] = useState(0);
+  // Throttled / Decoupled Timeline State
+  const [timelineState, setTimelineState] = useState({
+    showUploadCard: false,
+    isDraggingPDF: false,
+    pdfLands: false,
+    isUploading: false,
+    isUploadComplete: false,
+    showAIExtraction: false,
+    showDashboard: false,
+    showLines: false,
+    isFinalPayoff: false,
+    isZoomingForward: false,
+    showSavingsCounters: false,
+    isMorphing: false,
+    activeStep: 0,
+    task1Done: false,
+    task2Done: false,
+    task3Done: false,
+    task1Status: null as string | null,
+    task2Status: null as string | null,
+    task3Status: null as string | null
+  });
+
   const [isPlaying, setIsPlaying] = useState(true);
 
-  // Audio helper
-  const playBeep = (freq = 600, type: OscillatorType = 'sine', duration = 0.08, volume = 0.02) => {
-    if (!soundEnabled) return;
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      if (freq === 600) osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + duration);
-      else if (freq === 400) osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + duration);
-      gain.gain.setValueAtTime(volume, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch (e) {
-      console.warn('Audio play block:', e);
+  // Framer Motion continuous values
+  const tickerTimeMV = useMotionValue(0);
+  const tickerTimeString = useTransform(tickerTimeMV, (t) => `${(t / 1000).toFixed(1)}s`);
+
+  const uploadProgressMV = useMotionValue(0);
+  const uploadPercentString = useTransform(uploadProgressMV, (p) => `${Math.floor(p * (2 - p) * 100)}%`);
+
+  const cursorXMV = useMotionValue("120%");
+  const cursorYMV = useMotionValue("120%");
+  const cursorOpacityMV = useMotionValue(0);
+  const cursorScaleMV = useMotionValue(1);
+
+  // Target values to avoid double triggering animation calls
+  const targetCursorXRef = useRef("120%");
+  const targetCursorYRef = useRef("120%");
+  const targetCursorOpacityRef = useRef(0);
+  const targetCursorClickingRef = useRef(false);
+  const lastAudioCheckRef = useRef(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // IntersectionObserver to pause timeline ticker off-screen
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        setIsInView(entry.isIntersecting);
+      });
+    }, {
+      threshold: 0.05
+    });
+
+    if (heroRef.current) {
+      observer.observe(heroRef.current);
     }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const resetTimeline = () => {
+    setIsPlaying(false);
+    setTimelineState({
+      showUploadCard: false,
+      isDraggingPDF: false,
+      pdfLands: false,
+      isUploading: false,
+      isUploadComplete: false,
+      showAIExtraction: false,
+      showDashboard: false,
+      showLines: false,
+      isFinalPayoff: false,
+      isZoomingForward: false,
+      showSavingsCounters: false,
+      isMorphing: false,
+      activeStep: 0,
+      task1Done: false,
+      task2Done: false,
+      task3Done: false,
+      task1Status: null as string | null,
+      task2Status: null as string | null,
+      task3Status: null as string | null
+    });
+    tickerTimeMV.set(0);
+    uploadProgressMV.set(0);
+    cursorXMV.set("120%");
+    cursorYMV.set("120%");
+    cursorOpacityMV.set(0);
+    cursorScaleMV.set(1);
+    targetCursorXRef.current = "120%";
+    targetCursorYRef.current = "120%";
+    targetCursorOpacityRef.current = 0;
+    targetCursorClickingRef.current = false;
+    lastAudioCheckRef.current = 0;
+    setTimeout(() => setIsPlaying(true), 600);
   };
 
   // Master Timeline Driver
@@ -160,112 +237,213 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
     const playTimeline = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
       const elapsed = timestamp - startTimestamp;
+      const currentElapsed = elapsed % 18000;
 
-      if (elapsed <= 18000) {
-        setTime(elapsed);
-        animationFrame = window.requestAnimationFrame(playTimeline);
-      } else {
-        // Auto-loop
-        startTimestamp = null;
-        setTime(0);
-        animationFrame = window.requestAnimationFrame(playTimeline);
+      // Update ticking MotionValue out-of-band
+      tickerTimeMV.set(currentElapsed);
+
+      // Upload progress updates
+      const uploadProgress = Math.min(Math.max((currentElapsed - 1500) / 1000, 0), 1);
+      uploadProgressMV.set(uploadProgress);
+
+      // Throttled sound triggers using the recycled AudioPool
+      const lastCheck = lastAudioCheckRef.current;
+      const playBeepPool = (freq: number, type: OscillatorType, dur: number, vol: number) => {
+        if (soundEnabled) {
+          audioPool.playBeep(freq, type, dur, vol);
+        }
+      };
+
+      const checkSoundTrigger = (threshold: number, freq: number, type: OscillatorType, dur: number, vol: number) => {
+        if (lastCheck > currentElapsed) {
+          if (lastCheck <= threshold || currentElapsed >= threshold) {
+            playBeepPool(freq, type, dur, vol);
+          }
+        } else {
+          if (lastCheck < threshold && currentElapsed >= threshold) {
+            playBeepPool(freq, type, dur, vol);
+          }
+        }
+      };
+
+      checkSoundTrigger(1500, 400, 'sine', 0.1, 0.05);
+      checkSoundTrigger(2500, 800, 'sine', 0.1, 0.05);
+      checkSoundTrigger(4400, 720, 'sine', 0.04, 0.012);
+      checkSoundTrigger(5100, 740, 'sine', 0.04, 0.012);
+      checkSoundTrigger(5800, 760, 'sine', 0.04, 0.012);
+      checkSoundTrigger(17000, 600, 'sine', 0.05, 0.05);
+
+      lastAudioCheckRef.current = currentElapsed;
+
+      // Ingest AI task status texts
+      const getTaskStatusLocal = (start: number, done: number, label: string) => {
+        if (currentElapsed < start) return null;
+        if (currentElapsed >= done) return `✓ Verified ${label}`;
+        const prog = (currentElapsed - start) / (done - start);
+        return prog < 0.5 ? `Reading...` : `Scanning...`;
+      };
+
+      const task1Status = getTaskStatusLocal(3800, 4400, "Form 16 structure");
+      const task2Status = getTaskStatusLocal(4500, 5100, "Employer & Deductions");
+      const task3Status = getTaskStatusLocal(5200, 5800, "Regime Optimization");
+
+      // Cursor movement sequencer
+      let cursorX = "120%";
+      let cursorY = "120%";
+      let cursorOpacity = 0;
+      let cursorClicking = false;
+
+      if (currentElapsed > 800 && currentElapsed <= 1300) {
+        cursorOpacity = 1; cursorX = "72%"; cursorY = "58%";
+      } else if (currentElapsed > 1300 && currentElapsed <= 1500) {
+        cursorOpacity = 1; cursorX = "50%"; cursorY = "50%";
+      } else if (currentElapsed > 1500 && currentElapsed <= 2500) {
+        cursorOpacity = 1; cursorX = "53%"; cursorY = "56%";
+      } else if (currentElapsed > 2500 && currentElapsed < 15500) {
+        cursorOpacity = 0; cursorX = "80%"; cursorY = "80%";
+      } else if (currentElapsed >= 15500 && currentElapsed < 16500) {
+        cursorOpacity = 1; cursorX = "50%"; cursorY = "72%";
+      } else if (currentElapsed >= 16500 && currentElapsed < 17000) {
+        cursorOpacity = 1; cursorX = "50%"; cursorY = "75%";
+      } else if (currentElapsed >= 17000 && currentElapsed < 17200) {
+        cursorOpacity = 1; cursorX = "50%"; cursorY = "75%"; cursorClicking = true;
+      } else if (currentElapsed >= 17200) {
+        cursorOpacity = 1; cursorX = "55%"; cursorY = "80%";
       }
+
+      // Smoothly animate cursor MotionValues outside of the React render loop
+      if (targetCursorXRef.current !== cursorX) {
+        targetCursorXRef.current = cursorX;
+        animate(cursorXMV, cursorX, { type: 'spring', stiffness: 140, damping: 24 });
+      }
+      if (targetCursorYRef.current !== cursorY) {
+        targetCursorYRef.current = cursorY;
+        animate(cursorYMV, cursorY, { type: 'spring', stiffness: 140, damping: 24 });
+      }
+      if (targetCursorOpacityRef.current !== cursorOpacity) {
+        targetCursorOpacityRef.current = cursorOpacity;
+        animate(cursorOpacityMV, cursorOpacity, { duration: 0.3 });
+      }
+      if (targetCursorClickingRef.current !== cursorClicking) {
+        targetCursorClickingRef.current = cursorClicking;
+        animate(cursorScaleMV, cursorClicking ? 0.9 : 1, { duration: 0.15 });
+      }
+
+      // Threshold check triggers for React state updates
+      const nextShowUploadCard = currentElapsed >= 500;
+      const nextIsDraggingPDF = currentElapsed > 1000 && currentElapsed < 1500;
+      const nextPdfLands = currentElapsed >= 1500;
+      const nextIsUploading = currentElapsed >= 1500 && currentElapsed < 2500;
+      const nextIsUploadComplete = currentElapsed >= 2500;
+      const nextShowAIExtraction = currentElapsed >= 3500;
+      const nextShowDashboard = currentElapsed >= 6500;
+      const nextShowLines = currentElapsed >= 7800;
+      const nextShowSavingsCounters = currentElapsed >= 8000;
+      const nextIsFinalPayoff = currentElapsed >= 11500;
+      const nextIsZoomingForward = currentElapsed >= 17200;
+
+      const nextActiveStep = currentElapsed >= 11500 ? 3 : currentElapsed >= 6500 ? 2 : currentElapsed >= 3500 ? 1 : 0;
+
+      const task1Done = currentElapsed >= 4400;
+      const task2Done = currentElapsed >= 5100;
+      const task3Done = currentElapsed >= 5800;
+
+      const nextIsMorphing = (currentElapsed > 3000 && currentElapsed < 3500) || (currentElapsed > 6000 && currentElapsed < 6500);
+
+      // Update react state ONLY if a threshold is crossed (approx 15 renders per 18s loop!)
+      setTimelineState(prev => {
+        if (
+          prev.showUploadCard === nextShowUploadCard &&
+          prev.isDraggingPDF === nextIsDraggingPDF &&
+          prev.pdfLands === nextPdfLands &&
+          prev.isUploading === nextIsUploading &&
+          prev.isUploadComplete === nextIsUploadComplete &&
+          prev.showAIExtraction === nextShowAIExtraction &&
+          prev.showDashboard === nextShowDashboard &&
+          prev.showLines === nextShowLines &&
+          prev.showSavingsCounters === nextShowSavingsCounters &&
+          prev.isFinalPayoff === nextIsFinalPayoff &&
+          prev.isZoomingForward === nextIsZoomingForward &&
+          prev.isMorphing === nextIsMorphing &&
+          prev.activeStep === nextActiveStep &&
+          prev.task1Done === task1Done &&
+          prev.task2Done === task2Done &&
+          prev.task3Done === task3Done &&
+          prev.task1Status === task1Status &&
+          prev.task2Status === task2Status &&
+          prev.task3Status === task3Status
+        ) {
+          return prev;
+        }
+
+        return {
+          showUploadCard: nextShowUploadCard,
+          isDraggingPDF: nextIsDraggingPDF,
+          pdfLands: nextPdfLands,
+          isUploading: nextIsUploading,
+          isUploadComplete: nextIsUploadComplete,
+          showAIExtraction: nextShowAIExtraction,
+          showDashboard: nextShowDashboard,
+          showLines: nextShowLines,
+          showSavingsCounters: nextShowSavingsCounters,
+          isFinalPayoff: nextIsFinalPayoff,
+          isZoomingForward: nextIsZoomingForward,
+          isMorphing: nextIsMorphing,
+          activeStep: nextActiveStep,
+          task1Done,
+          task2Done,
+          task3Done,
+          task1Status,
+          task2Status,
+          task3Status
+        };
+      });
+
+      animationFrame = window.requestAnimationFrame(playTimeline);
     };
 
-    if (isPlaying && !prefersReducedMotion) {
+    if (isPlaying && isInView && !prefersReducedMotion) {
       animationFrame = window.requestAnimationFrame(playTimeline);
     } else if (prefersReducedMotion) {
-      setTime(18000);
+      setTimelineState(prev => ({
+        ...prev,
+        showUploadCard: true,
+        isUploadComplete: true,
+        showAIExtraction: true,
+        showDashboard: true,
+        showLines: true,
+        showSavingsCounters: true,
+        isFinalPayoff: true,
+        task1Done: true,
+        task2Done: true,
+        task3Done: true
+      }));
     }
 
     return () => window.cancelAnimationFrame(animationFrame);
-  }, [isPlaying, prefersReducedMotion]);
+  }, [isPlaying, isInView, soundEnabled, prefersReducedMotion]);
 
-  // SCENE TIMING BOOLEANS (V4 18.0s Extended Timeline)
-  // 0.0s - 1.0s: Idle
-  // 1.0s - 3.0s: Upload Card
-  const showUploadCard = time >= 500;
-  const isDraggingPDF = time > 1000 && time < 1500;
-  const pdfLands = time >= 1500;
-  const isUploading = time >= 1500 && time < 2500;
-  const isUploadComplete = time >= 2500;
+  const {
+    showUploadCard,
+    isDraggingPDF,
+    pdfLands,
+    isUploading,
+    isUploadComplete,
+    showAIExtraction,
+    showDashboard,
+    showLines,
+    isFinalPayoff,
+    isZoomingForward,
+    isMorphing
+  } = timelineState;
 
-  // 3.5s - 6.5s: AI Extraction
-  const showAIExtraction = time >= 3500;
-
-  // 6.5s - 10.0s: Dashboard & Lines
-  const showDashboard = time >= 6500;
-  const showLines = time >= 8500;
-
-  // 11.5s - 18.0s: Keynote Final Reward
-  const isFinalPayoff = time >= 11500;
-
-  // 17.2s: Click & Zoom
-  const isZoomingForward = time >= 17200;
-
-  // Upload Progress Interpolator
-  const uploadProgress = Math.min(Math.max((time - 1500) / (2500 - 1500), 0), 1);
-  const uploadPercent = Math.floor(uploadProgress * (2 - uploadProgress) * 100);
-
-  // AI Task Sequencer (Start at 3.5s, 600ms per task duration)
   const aiTasks = useMemo(() => [
     { id: 1, label: "Form 16 structure", start: 3800, done: 4400 },
     { id: 2, label: "Employer & Deductions", start: 4500, done: 5100 },
     { id: 3, label: "Regime Optimization", start: 5200, done: 5800 }
   ], []);
 
-  // Play sound on task completion
-  useEffect(() => {
-    aiTasks.forEach(t => {
-      if (Math.abs(time - t.done) < 30) playBeep(700 + t.id * 20, 'sine', 0.04, 0.012);
-    });
-    if (Math.abs(time - 1500) < 30) playBeep(400, 'sine', 0.1, 0.05); // Drop thump
-    if (Math.abs(time - 2500) < 30) playBeep(800, 'sine', 0.1, 0.05); // Verified
-    if (Math.abs(time - 17000) < 30) playBeep(600, 'sine', 0.05, 0.05); // Click at 17.0s
-  }, [time, aiTasks]);
-
-  // Dynamic AI Text state function
-  const getTaskStatus = (t: { start: number, done: number, label: string }) => {
-    if (time < t.start) return null;
-    if (time >= t.done) return `✓ Verified ${t.label}`;
-    const progress = (time - t.start) / (t.done - t.start);
-    return progress < 0.5 ? `Reading...` : `Scanning...`;
-  };
-
-  // IMPERFECT CURSOR PHYSICS
-  let cursorX = "120%";
-  let cursorY = "120%";
-  let cursorOpacity = 0;
-  let cursorClicking = false;
-
-  if (time > 800 && time <= 1300) {
-    // Bring cursor in to grab PDF (Overshoot slightly)
-    cursorOpacity = 1; cursorX = "72%"; cursorY = "58%";
-  } else if (time > 1300 && time <= 1500) {
-    // Correct and drag to dropzone
-    cursorOpacity = 1; cursorX = "50%"; cursorY = "50%";
-  } else if (time > 1500 && time <= 2500) {
-    // Drift away slightly
-    cursorOpacity = 1; cursorX = "53%"; cursorY = "56%";
-  } else if (time > 2500 && time < 15500) {
-    // Hide during AI & Dashboard build and rest phase
-    cursorOpacity = 0; cursorX = "80%"; cursorY = "80%";
-  } else if (time >= 15500 && time < 16500) {
-    // Bring back for CTA
-    cursorOpacity = 1; cursorX = "50%"; cursorY = "72%";
-  } else if (time >= 16500 && time < 17000) {
-    // Hover CTA target
-    cursorOpacity = 1; cursorX = "50%"; cursorY = "75%";
-  } else if (time >= 17000 && time < 17200) {
-    // Click!
-    cursorOpacity = 1; cursorX = "50%"; cursorY = "75%"; cursorClicking = true;
-  } else if (time >= 17200) {
-    // Drift away
-    cursorOpacity = 1; cursorX = "55%"; cursorY = "80%";
-  }
-
-  // Motion Blur Class for major morphs (Upload -> Extract -> Dashboard)
-  const isMorphing = (time > 3000 && time < 3500) || (time > 6000 && time < 6500);
+  const cursorClicking = targetCursorClickingRef.current;
 
   return (
     <div
@@ -293,6 +471,11 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           100% { transform: translate(250%, 250%) rotate(30deg); opacity: 0; }
         }
         .animate-glass-sweep { animation: glass-sweep 20s infinite cubic-bezier(0.16, 1, 0.3, 1); }
+
+        @keyframes dashed-spin {
+          from { stroke-dashoffset: 0; }
+          to { stroke-dashoffset: -20; }
+        }
       `}</style>
 
       {/* 0.5px/s Dust Particles (Max 12) & 4% Aurora */}
@@ -314,6 +497,8 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
         ))}
         <div className="absolute top-[20%] left-[20%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-[#2563EB]/4 to-transparent blur-[120px]" />
         <div className="absolute bottom-[20%] right-[20%] w-[400px] h-[400px] rounded-full bg-gradient-to-br from-[#10B981]/4 to-transparent blur-[100px]" />
+        {/* Soft aurora glow directly behind browser stage */}
+        <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-[700px] h-[350px] rounded-full bg-emerald-500/[0.02] dark:bg-[#16E27A]/[0.015] blur-[120px] pointer-events-none" />
       </div>
 
       {/* Hero Copy (V4 Master Spec) */}
@@ -340,7 +525,7 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <button
               onClick={onStart}
-              className="group relative overflow-hidden px-8 py-[18px] bg-primary-action hover:bg-primary-action/90 text-white font-bold text-[13px] uppercase tracking-wider rounded-[14px] transition-all shadow-[0_0_20px_rgba(37,99,235,0.15)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer"
+              className="group relative overflow-hidden px-8 py-[18px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-[13px] uppercase tracking-wider rounded-[14px] transition-all duration-300 shadow-[0_4px_14px_rgba(37,99,235,0.18)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.3)] active:scale-[0.97] hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
             >
               <RollingText text="Calculate My Tax Savings" />
               <ArrowRight className="w-4 h-4 text-white" />
@@ -351,11 +536,7 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
                 <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               </button>
               <button
-                onClick={() => {
-                  setIsPlaying(false);
-                  setTime(0);
-                  setTimeout(() => setIsPlaying(true), 600);
-                }}
+                onClick={resetTimeline}
                 className="px-5 py-[18px] bg-white/60 hover:bg-white text-slate-600 border border-slate-200/50 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] dark:text-slate-400 dark:border-slate-800 rounded-[14px] transition-all flex items-center justify-center shadow-sm dark:shadow-none backdrop-blur-md cursor-pointer"
                 title="Replay Story"
               >
@@ -371,24 +552,23 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
             <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-500" /> PRIVACY FIRST</span>
           </div>
         </div>
-      </motion.div>
-
-      {/* THE BROWSER STAGE - Scaled up 20% to max-w-[960px] */}
+      </motion.div>      {/* THE BROWSER STAGE - Scaled up to max-w-[1080px] with tighter gap */}
       <motion.div
         animate={{
-          scale: isZoomingForward ? 1.3 : 1,
-          opacity: isZoomingForward ? 0 : 1,
+          scale: isZoomingForward ? 1.3 : (mounted ? 1 : 0.96),
+          opacity: isZoomingForward ? 0 : (mounted ? 1 : 0),
           filter: isMorphing ? 'blur(4px)' : 'blur(0px)'
         }}
-        transition={{ duration: isZoomingForward ? 0.5 : 0.3 }}
-        className="mt-16 w-full max-w-[960px] border border-white/60 dark:border-white/[0.06] bg-white/40 dark:bg-[#0c101a]/85 backdrop-blur-[24px] rounded-[20px] p-2 relative z-10 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.15)] dark:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.7)] animate-browser-breathe"
+        initial={{ scale: 0.96, opacity: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="mt-10 w-full max-w-[1080px] border border-slate-200 dark:border-white/[0.06] bg-white/70 dark:bg-[#0c101a]/95 backdrop-blur-[24px] rounded-[20px] p-2 relative z-10 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.7)] animate-browser-breathe"
       >
         <div className="absolute inset-0 overflow-hidden rounded-[20px] pointer-events-none z-20">
           <div className="w-1/2 h-[200%] bg-gradient-to-r from-transparent via-white/40 dark:via-white/[0.015] to-transparent absolute animate-glass-sweep" />
         </div>
 
         {/* Title Bar with Semantic Timeline */}
-        <div className="h-10 border-b border-slate-200/50 dark:border-white/[0.04] bg-white/60 dark:bg-slate-900/50 backdrop-blur-md px-5 flex items-center justify-between rounded-t-[22px]">
+        <div className="h-10 border-b border-slate-200 dark:border-white/[0.04] bg-white dark:bg-[#0E131B]/90 backdrop-blur-md px-5 flex items-center justify-between rounded-t-[22px]">
           <div className="flex gap-1.5">
             <span className="w-3 h-3 rounded-full bg-red-500/40 border border-red-500/20" />
             <span className="w-3 h-3 rounded-full bg-yellow-500/40 border border-yellow-500/20" />
@@ -400,19 +580,19 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
               <Lock className="w-3 h-3" /> taxsense.in/sandbox
             </div>
             <div className="hidden sm:flex items-center gap-3 border-l border-slate-300 dark:border-white/10 pl-4">
-              <span className={time >= 0 && time < 3500 ? "text-emerald-600 dark:text-emerald-400 font-bold" : ""}>● Upload</span>
-              <span className={time >= 3500 && time < 6500 ? "text-blue-600 dark:text-blue-400 font-bold" : ""}>● Extract</span>
-              <span className={time >= 6500 && time < 11500 ? "text-blue-600 dark:text-blue-400 font-bold" : ""}>● Compare</span>
-              <span className={time >= 11500 ? "text-emerald-600 dark:text-emerald-400 font-bold" : ""}>● Ready</span>
+            <span className={timelineState.activeStep === 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : ""}>● Upload</span>
+              <span className={timelineState.activeStep === 1 ? "text-blue-600 dark:text-blue-400 font-bold" : ""}>● Extract</span>
+              <span className={timelineState.activeStep === 2 ? "text-blue-600 dark:text-blue-400 font-bold" : ""}>● Compare</span>
+              <span className={timelineState.activeStep === 3 ? "text-emerald-600 dark:text-emerald-400 font-bold" : ""}>● Ready</span>
             </div>
           </div>
           <div className="w-12 text-[9px] font-mono text-slate-500 dark:text-slate-600 text-right">
-            {(time / 1000).toFixed(1)}s
+            <motion.span>{tickerTimeString}</motion.span>
           </div>
         </div>
 
-        {/* BROWSER CONTENT WINDOW */}
-        <div className="w-full bg-slate-50/90 dark:bg-[#030712] rounded-b-[22px] min-h-[450px] relative overflow-hidden flex items-center justify-center font-sans p-8 border-t border-slate-200 dark:border-transparent">
+        {/* BROWSER CONTENT WINDOW with increased height */}
+        <div className="w-full bg-slate-50/90 dark:bg-[#030712] rounded-b-[22px] min-h-[510px] relative overflow-hidden flex items-center justify-center font-sans p-8 border-t border-slate-200 dark:border-transparent">
 
           {/* APPLE KEYNOTE DESATURATION LAYER */}
           <motion.div
@@ -430,12 +610,46 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
               <motion.div
                 layoutId="morph-container"
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: isDraggingPDF ? 1.04 : 1, 
+                  y: 0,
+                  boxShadow: isDraggingPDF 
+                    ? '0 20px 50px rgba(16,185,129,0.12), inset 0 1px 1px rgba(255,255,255,0.06)' 
+                    : '0 8px 32px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,0.04)'
+                }}
                 exit={{ opacity: 0, scale: 0.95, y: -40 }} // Exit morph
-                transition={SPRING_HEAVY}
-                className="w-[340px] bg-white/40 dark:bg-slate-900/10 border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md rounded-[20px] p-8 flex flex-col items-center text-center relative overflow-hidden group"
-                style={{ borderStyle: isUploadComplete ? 'solid' : 'dashed' }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                className={`w-[340px] bg-white dark:bg-[#0E131B] backdrop-blur-md rounded-[20px] p-8 flex flex-col items-center text-center relative overflow-hidden group border transition-colors duration-300 ${
+                  isUploadComplete 
+                    ? 'border-slate-300 dark:border-slate-700 border-solid' 
+                    : (isDraggingPDF ? 'border-emerald-500/50 dark:border-[#16E27A]/50 bg-emerald-500/[0.02]' : 'border-slate-200 dark:border-white/[0.06]')
+                }`}
               >
+                {/* Marching Ants Dashed Border Animation */}
+                {!isUploadComplete && (
+                  <motion.svg 
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute inset-0 w-full h-full pointer-events-none rounded-[20px]"
+                  >
+                    <rect
+                      x="1.5" y="1.5"
+                      width="calc(100% - 3px)"
+                      height="calc(100% - 3px)"
+                      rx="18" ry="18"
+                      fill="none"
+                      stroke={isDraggingPDF ? "#10B981" : "rgba(59,130,246,0.3)"}
+                      className={isDraggingPDF ? "" : "dark:stroke-emerald-500/35"}
+                      strokeWidth="1.5"
+                      strokeDasharray="6 4"
+                      style={{
+                        animation: 'dashed-spin 1.2s linear infinite',
+                      }}
+                    />
+                  </motion.svg>
+                )}
+
                 {/* Dotted Hover Glow */}
                 <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/[0.02] transition-colors duration-500" />
 
@@ -448,43 +662,52 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
                     className="absolute z-20 pointer-events-none drop-shadow-2xl"
                   >
                     <div className="w-16 h-20 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center">
-                      <FileText className="w-8 h-8 text-red-500" />
+                      <FileText className="w-8 h-8 text-red-500 animate-bounce" />
                       <span className="text-[7px] text-slate-800 dark:text-slate-200 font-bold mt-1">PDF</span>
                     </div>
                   </motion.div>
                 )}
 
                 <motion.div
-                  animate={{ scale: pdfLands ? 1.05 : 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                  animate={{ 
+                    scale: pdfLands ? 1.05 : 1,
+                    y: isUploadComplete ? 0 : [0, -3, 0]
+                  }}
+                  transition={{ 
+                    y: isUploadComplete ? {} : { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
+                    scale: { type: "spring", stiffness: 300, damping: 10 }
+                  }}
                   className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-colors duration-300 relative z-10 ${isUploadComplete ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
                     } border shadow-inner`}
                 >
                   {isUploadComplete ? (
                     <Check className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    <FileText className="w-7 h-7 text-slate-400" />
+                    <Upload className="w-7 h-7 text-slate-400" />
                   )}
                 </motion.div>
 
                 <h4 className="text-[15px] font-bold text-slate-900 dark:text-white mb-2 relative z-10">
-                  {isUploadComplete ? 'Document Secured' : 'Drag Form 16 Here'}
+                  {isUploadComplete ? 'Document Secured' : (isDraggingPDF ? 'Drop your Form 16' : 'Drag Form 16 Here')}
                 </h4>
 
                 {!isUploading && !isUploadComplete && (
-                  <p className="text-[12px] text-slate-500 relative z-10">Secure AES-256 Client Processing</p>
+                  <div className="space-y-1 relative z-10 text-[11px] text-slate-500 dark:text-slate-400">
+                    <p>Supported: Form 16, AIS, 26AS</p>
+                    <p className="text-[9px] uppercase font-mono tracking-wider text-slate-400/80">Secure Local Sandbox</p>
+                  </div>
                 )}
 
                 {isUploading && (
                   <div className="w-full mt-4 space-y-2 relative z-10">
-                    <div className="flex justify-between items-center text-[11px] font-mono text-slate-650 dark:text-slate-400">
+                    <div className="flex justify-between items-center text-[11px] font-mono text-slate-655 dark:text-slate-400">
                       <span>Form16.pdf</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{uploadPercent}%</span>
+                      <motion.span className="text-emerald-600 dark:text-emerald-400 font-bold">{uploadPercentString}</motion.span>
                     </div>
                     <div className="h-1.5 bg-slate-100 dark:bg-slate-950 rounded-full overflow-hidden border border-slate-200 dark:border-slate-800">
-                      <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 relative" style={{ width: `${uploadPercent}%` }}>
+                      <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 relative" style={{ width: uploadPercentString }}>
                         <ShimmerLine active={true} />
-                      </div>
+                      </motion.div>
                     </div>
                   </div>
                 )}
@@ -500,7 +723,7 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
                 transition={SPRING_HEAVY}
-                className="w-[460px] bg-white/40 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/85 backdrop-blur-xl rounded-[20px] p-6 shadow-2xl relative overflow-hidden"
+                className="w-[460px] bg-white dark:bg-[#0E131B] border border-slate-250 dark:border-white/[0.06] backdrop-blur-xl rounded-[20px] p-6 shadow-2xl relative overflow-hidden"
               >
                 {/* Laser Scanning Line */}
                 <motion.div
@@ -521,9 +744,9 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
 
                 <div className="space-y-3 relative z-10">
                   {aiTasks.map((task) => {
-                    const statusText = getTaskStatus(task);
+                    const isDone = task.id === 1 ? timelineState.task1Done : task.id === 2 ? timelineState.task2Done : timelineState.task3Done;
+                    const statusText = task.id === 1 ? timelineState.task1Status : task.id === 2 ? timelineState.task2Status : timelineState.task3Status;
                     if (!statusText) return null;
-                    const isDone = time >= task.done;
 
                     return (
                       <motion.div
@@ -590,43 +813,43 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
                   <motion.div
                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.0, ...SPRING_GENTLE }}
-                    className="bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl"
+                    className="bg-white dark:bg-[#0E131B] border border-slate-250 dark:border-white/[0.06] rounded-2xl p-6 shadow-xl"
                   >
-                    <div className="text-[11px] text-slate-500 font-mono uppercase mb-2 tracking-wider">Detected Income</div>
+                    <div className="text-[11px] text-slate-555 dark:text-slate-400 font-mono uppercase mb-2 tracking-wider">Detected Income</div>
                     <div className="text-[15px] font-bold text-slate-900 dark:text-white mb-4">Google India Pvt Ltd</div>
                     <div className="text-xl font-mono font-bold text-slate-900 dark:text-white">₹8,50,000</div>
                   </motion.div>
 
-                  {/* 2. Deductions Card (Entry 7.0s) */}
+                  {/* 2. Deductions Card (Entry 6.75s) */}
                   <motion.div
                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, ...SPRING_GENTLE }}
-                    className="bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl"
+                    transition={{ delay: 0.25, ...SPRING_GENTLE }}
+                    className="bg-white dark:bg-[#0E131B] border border-slate-250 dark:border-white/[0.06] rounded-2xl p-6 shadow-xl"
                   >
-                    <div className="text-[11px] text-slate-500 font-mono uppercase mb-2 tracking-wider">Verified Deductions</div>
+                    <div className="text-[11px] text-slate-555 dark:text-slate-400 font-mono uppercase mb-2 tracking-wider">Verified Deductions</div>
                     <div className="text-[15px] font-bold text-slate-900 dark:text-white mb-4">Sec 80C + Standard</div>
-                    <div className="text-xl font-mono font-bold text-emerald-600 dark:text-emerald-400">₹2,25,000</div>
+                    <div className="text-xl font-mono font-bold text-emerald-700 dark:text-emerald-450">₹2,25,000</div>
                   </motion.div>
                 </div>
 
-                {/* 3. Regime Comparison (Entry 8.0s) */}
+                {/* 3. Regime Comparison (Entry 7.0s) */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.5, ...SPRING_GENTLE }}
-                  className="bg-white/65 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 grid grid-cols-2 gap-6 shadow-2xl relative overflow-hidden mx-auto w-[400px]"
+                  transition={{ delay: 0.5, ...SPRING_GENTLE }}
+                  className="bg-white dark:bg-[#0E131B] border border-slate-250 dark:border-white/[0.06] rounded-2xl p-6 grid grid-cols-2 gap-6 shadow-2xl relative overflow-hidden mx-auto w-[400px]"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent animate-pulse opacity-50" />
 
                   <div className="text-center relative z-10">
-                    <div className="text-[11px] text-slate-500 font-mono uppercase mb-2 tracking-wider">Old Regime</div>
+                    <div className="text-[11px] text-slate-555 dark:text-slate-400 font-mono uppercase mb-2 tracking-wider">Old Regime</div>
                     <div className="text-2xl font-mono font-bold text-slate-500 dark:text-slate-400 line-through decoration-red-500/50 decoration-2">
-                      {time >= 10000 ? <RollingCounter value={54600} prefix="₹" delayMs={0} /> : "₹00,000"}
+                      {timelineState.showSavingsCounters ? <RollingCounter value={54600} prefix="₹" delayMs={0} /> : "₹00,000"}
                     </div>
                   </div>
-                  <div className="text-center relative z-10">
-                    <div className="text-[11px] text-emerald-600 dark:text-emerald-500 font-mono uppercase mb-2 tracking-wider">New Regime</div>
-                    <div className="text-2xl font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                      {time >= 10000 ? <RollingCounter value={36360} prefix="₹" delayMs={500} /> : "₹00,000"}
+                  <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/5 border border-emerald-200/50 dark:border-emerald-500/10 rounded-2xl flex-1 shadow-sm text-center">
+                    <div className="text-[11px] text-emerald-600 dark:text-emerald-500 font-mono uppercase mb-2 tracking-widest font-bold">New Regime Tax</div>
+                    <div className="text-xl sm:text-2xl font-black text-[#10B981] dark:text-[#16E27A] font-mono leading-none tracking-tight">
+                      {timelineState.showSavingsCounters ? <RollingCounter value={36360} prefix="₹" delayMs={400} /> : "₹00,000"}
                     </div>
                   </div>
                 </motion.div>
@@ -694,10 +917,15 @@ export default function HeroSection({ onStart }: HeroSectionProps) {
           {/* SIMULATED LIVING CURSOR */}
           {!prefersReducedMotion && (
             <motion.div
-              animate={{ left: cursorX, top: cursorY, opacity: cursorOpacity, scale: cursorClicking ? 0.9 : 1 }}
-              transition={{ type: 'spring', stiffness: 140, damping: 24, opacity: { duration: 0.3 } }} // Human imperfect spring
+              style={{
+                left: cursorXMV,
+                top: cursorYMV,
+                opacity: cursorOpacityMV,
+                scale: cursorScaleMV,
+                x: '-20%',
+                y: '-10%'
+              }}
               className="absolute z-50 pointer-events-none w-7 h-7 flex items-center justify-center drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
-              style={{ x: '-20%', y: '-10%' }}
             >
               <MousePointer2 className="w-6 h-6 text-white fill-black stroke-[1.5]" />
               {cursorClicking && (
