@@ -185,21 +185,21 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         className="absolute inset-0 z-0 pointer-events-none opacity-20 hidden dark:block"
       />
 
-      {/* LEFT SCROLL JOURNEY RAIL (Desktop only) */}
+      {/* LEFT SCROLL RAIL (Desktop only) */}
       <motion.div
         animate={{ opacity: activeSection === 'journey' ? 0.15 : 1.0 }}
         transition={{ duration: 0.4 }}
-        className="fixed left-12 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-4 select-none"
+        className="fixed left-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-5 select-none w-12 py-6 bg-white/50 dark:bg-slate-950/20 border border-slate-200/40 dark:border-white/[0.03] backdrop-blur-[16px] rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.03)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
       >
-        <span className="text-[9px] font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+        <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">
           {activeStepText}
         </span>
 
-        <div className="h-[280px] w-[2px] bg-gradient-to-b from-slate-200 via-slate-350 to-slate-200 dark:from-white/[0.08] dark:via-white/[0.18] dark:to-white/[0.08] relative flex flex-col justify-between items-center py-2">
-          {/* Dynamic Fill line with vertical gradient and lower opacity */}
+        <div className="h-[240px] w-[2px] bg-slate-100 dark:bg-white/[0.04] relative flex flex-col justify-between items-center py-1">
+          {/* Dynamic Fill line with vertical gradient */}
           <motion.div
             style={{ scaleY }}
-            className="absolute top-0 left-0 right-0 bg-gradient-to-b from-slate-400 to-slate-900 dark:from-white/20 dark:to-white/60 origin-top h-full w-full opacity-60"
+            className="absolute top-0 left-0 right-0 bg-gradient-to-b from-blue-500 to-[#16E27A] origin-top h-full w-full rounded-full"
           />
 
           {sections.map((s, idx) => {
@@ -212,36 +212,40 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                 onMouseEnter={() => setHoveredDot(s.id)}
                 onMouseLeave={() => setHoveredDot(null)}
                 onClick={() => handleScrollTo(s.id)}
-                className="relative flex items-center justify-center w-6 h-6 cursor-pointer"
+                className="relative flex items-center justify-center w-5 h-5 cursor-pointer z-20"
               >
                 <motion.div
-                  className={`rounded-full transition-all duration-300 ${isActive
-                      ? 'w-2.5 h-2.5 bg-slate-900 shadow-[0_0_8px_rgba(0,0,0,0.2)] dark:bg-white dark:shadow-[0_0_10px_rgba(255,255,255,0.7)] border border-white dark:border-[#020202] z-20'
-                      : isCompleted
-                        ? 'w-2 h-2 bg-slate-500 dark:bg-white/60 z-20'
-                        : 'w-2 h-2 bg-slate-200 hover:bg-slate-300 dark:bg-white/20 dark:hover:bg-white/45 z-20'
-                    }`}
-                  animate={isActive ? { opacity: [0.7, 1, 0.7] } : {}}
-                  transition={isActive ? { repeat: Infinity, duration: 3.5, ease: "easeInOut" } : {}}
+                  animate={{
+                    scale: isActive ? 1.25 : 1,
+                    backgroundColor: isActive 
+                      ? '#16E27A' 
+                      : (isCompleted ? '#10B981' : 'rgba(148, 163, 184, 0.2)')
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className={`rounded-full border transition-all duration-300 ${
+                    isActive 
+                      ? 'border-white dark:border-[#050607] w-2.5 h-2.5 shadow-[0_0_12px_rgba(22,226,122,0.6)]' 
+                      : 'border-transparent w-2 h-2'
+                  }`}
                 />
 
                 {/* Pulsing outer ring with soft outer glow for active dot */}
                 {isActive && (
                   <motion.span
-                    animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.3, 1] }}
-                    transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
-                    className="absolute w-5 h-5 rounded-full border border-slate-900/30 dark:border-white/40 pointer-events-none"
+                    layoutId="activeDotRing"
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    className="absolute w-4.5 h-4.5 rounded-full border border-[#16E27A]/40 pointer-events-none"
                   />
                 )}
 
                 <AnimatePresence>
                   {hoveredDot === s.id && (
                     <motion.div
-                      initial={{ opacity: 0, x: -10 }}
+                      initial={{ opacity: 0, x: 8 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="absolute left-8 px-2.5 py-1 bg-white/80 dark:bg-[#0E131B] backdrop-blur-md border border-slate-200/50 dark:border-white/[0.06] text-slate-800 dark:text-white text-[9px] font-bold uppercase tracking-wider rounded-md whitespace-nowrap shadow-xl"
+                      exit={{ opacity: 0, x: 8 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute left-10 px-3 py-1.5 bg-slate-900/90 dark:bg-[#0E131B]/95 backdrop-blur-md border border-slate-700/30 dark:border-white/[0.08] text-white text-[9px] font-bold uppercase tracking-wider rounded-lg whitespace-nowrap shadow-xl"
                     >
                       {s.label}
                     </motion.div>
@@ -252,9 +256,14 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           })}
         </div>
 
-        <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-          Filing Journey
-        </span>
+        {/* Vertical text layout for "JOURNEY" to fit inside slim pill */}
+        <div className="flex flex-col items-center gap-[2px] pt-1">
+          {"JOURNEY".split("").map((char, index) => (
+            <span key={index} className="text-[7.5px] font-black text-slate-400 dark:text-slate-500 font-sans tracking-none leading-none">
+              {char}
+            </span>
+          ))}
+        </div>
       </motion.div>
 
       {/* 2% Opacity Film Grain Overlay */}
