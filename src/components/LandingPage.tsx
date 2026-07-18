@@ -33,6 +33,22 @@ const LazySection: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
+const getNodeColorRGB = (idx: number): [number, number, number] => {
+  if (idx <= 4) {
+    const ratio = idx / 4;
+    const r = Math.round(59 + (16 - 59) * ratio);
+    const g = Math.round(130 + (185 - 130) * ratio);
+    const b = Math.round(246 + (129 - 246) * ratio);
+    return [r, g, b];
+  } else {
+    const ratio = (idx - 4) / 4;
+    const r = Math.round(16 + (22 - 16) * ratio);
+    const g = Math.round(185 + (226 - 185) * ratio);
+    const b = Math.round(129 + (122 - 129) * ratio);
+    return [r, g, b];
+  }
+};
+
 export default function LandingPage({ onStart }: LandingPageProps) {
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [soundEnabled] = useState(true);
@@ -264,13 +280,22 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
           {/* Glowing active point following the progress indicator */}
           <motion.div
-            style={{ y: progressGlowY, x: "-50%" }}
-            className="absolute top-0 left-1/2 w-1.5 h-1.5 bg-[#16E27A] rounded-full blur-[2px] pointer-events-none z-30 animate-pulse"
+            style={{ 
+              y: progressGlowY, 
+              x: "-50%",
+              backgroundColor: `rgb(${getNodeColorRGB(activeIndex)[0]}, ${getNodeColorRGB(activeIndex)[1]}, ${getNodeColorRGB(activeIndex)[2]})`,
+              boxShadow: `0 0 10px rgba(${getNodeColorRGB(activeIndex)[0]}, ${getNodeColorRGB(activeIndex)[1]}, ${getNodeColorRGB(activeIndex)[2]}, 0.8)`
+            }}
+            className="absolute top-0 left-1/2 w-1.5 h-1.5 rounded-full blur-[2px] pointer-events-none z-30 animate-pulse"
           />
 
           {sections.map((s, idx) => {
             const isCompleted = idx < activeIndex;
             const isActive = idx === activeIndex;
+            const [r, g, b] = getNodeColorRGB(idx);
+            const rgbStr = `rgb(${r}, ${g}, ${b})`;
+            const rgbaGlowStr = `rgba(${r}, ${g}, ${b}, 0.4)`;
+            const rgbaGlowStrongStr = `rgba(${r}, ${g}, ${b}, 0.7)`;
 
             return (
               <div
@@ -294,9 +319,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                     animate={prefersReducedMotion ? {} : {
                       scale: [1, 1.05, 1],
                       boxShadow: [
-                        "0 0 8px rgba(22,226,122,0.4)",
-                        "0 0 16px rgba(22,226,122,0.7)",
-                        "0 0 8px rgba(22,226,122,0.4)"
+                        `0 0 8px ${rgbaGlowStr}`,
+                        `0 0 16px ${rgbaGlowStrongStr}`,
+                        `0 0 8px ${rgbaGlowStr}`
                       ]
                     }}
                     transition={{
@@ -304,10 +329,17 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                       duration: 2.8,
                       ease: "easeInOut"
                     }}
-                    className="w-2.5 h-2.5 bg-[#16E27A] rounded-full border border-white dark:border-[#050607] z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)]"
+                    style={{ backgroundColor: rgbStr }}
+                    className="w-2.5 h-2.5 rounded-full border border-white dark:border-[#050607] z-20"
                   />
                 ) : isCompleted ? (
-                  <div className="w-2 h-2 bg-[#16E27A] rounded-full z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)] transition-all duration-300" />
+                  <div 
+                    style={{ 
+                      backgroundColor: rgbStr,
+                      boxShadow: `0 0 8px ${rgbaGlowStr}`
+                    }}
+                    className="w-2 h-2 rounded-full z-20 transition-all duration-300" 
+                  />
                 ) : (
                   <div className="w-2 h-2 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 rounded-full z-20 opacity-40 transition-all duration-300" />
                 )}
@@ -316,8 +348,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                 {isActive && (
                   <motion.span
                     layoutId="activeDotRing"
+                    style={{ borderColor: rgbStr }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className="absolute w-4.5 h-4.5 rounded-full border border-[#16E27A]/40 pointer-events-none"
+                    className="absolute w-4.5 h-4.5 rounded-full border opacity-50 pointer-events-none"
                   />
                 )}
 
