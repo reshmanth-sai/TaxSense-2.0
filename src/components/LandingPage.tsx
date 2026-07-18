@@ -75,12 +75,11 @@ export default function LandingPage({ onStart }: LandingPageProps) {
     { id: 'get-started', label: 'Get Started' }
   ];
 
-  // Scroll Progress Trackers with height re-measurement engine for lazy-loaded content
-  const scrollProgressMV = useMotionValue(0);
-  const scaleY = useSpring(scrollProgressMV, { stiffness: 100, damping: 30, restDelta: 0.001 });
-  const progressHeight = useTransform(scaleY, [0, 1], ["0%", "100%"]);
-  const transformY = useTransform(scaleY, [0, 1], ["0%", "100%"]);
-  const progressGlowY = useTransform(scaleY, [0, 1], [4, 266]);
+  // Section-Based Progress trackers
+  const activeSectionIndexMV = useMotionValue(0);
+  const scaleY = useSpring(activeSectionIndexMV, { stiffness: 120, damping: 20, restDelta: 0.001 });
+  const transformY = useTransform(scaleY, [0, 8], ["0%", "100%"]);
+  const progressGlowY = useTransform(scaleY, [0, 8], [4, 266]);
 
   // Navbar dynamic scroll transparency state
   const [isScrolled, setIsScrolled] = useState(false);
@@ -88,29 +87,11 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 40);
-
-      // Re-measure dynamic scrollable height
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalScroll > 0) {
-        scrollProgressMV.set(window.scrollY / totalScroll);
-      } else {
-        scrollProgressMV.set(0);
-      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
-
-    // Initial triggers and deferred timeouts for lazy layout mounts
-    handleScroll();
-    const t1 = setTimeout(handleScroll, 600);
-    const t2 = setTimeout(handleScroll, 1800);
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      clearTimeout(t1);
-      clearTimeout(t2);
     };
   }, []);
 
@@ -156,6 +137,12 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
   const activeIndex = sections.findIndex(s => s.id === activeSection);
   const activeStepText = activeIndex >= 0 ? `${activeIndex + 1} / ${sections.length}` : `1 / ${sections.length}`;
+
+  useEffect(() => {
+    if (activeIndex >= 0) {
+      activeSectionIndexMV.set(activeIndex);
+    }
+  }, [activeIndex]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 via-slate-50 to-emerald-50 text-slate-900 dark:bg-[#020202] dark:from-transparent dark:via-transparent dark:to-transparent dark:text-[#F6F7F8] font-sans antialiased selection:bg-sky-200 selection:text-slate-900 dark:selection:bg-[#16E27A] dark:selection:text-[#050607] overflow-x-hidden relative">
@@ -320,7 +307,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                     className="w-2.5 h-2.5 bg-[#16E27A] rounded-full border border-white dark:border-[#050607] z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)]"
                   />
                 ) : isCompleted ? (
-                  <div className="w-2.5 h-2.5 bg-[#16E27A] rounded-full border border-white dark:border-[#050607] z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)] transition-all duration-300" />
+                  <div className="w-2 h-2 bg-[#16E27A] rounded-full z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)] transition-all duration-300" />
                 ) : (
                   <div className="w-2 h-2 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 rounded-full z-20 opacity-40 transition-all duration-300" />
                 )}
