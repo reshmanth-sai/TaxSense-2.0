@@ -258,7 +258,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             {/* Dynamic Cover overlay that translates down to reveal the gradient track */}
             <motion.div
               style={{ y: transformY }}
-              className="absolute inset-0 bg-slate-100 dark:bg-[#070a12] origin-bottom"
+              className="absolute inset-0 bg-slate-100 dark:bg-[#050607] origin-bottom"
             />
           </div>
 
@@ -507,47 +507,65 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       </div>
 
       {/* SECTION 1: HERO */}
-      <HeroSection onStart={handleStartWorkspace} />
+      <div id="hero" className="w-full">
+        <HeroSection onStart={handleStartWorkspace} />
+      </div>
 
       {/* SECTION 3: HOW IT WORKS */}
-      <LazySection>
-        <JourneySection />
-      </LazySection>
+      <div id="journey" className="w-full">
+        <LazySection>
+          <JourneySection />
+        </LazySection>
+      </div>
 
       {/* SECTION 4: INTERACTIVE SHOWCASE */}
-      <LazySection>
-        <InteractiveShowcaseSection />
-      </LazySection>
+      <div id="interactive-showcase" className="w-full">
+        <LazySection>
+          <InteractiveShowcaseSection />
+        </LazySection>
+      </div>
 
       {/* SECTION 5: WHY TAXSENSE */}
-      <LazySection>
-        <ComparisonSection />
-      </LazySection>
+      <div id="comparison" className="w-full">
+        <LazySection>
+          <ComparisonSection />
+        </LazySection>
+      </div>
 
       {/* SECTION 6: AI COPILOT SHOWCASE */}
-      <LazySection>
-        <CopilotSection soundEnabled={soundEnabled} />
-      </LazySection>
+      <div id="copilot" className="w-full">
+        <LazySection>
+          <CopilotSection soundEnabled={soundEnabled} />
+        </LazySection>
+      </div>
 
       {/* SECTION 7: SECURITY */}
-      <LazySection>
-        <SecuritySection />
-      </LazySection>
+      <div id="security" className="w-full">
+        <LazySection>
+          <SecuritySection />
+        </LazySection>
+      </div>
 
       {/* SECTION 8: TESTIMONIALS */}
-      <LazySection>
-        <TestimonialsSection />
-      </LazySection>
+      <div id="testimonials" className="w-full">
+        <LazySection>
+          <TestimonialsSection />
+        </LazySection>
+      </div>
 
       {/* SECTION 9: FAQ */}
-      <LazySection>
-        <FAQSection />
-      </LazySection>
+      <div id="faq" className="w-full">
+        <LazySection>
+          <FAQSection />
+        </LazySection>
+      </div>
 
       {/* SECTION 10: FINAL CTA */}
-      <LazySection>
-        <GetStartedSection onStart={handleStartWorkspace} />
-      </LazySection>
+      <div id="get-started" className="w-full">
+        <LazySection>
+          <GetStartedSection onStart={handleStartWorkspace} />
+        </LazySection>
+      </div>
 
       {/* FOOTER ROW */}
       <div ref={footerRef} className="relative z-20 w-full overflow-hidden bg-transparent">
