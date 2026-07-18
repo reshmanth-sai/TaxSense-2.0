@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useScroll, useSpring, useTransform, motion, AnimatePresence, useInView } from 'motion/react';
+import { useScroll, useSpring, useTransform, motion, AnimatePresence, useInView, useMotionValue } from 'motion/react';
 import { ShieldCheck, Sun, Moon } from 'lucide-react';
 import { useSidebarStore } from './sidebar/useSidebarStore';
 import HeroSection from './HeroSection';
@@ -56,18 +56,41 @@ export default function LandingPage({ onStart }: LandingPageProps) {
     { id: 'get-started', label: 'Get Started' }
   ];
 
-  // Scroll Progress Trackers
-  const { scrollYProgress } = useScroll();
-  const scaleY = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  // Scroll Progress Trackers with height re-measurement engine for lazy-loaded content
+  const scrollProgressMV = useMotionValue(0);
+  const scaleY = useSpring(scrollProgressMV, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  const progressHeight = useTransform(scaleY, [0, 1], ["0%", "100%"]);
 
   // Navbar dynamic scroll transparency state
   const [isScrolled, setIsScrolled] = useState(false);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 40);
+
+      // Re-measure dynamic scrollable height
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalScroll > 0) {
+        scrollProgressMV.set(window.scrollY / totalScroll);
+      } else {
+        scrollProgressMV.set(0);
+      }
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll, { passive: true });
+
+    // Initial triggers and deferred timeouts for lazy layout mounts
+    handleScroll();
+    const t1 = setTimeout(handleScroll, 600);
+    const t2 = setTimeout(handleScroll, 1800);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   // Footer sheet overlap slide-in scroll tracker
@@ -182,7 +205,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           backgroundImage: 'radial-gradient(rgba(255,255,255,0.08) 1.2px, transparent 0)',
           backgroundSize: '24px 24px',
         }}
-        className="absolute inset-0 z-0 pointer-events-none opacity-20 hidden dark:block"
+        className="absolute inset-0 z-0 pointer-events-none opacity-20 hidden dark:block animate-grid-drift"
       />
 
       {/* LEFT SCROLL RAIL (Desktop only) */}
@@ -198,8 +221,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         <div className="h-[240px] w-[2px] bg-slate-100 dark:bg-white/[0.04] relative flex flex-col justify-between items-center py-1">
           {/* Dynamic Fill line with vertical gradient */}
           <motion.div
-            style={{ scaleY }}
-            className="absolute top-0 left-0 right-0 bg-gradient-to-b from-blue-500 to-[#16E27A] origin-top h-full w-full rounded-full"
+            style={{ height: progressHeight as any }}
+            className="absolute top-0 left-0 right-0 bg-gradient-to-b from-blue-500 to-[#16E27A] w-full rounded-full"
           />
 
           {sections.map((s, idx) => {
@@ -216,10 +239,10 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               >
                 <motion.div
                   animate={{
-                    scale: isActive ? 1.25 : 1,
+                    scale: isActive ? 1.25 : (hoveredDot === s.id ? 1.15 : 1),
                     backgroundColor: isActive 
                       ? '#16E27A' 
-                      : (isCompleted ? '#10B981' : 'rgba(148, 163, 184, 0.2)')
+                      : (isCompleted ? '#10B981' : (hoveredDot === s.id ? 'rgba(16, 185, 129, 0.4)' : 'rgba(148, 163, 184, 0.2)'))
                   }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className={`rounded-full border transition-all duration-300 ${
