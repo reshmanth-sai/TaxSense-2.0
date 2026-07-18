@@ -320,12 +320,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                     className="w-2.5 h-2.5 bg-[#16E27A] rounded-full border border-white dark:border-[#050607] z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)]"
                   />
                 ) : isCompleted ? (
-                  <div className="w-2 h-2 bg-[#10B981] dark:bg-[#16E27A] rounded-full z-20 shadow-[0_0_6px_rgba(16,185,129,0.3)] transition-all duration-300 flex items-center justify-center">
-                    {/* Tiny completed marker checkmark */}
-                    <svg className="w-1 h-1 text-white stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
+                  <div className="w-2 h-2 bg-[#16E27A] rounded-full z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)] transition-all duration-300" />
                 ) : (
                   <div className="w-2 h-2 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 rounded-full z-20 opacity-40 transition-all duration-300" />
                 )}
