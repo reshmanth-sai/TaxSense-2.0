@@ -322,7 +322,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                 ) : isCompleted ? (
                   <div className="w-2 h-2 bg-[#16E27A] rounded-full z-20 shadow-[0_0_8px_rgba(22,226,122,0.4)] transition-all duration-300" />
                 ) : (
-                  <div className="w-2 h-2 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 rounded-full z-20 opacity-40 transition-all duration-300" />
+                  <div className="w-2 h-2 bg-[#16E27A]/25 hover:bg-[#16E27A]/50 dark:bg-[#16E27A]/15 dark:hover:bg-[#16E27A]/35 rounded-full z-20 transition-all duration-300" />
                 )}
 
                 {/* Pulsing outer ring with soft outer glow for active dot */}
