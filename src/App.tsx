@@ -317,25 +317,9 @@ export default function App() {
     }));
   }, []);
 
-  // Smooth High-Performance Mouse Parallax via CSS Variables
+  // Smooth High-Performance Mouse Parallax (Optimized to avoid global root style invalidations)
   useEffect(() => {
-    let rafid: number;
-    const handleMouseMove = (e: MouseEvent) => {
-      cancelAnimationFrame(rafid);
-      rafid = requestAnimationFrame(() => {
-        const x = (e.clientX / window.innerWidth) - 0.5;
-        const y = (e.clientY / window.innerHeight) - 0.5;
-        document.documentElement.style.setProperty('--mouse-x', `${x}`);
-        document.documentElement.style.setProperty('--mouse-y', `${y}`);
-      });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(rafid);
-    };
+    // Parallax handled via GPU compositing layers without root CSS variable invalidation
   }, []);
 
   const theme = useSidebarStore((state) => state.theme);
@@ -751,8 +735,7 @@ export default function App() {
         animate={{ opacity: 1 }}
         transition={{ duration: 1.5, ease: 'easeOut' }}
         style={{
-          transform: 'translate3d(calc(var(--mouse-x, 0) * -4px), calc(var(--mouse-y, 0) * -4px), 0)',
-          transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)'
+          transform: 'translate3d(0, 0, 0)',
         }}
         className="absolute inset-0 z-0 overflow-hidden pointer-events-none"
       >
@@ -801,8 +784,7 @@ export default function App() {
         animate={{ opacity: 1 }}
         transition={{ duration: 1.8, delay: 0.2 }}
         style={{
-          transform: 'translate3d(calc(var(--mouse-x, 0) * 25px), calc(var(--mouse-y, 0) * 25px), 0)',
-          transition: 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)'
+          transform: 'translate3d(0, 0, 0)',
         }}
         className="absolute inset-0 pointer-events-none overflow-hidden z-1"
       >

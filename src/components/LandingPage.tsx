@@ -163,11 +163,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 via-slate-50 to-emerald-50 text-slate-900 dark:bg-[#020202] dark:from-transparent dark:via-transparent dark:to-transparent dark:text-[#F6F7F8] font-sans antialiased selection:bg-sky-200 selection:text-slate-900 dark:selection:bg-[#16E27A] dark:selection:text-[#050607] overflow-x-hidden relative">
 
-      {/* Scroll progress bar at the very top of the page */}
-      <motion.div
-        style={{ scaleX: scaleY }}
-        className="fixed top-0 left-0 right-0 h-[2.5px] bg-blue-600 dark:bg-[#16E27A] origin-left z-[100] shadow-[0_0_8px_rgba(37,99,235,0.4)] dark:shadow-[0_0_8px_rgba(22,226,122,0.6)] pointer-events-none"
-      />
+
 
       {/* Inline styles for border beams & background drift keyframe animations */}
       <style>{`
@@ -206,14 +202,14 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           backgroundImage: 'linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)',
           backgroundSize: '100px 100px'
         }}
-        className="absolute inset-0 z-0 pointer-events-none dark:hidden animate-grid-drift"
+        className="absolute inset-0 z-0 pointer-events-none dark:hidden opacity-70"
       />
       <div
         style={{
           backgroundImage: 'linear-gradient(rgba(255,255,255,0.007) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.007) 1px, transparent 1px)',
           backgroundSize: '100px 100px'
         }}
-        className="absolute inset-0 z-0 pointer-events-none hidden dark:block animate-grid-drift"
+        className="absolute inset-0 z-0 pointer-events-none hidden dark:block opacity-70"
       />
 
       {/* Engineering Dot Matrix Grid Overlay (24px spacing, 1% opacity) */}
@@ -229,7 +225,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           backgroundImage: 'radial-gradient(rgba(255,255,255,0.08) 1.2px, transparent 0)',
           backgroundSize: '24px 24px',
         }}
-        className="absolute inset-0 z-0 pointer-events-none opacity-20 hidden dark:block animate-grid-drift"
+        className="absolute inset-0 z-0 pointer-events-none opacity-20 hidden dark:block"
       />
 
       {/* LEFT SCROLL RAIL (Desktop only) */}
