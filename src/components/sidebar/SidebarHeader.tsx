@@ -15,7 +15,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ isExpanded }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const workspaces = [
-    { id: 'TaxSense-2.0', name: 'TaxSense-2.0', sub: 'Production' },
+    { id: 'TaxSense', name: 'TaxSense', sub: 'Production Workspace' },
     { id: 'Sandbox-Personal', name: 'Sandbox-Personal', sub: 'Testing Environment' }
   ];
 
@@ -39,39 +39,41 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ isExpanded }) => {
         ref={dropdownRef}
         className={`flex items-center ${isExpanded ? 'gap-2 overflow-hidden min-w-0 flex-1 relative' : 'justify-center w-full'}`}
       >
-        <div className="relative group/logo w-full flex items-center justify-center py-1">
+        <div className="relative group/logo w-full flex items-center justify-center">
           {/* Clickable Switcher trigger */}
           <button
             onClick={() => isExpanded && setIsDropdownOpen(!isDropdownOpen)}
             disabled={!isExpanded}
-            className={`flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all duration-180 w-full text-left group focus:outline-none ${
-              isExpanded ? 'hover:bg-slate-900/5 dark:hover:bg-white/5 cursor-pointer' : 'cursor-default justify-center'
+            className={`flex items-center transition-all duration-180 text-left group focus:outline-none ${
+              isExpanded 
+                ? 'w-full gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-900/5 dark:hover:bg-white/5 cursor-pointer' 
+                : 'w-9 h-9 mx-auto justify-center rounded-xl cursor-default'
             }`}
           >
             {/* Theme responsive logo calculator box */}
-            <div className="w-6.5 h-6.5 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-lg font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/15 transition-transform duration-200 group-hover:scale-105 active:scale-95">
-              <Calculator className="h-3.5 w-3.5 text-white" />
+            <div className={`bg-gradient-to-br from-emerald-400 to-blue-600 rounded-xl font-bold shrink-0 flex items-center justify-center shadow-md shadow-emerald-500/15 transition-transform duration-200 group-hover:scale-105 active:scale-95 ${
+              isExpanded ? 'w-7 h-7' : 'w-9 h-9'
+            }`}>
+              <Calculator className={`${isExpanded ? 'h-3.5 w-3.5' : 'h-4.5 w-4.5'} text-white`} />
             </div>
 
-            <motion.div
-              initial={false}
-              animate={{
-                opacity: isExpanded ? 1 : 0,
-                width: isExpanded ? 'auto' : 0
-              }}
-              transition={{ duration: 0.15 }}
-              className="flex-1 min-w-0 flex items-center justify-between overflow-hidden"
-            >
-              <div className="flex flex-col min-w-0 pr-1 text-left">
-                <span className="font-bold text-[11px] text-slate-700 dark:text-slate-200 group-hover:text-slate-950 dark:group-hover:text-white transition-colors truncate leading-tight">
-                  {activeWorkspace}
-                </span>
-                <span className="text-[8px] text-slate-500 dark:text-slate-400 font-medium tracking-wider uppercase leading-none mt-0.5">
-                  WORKSPACE
-                </span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-505 group-hover:text-slate-700 dark:group-hover:text-slate-350 transition-colors shrink-0" />
-            </motion.div>
+            {isExpanded && (
+              <motion.div
+                initial={false}
+                animate={{ opacity: 1, width: 'auto' }}
+                transition={{ duration: 0.15 }}
+                className="flex-1 min-w-0 flex items-center overflow-hidden"
+              >
+                <div className="flex flex-col min-w-0 text-left">
+                  <span className="font-black text-sm text-slate-900 dark:text-white tracking-tight leading-tight">
+                    TaxSense
+                  </span>
+                  <span className="text-[8.5px] text-slate-500 dark:text-slate-400 font-extrabold tracking-widest uppercase leading-none mt-0.5 font-mono">
+                    WORKSPACE
+                  </span>
+                </div>
+              </motion.div>
+            )}
           </button>
 
           {/* Tooltip for collapsed logo */}

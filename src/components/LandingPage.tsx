@@ -12,8 +12,14 @@ import {
   SecuritySection,
   TestimonialsSection,
   FAQSection,
-  GetStartedSection
+  GetStartedSection,
+  DeadlineBanner,
+  Navbar,
+  TippingPointVisualizer,
+  RefundFinderWidget
 } from './landing';
+
+import { CTCEfficiencyScorecard } from './dashboard/CTCEfficiencyScorecard';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -34,20 +40,21 @@ const LazySection: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const getNodeColorRGB = (idx: number): [number, number, number] => {
-  if (idx <= 4) {
-    const ratio = idx / 4;
+  if (idx <= 5) {
+    const ratio = idx / 5;
     const r = Math.round(59 + (16 - 59) * ratio);
     const g = Math.round(130 + (185 - 130) * ratio);
     const b = Math.round(246 + (129 - 246) * ratio);
     return [r, g, b];
   } else {
-    const ratio = (idx - 4) / 4;
+    const ratio = Math.min(1, (idx - 5) / 6);
     const r = Math.round(16 + (22 - 16) * ratio);
     const g = Math.round(185 + (226 - 185) * ratio);
     const b = Math.round(129 + (122 - 129) * ratio);
     return [r, g, b];
   }
 };
+
 
 export default function LandingPage({ onStart }: LandingPageProps) {
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
@@ -81,9 +88,12 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
   const sections = [
     { id: 'hero', label: 'Hero' },
-    { id: 'journey', label: 'How It Works' },
-    { id: 'interactive-showcase', label: 'Dashboard Showcase' },
     { id: 'comparison', label: 'Regime Comparison' },
+    { id: 'tipping-point', label: 'Tipping Point' },
+    { id: 'interactive-showcase', label: 'Tax Calculator' },
+    { id: 'refund-finder', label: 'Refund Finder' },
+    { id: 'ctc-scorecard', label: 'Flexi Basket' },
+    { id: 'journey', label: 'How It Works' },
     { id: 'copilot', label: 'AI Copilot' },
     { id: 'security', label: 'Security' },
     { id: 'testimonials', label: 'Testimonials' },
@@ -92,10 +102,13 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   ];
 
   // Section-Based Progress trackers
+  const maxSectionIndex = sections.length - 1;
   const activeSectionIndexMV = useMotionValue(0);
-  const scaleY = useSpring(activeSectionIndexMV, { stiffness: 120, damping: 20, restDelta: 0.001 });
-  const transformY = useTransform(scaleY, [0, 8], ["0%", "100%"]);
-  const progressGlowY = useTransform(scaleY, [0, 8], [4, 266]);
+  const scaleY = useSpring(activeSectionIndexMV, { stiffness: 280, damping: 28, mass: 0.5, restDelta: 0.0001 });
+  const transformY = useTransform(scaleY, [0, maxSectionIndex], ["0%", "100%"]);
+  const progressGlowY = useTransform(scaleY, [0, maxSectionIndex], [14, 256]);
+
+
 
   // Navbar dynamic scroll transparency state
   const [isScrolled, setIsScrolled] = useState(false);
@@ -262,8 +275,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
         {/* Integrated Vertical Track and Dots */}
         <div className="h-[270px] w-5 relative flex flex-col justify-between items-center py-1">
-          {/* Track Line Background */}
-          <div className="absolute top-0 bottom-0 w-[2px] bg-slate-100 dark:bg-white/[0.04] overflow-hidden rounded-full left-1/2 -translate-x-1/2">
+          {/* Track Line Background (Bounded exactly between Dot 1 center and Dot 9 center) */}
+          <div className="absolute top-[14px] bottom-[14px] w-[2px] bg-slate-100 dark:bg-white/[0.04] overflow-hidden rounded-full left-1/2 -translate-x-1/2">
             {/* Static full-height gradient line */}
             <div className="absolute inset-0 bg-gradient-to-b from-blue-500 via-[#10B981] to-[#16E27A]" />
             
@@ -345,7 +358,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                   <motion.span
                     layoutId="activeDotRing"
                     style={{ borderColor: rgbStr }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+
                     className="absolute w-4.5 h-4.5 rounded-full border opacity-50 pointer-events-none"
                   />
                 )}
@@ -435,161 +449,89 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         />
       </div>
 
-      {/* HEADER NAVBAR (Floating Pill) */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4 flex justify-center pointer-events-none">
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className={`pointer-events-auto w-full flex items-center justify-between px-6 ${isScrolled ? 'py-2' : 'py-3.5'} rounded-full transition-all duration-300 border ${isScrolled
-              ? 'bg-white/60 border-white/60 dark:bg-[#050607]/80 dark:border-white/[0.04] backdrop-blur-[18px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-none'
-              : 'bg-white/30 border-white/40 dark:bg-white/[0.02] dark:border-white/[0.02] backdrop-blur-[18px]'
-            }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-900 dark:text-white font-bold shadow-lg shadow-white/5">
-              <svg className="w-4.5 h-4.5 text-slate-900 dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="13" x2="15" y2="13"></line>
-                <line x1="9" y1="17" x2="13" y2="17"></line>
-              </svg>
-            </div>
-            <span className="text-sm font-black tracking-wider uppercase text-slate-900 dark:text-white select-none">
-              Tax<span className="text-slate-600 dark:text-slate-400">Sense</span>
-            </span>
-            {/* Animated network operational latency badge */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.04] backdrop-blur-[18px] text-[8.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-2">
-              <span className="relative flex h-1 w-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1 w-1 bg-emerald-500"></span>
-              </span>
-              <span>24ms API</span>
-            </div>
-          </div>
+      {/* TOP DEADLINE BANNER */}
+      <DeadlineBanner onStart={handleStartWorkspace} />
 
-          {/* Center menu links */}
-          <div className="hidden md:flex items-center gap-6 text-[11px] font-mono tracking-wider uppercase text-slate-550 dark:text-slate-300">
-            {[
-              { id: 'journey', label: 'How It Works' },
-              { id: 'interactive-showcase', label: 'Features' },
-              { id: 'security', label: 'Security' },
-              { id: 'faq', label: 'FAQ' }
-            ].map((link) => {
-              const isLinkActive = activeSection === link.id;
-              return (
-                <div
-                  key={link.id}
-                  className="relative py-1 cursor-pointer"
-                  onMouseEnter={() => setHoveredLink(link.id)}
-                  onMouseLeave={() => setHoveredLink(null)}
-                >
-                  <button 
-                    onClick={() => handleScrollTo(link.id)} 
-                    className={`transition-colors duration-200 cursor-pointer ${
-                      isLinkActive ? 'text-slate-900 dark:text-white font-bold' : 'hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    {link.label}
-                  </button>
-                  {hoveredLink === link.id && (
-                    <motion.div
-                      layoutId="nav-underline"
-                      className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-slate-900 dark:bg-[#16E27A]"
-                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                    />
-                  )}
-                  {isLinkActive && (
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-500 dark:bg-[#16E27A] shadow-[0_0_4px_rgba(22,226,122,0.8)]" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+      {/* HEADER NAVBAR (Enterprise Glass Navbar) */}
+      <Navbar onStart={handleStartWorkspace} activeSection={activeSection} />
 
-          <div className="flex items-center gap-4">
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono tracking-wider uppercase text-slate-555 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              GitHub
-            </a>
-            
-            {/* Theme Toggle Button */}
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-slate-500 hover:text-slate-850 dark:text-slate-400 dark:hover:text-slate-250 cursor-pointer rounded-full transition-all"
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
-            </button>
-            <button
-              onClick={handleStartWorkspace}
-              className="group relative overflow-hidden px-5 py-2 bg-slate-950 text-white dark:bg-[#16E27A] dark:text-[#050607] font-bold text-xs rounded-[14px] transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.1)] dark:shadow-md dark:shadow-[#16E27A]/10 hover:shadow-[0_0_15px_rgba(37,99,235,0.25)] dark:hover:shadow-[0_0_15px_rgba(22,226,122,0.3)] active:scale-95 border border-slate-800 dark:border-transparent"
-            >
-              <RollingText text="Calculate Savings" />
-            </button>
-          </div>
-        </motion.header>
-      </div>
 
       {/* SECTION 1: HERO */}
       <div id="hero" className="w-full">
         <HeroSection onStart={handleStartWorkspace} />
       </div>
 
-      {/* SECTION 3: HOW IT WORKS */}
-      <div id="journey" className="w-full">
-        <LazySection>
-          <JourneySection />
-        </LazySection>
-      </div>
-
-      {/* SECTION 4: INTERACTIVE SHOWCASE */}
-      <div id="interactive-showcase" className="w-full">
-        <LazySection>
-          <InteractiveShowcaseSection />
-        </LazySection>
-      </div>
-
-      {/* SECTION 5: WHY TAXSENSE */}
+      {/* SECTION 2: WHY TAXSENSE / COMPARISON */}
       <div id="comparison" className="w-full">
         <LazySection>
           <ComparisonSection />
         </LazySection>
       </div>
 
-      {/* SECTION 6: AI COPILOT SHOWCASE */}
+      {/* SECTION 3: TIPPING POINT VISUALIZER (NEW) */}
+      <div id="tipping-point" className="w-full">
+        <LazySection>
+          <TippingPointVisualizer />
+        </LazySection>
+      </div>
+
+      {/* SECTION 4: INTERACTIVE CALCULATOR SHOWCASE */}
+      <div id="interactive-showcase" className="w-full">
+        <LazySection>
+          <InteractiveShowcaseSection />
+        </LazySection>
+      </div>
+
+      {/* SECTION 5: UNCLAIMED REFUND FINDER (NEW) */}
+      <div id="refund-finder" className="w-full">
+        <LazySection>
+          <RefundFinderWidget onStart={handleStartWorkspace} />
+        </LazySection>
+      </div>
+
+      {/* SECTION 6: CTC FLEXI BASKET SCORECARD (NEW) */}
+      <div id="ctc-scorecard" className="w-full">
+        <LazySection>
+          <CTCEfficiencyScorecard />
+        </LazySection>
+      </div>
+
+      {/* SECTION 7: 4-STEP JOURNEY */}
+      <div id="journey" className="w-full">
+        <LazySection>
+          <JourneySection />
+        </LazySection>
+      </div>
+
+      {/* SECTION 8: MULTILINGUAL AI COPILOT SHOWCASE */}
       <div id="copilot" className="w-full">
         <LazySection>
           <CopilotSection soundEnabled={soundEnabled} />
         </LazySection>
       </div>
 
-      {/* SECTION 7: SECURITY */}
+      {/* SECTION 9: SECURITY */}
       <div id="security" className="w-full">
         <LazySection>
           <SecuritySection />
         </LazySection>
       </div>
 
-      {/* SECTION 8: TESTIMONIALS */}
+      {/* SECTION 10: TESTIMONIALS */}
       <div id="testimonials" className="w-full">
         <LazySection>
           <TestimonialsSection />
         </LazySection>
       </div>
 
-      {/* SECTION 9: FAQ */}
+      {/* SECTION 11: FAQ */}
       <div id="faq" className="w-full">
         <LazySection>
           <FAQSection />
         </LazySection>
       </div>
 
-      {/* SECTION 10: FINAL CTA */}
+      {/* SECTION 12: FINAL CTA */}
       <div id="get-started" className="w-full">
         <LazySection>
           <GetStartedSection onStart={handleStartWorkspace} />
@@ -598,63 +540,89 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
       {/* FOOTER ROW */}
       <div ref={footerRef} className="relative z-20 w-full overflow-hidden bg-transparent">
+        {/* REDESIGNED COMPACT ENTERPRISE FOOTER */}
         <motion.footer
+          ref={footerRef}
           style={{ y: footerY }}
-          className="rounded-t-[48px] dark:rounded-none border-t border-slate-200/50 dark:border-white/[0.04] bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 text-slate-800 dark:bg-none dark:bg-[#020202] dark:text-slate-100 pt-24 pb-12 px-6 md:px-12 text-left text-xs transition-all duration-300 shadow-[0_-15px_40px_rgba(0,0,0,0.02)] dark:shadow-none -mt-12 relative z-10"
+          className="w-full border-t border-slate-200/80 dark:border-white/[0.06] bg-slate-100/90 dark:bg-[#060A12] text-slate-800 dark:text-slate-100 py-10 px-6 md:px-12 text-left text-xs transition-all duration-300 relative z-10"
         >
-          <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 pb-12 border-b border-slate-200 dark:border-white/[0.04]">
-            <div className="space-y-3">
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-350">Product</h4>
-              <ul className="space-y-2 text-[11px] text-slate-700 dark:text-slate-400 font-semibold">
-                <li><a href="#hero" className="hover:translate-x-1 hover:text-blue-600 dark:hover:text-[#16E27A] transition-all duration-200 inline-block">Sandbox Workspace</a></li>
-                <li><a href="#interactive-showcase" className="hover:translate-x-1 hover:text-blue-600 dark:hover:text-[#16E27A] transition-all duration-200 inline-block">OCR Form 16 Parser</a></li>
-                <li><a href="#copilot" className="hover:translate-x-1 hover:text-blue-600 dark:hover:text-[#16E27A] transition-all duration-200 inline-block">AI Copilot Chat</a></li>
-                <li><a href="#comparison" className="hover:translate-x-1 hover:text-blue-600 dark:hover:text-[#16E27A] transition-all duration-200 inline-block">Regime Optimizations</a></li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-355">Resources</h4>
-              <ul className="space-y-2 text-[11px] text-slate-700 dark:text-slate-400 font-semibold font-sans">
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Tax Guides</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Deductions Calculator</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Income Tax Slabs</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">API Documentation</span></li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-355">Company</h4>
-              <ul className="space-y-2 text-[11px] text-slate-700 dark:text-slate-400 font-semibold font-sans">
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">About Us</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Careers</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Partners</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Security Sandbox</span></li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-355">Legal</h4>
-              <ul className="space-y-2 text-[11px] text-slate-700 dark:text-slate-400 font-semibold font-sans">
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Privacy Policy</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Terms of Service</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Security Disclaimers</span></li>
-                <li><span className="text-slate-600 dark:text-slate-400 hover:translate-x-1 hover:text-slate-800 dark:hover:text-white transition-all duration-200 inline-block cursor-pointer">Trust Center</span></li>
-              </ul>
-            </div>
-          </div>
+          <div className="max-w-6xl mx-auto space-y-8">
+            
+            {/* TIER 1: MAIN COMPACT FOOTER GRID */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8 border-b border-slate-200/80 dark:border-white/[0.06]">
+              {/* BRAND COLUMN (5 cols) */}
+              <div className="lg:col-span-5 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-xl bg-[#0B1730] dark:bg-gradient-to-br dark:from-blue-600/30 dark:to-emerald-500/30 border border-[#0B1730]/20 dark:border-blue-400/40 text-emerald-400 flex items-center justify-center font-bold shadow-sm">
+                    <svg className="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect>
+                      <line x1="9" y1="9" x2="15" y2="9"></line>
+                      <line x1="9" y1="13" x2="15" y2="13"></line>
+                      <line x1="9" y1="17" x2="13" y2="17"></line>
+                    </svg>
+                  </div>
+                  <span className="text-sm font-extrabold tracking-tight text-[#0B1730] dark:text-white">
+                    TAXSENSE
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 max-w-sm leading-relaxed font-sans font-medium">
+                  AI-First tax optimization & Form 16 automation platform. Client-side memory for 100% private filing.
+                </p>
+                <div className="flex items-center gap-2 pt-1 text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span>Operational • Local Sandbox Active</span>
+                </div>
+              </div>
 
-          <div className="max-w-6xl mx-auto pt-8 flex flex-col sm:flex-row sm:justify-between items-center gap-4 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 select-none">
-            <div>
-              © {new Date().getFullYear()} TaxSense <span className="text-slate-300 dark:text-slate-800 font-normal mx-1.5">•</span> Built with ❤️ in India for taxpayers <span className="text-slate-300 dark:text-slate-800 font-normal mx-1.5">•</span> FY {new Date().getFullYear() === 2026 ? "2025-26" : "2026-27"}
+              {/* 3 LINK DIRECTORY COLUMNS (7 cols) */}
+              <div className="lg:col-span-7 grid grid-cols-3 gap-6 font-sans text-xs">
+                {/* Column 1: Product */}
+                <div className="space-y-2.5">
+                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</h4>
+                  <ul className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                    <li><button onClick={() => handleScrollTo('comparison')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">Regime Optimizer</button></li>
+                    <li><button onClick={() => handleScrollTo('interactive-showcase')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">OCR Form 16 Parser</button></li>
+                    <li><button onClick={() => handleScrollTo('copilot')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">AI Copilot Chat</button></li>
+                    <li><button onClick={() => handleScrollTo('refund-finder')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">Deduction Vault</button></li>
+                  </ul>
+                </div>
+
+                {/* Column 2: Resources */}
+                <div className="space-y-2.5">
+                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Resources</h4>
+                  <ul className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                    <li><button onClick={() => handleScrollTo('comparison')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">Tax Slabs 2025-26</button></li>
+                    <li><button onClick={() => handleScrollTo('interactive-showcase')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">AY 2026-27 Guide</button></li>
+                    <li><button onClick={() => handleScrollTo('security')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">Security Specs</button></li>
+                  </ul>
+                </div>
+
+                {/* Column 3: Legal & Trust */}
+                <div className="space-y-2.5">
+                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Legal & Trust</h4>
+                  <ul className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                    <li><button onClick={() => handleScrollTo('security')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">Privacy Policy</button></li>
+                    <li><button onClick={() => handleScrollTo('security')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">Terms of Service</button></li>
+                    <li><button onClick={() => handleScrollTo('security')} className="hover:text-[#0B1730] dark:hover:text-white transition-colors">Trust Center</button></li>
+                  </ul>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-4">
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50/50 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/10 rounded-full text-[9px] font-extrabold tracking-wider shadow-[0_2px_8px_rgba(16,185,129,0.02)]">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                </span>
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>100% Secure & Private</span>
-              </span>
+
+            {/* TIER 2: BOTTOM COPYRIGHT & ENCRYPTION BAR */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-[10px] font-mono text-slate-500 dark:text-slate-400 select-none">
+              <div>
+                © {new Date().getFullYear()} TAXSENSE • Built for Indian Taxpayers • FY 2025–26 (AY 2026–27)
+              </div>
+              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>AES-256 Client Encryption • 100% Private Local Memory</span>
+              </div>
             </div>
+
           </div>
         </motion.footer>
       </div>

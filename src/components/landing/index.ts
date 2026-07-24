@@ -6,3 +6,10 @@ export { SecuritySection } from './SecuritySection';
 export { TestimonialsSection } from './TestimonialsSection';
 export { FAQSection } from './FAQSection';
 export { GetStartedSection } from './GetStartedSection';
+export { ProductVideoPlayer } from './ProductVideoPlayer';
+export { DeadlineBanner } from './DeadlineBanner';
+export { Navbar } from './Navbar';
+export { TippingPointVisualizer } from './TippingPointVisualizer';
+
+export { RefundFinderWidget } from './RefundFinderWidget';
+export { ShareSavingsModal } from './ShareSavingsModal';

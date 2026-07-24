@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import multer from 'multer';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { Type } from '@google/genai';
 import { 
   getAI, 
@@ -14,6 +15,39 @@ import {
 
 const app = express();
 app.use(express.json());
+
+// Trust proxy if deployed behind a reverse proxy (e.g. Vercel, Cloudflare, Nginx)
+app.set('trust proxy', 1);
+
+// General API rate limiter (100 requests / 15 mins)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too many requests from this IP, please try again after 15 minutes.',
+    status: 429,
+  },
+});
+
+// Strict AI API rate limiter (20 requests / 1 min)
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too many AI requests from this IP. Please wait a minute before sending more requests.',
+    status: 429,
+  },
+});
+
+// Apply general rate limiting to all /api/ endpoints
+app.use('/api/', apiLimiter);
+
+// Apply strict rate limiting to heavy AI endpoints
+app.use(['/api/chat', '/api/extract', '/api/extract-pdf'], aiLimiter);
 
 const upload = multer({
   storage: multer.memoryStorage(),

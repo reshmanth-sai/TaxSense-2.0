@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useTaxStore } from '../store/useTaxStore';
 import { calculateTax, formatINR } from '../utils/taxCalculator';
+import { AIFilingWorkspaceModal } from './AIFilingWorkspaceModal';
 
 interface GenerateReturnCardProps {
   onContinue: () => void;
@@ -22,7 +23,6 @@ interface GenerateReturnCardProps {
 
 export const GenerateReturnCard: React.FC<GenerateReturnCardProps> = React.memo(({ onContinue, onBack }) => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [generationStep, setGenerationStep] = React.useState(0);
 
   const confirmedDeductions = useTaxStore((state) => state.confirmedDeductions);
   const incomeProfile = useTaxStore((state) => state.incomeProfile);
@@ -63,84 +63,57 @@ export const GenerateReturnCard: React.FC<GenerateReturnCardProps> = React.memo(
   const recommendedRegime = calculation.recommendedRegime || 'NEW';
   const savingsAmount = calculation.savings || 51480;
 
-  // Progressive modal checkpoints
-  React.useEffect(() => {
-    if (!isModalOpen) {
-      setGenerationStep(0);
-      return;
-    }
-    const timer1 = setTimeout(() => setGenerationStep(1), 500);
-    const timer2 = setTimeout(() => setGenerationStep(2), 1000);
-    const timer3 = setTimeout(() => setGenerationStep(3), 1500);
-    const timer4 = setTimeout(() => setGenerationStep(4), 2000);
-    const timer5 = setTimeout(() => setGenerationStep(5), 2500);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timer4);
-      clearTimeout(timer5);
-    };
-  }, [isModalOpen]);
-
   const triggerGenerate = React.useCallback(() => {
     setIsModalOpen(true);
   }, []);
 
   return (
-    <div className="space-y-8 max-w-[1000px] mx-auto text-slate-900 dark:text-slate-100 py-4">
+    <div className="space-y-6 max-w-6xl mx-auto text-slate-900 dark:text-slate-100 py-2">
       
-      {/* Centered Success Hero */}
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 dark:text-blue-400 mb-2">
-          <ShieldCheck className="h-6 w-6 text-blue-500 dark:text-blue-400 animate-pulse" />
+      {/* Centered Success Hero Card */}
+      <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-8 backdrop-blur-xl text-center space-y-4 shadow-md relative overflow-hidden">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-96 h-32 bg-gradient-radial from-emerald-500/10 via-transparent to-transparent pointer-events-none blur-2xl" />
+
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 mb-1 shadow-inner">
+          <FileCheck2 className="h-7 w-7 text-emerald-500 dark:text-emerald-400 animate-pulse" />
         </div>
-        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Your return is ready.</h1>
+        
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Your return is ready.</h1>
         <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
           Everything has been reviewed. You're one step away from generating your Income Tax Return.
         </p>
-      </div>
 
-      {/* Completion Illustration (CSS/SVG checkmark-shield) */}
-      <div className="flex justify-center my-4 select-none">
-        <div className="relative w-28 h-28 flex items-center justify-center bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-white/[0.04] rounded-full">
-          {/* Outer rotating pulse rings */}
-          <div className="absolute inset-0 rounded-full border border-dashed border-emerald-500/20 animate-spin" style={{ animationDuration: '30s' }} />
-          <div className="absolute inset-2 rounded-full border border-emerald-500/10 animate-ping" style={{ animationDuration: '4s' }} />
-          
-          <div className="relative w-18 h-18 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/5">
-            <FileCheck2 className="h-9 w-9 text-emerald-500 dark:text-emerald-400" />
+        {/* Final Exemption Summary Grid */}
+        <div className="mt-6 bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-5 text-left shadow-inner">
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block border-b border-slate-200/60 dark:border-white/[0.04] pb-2.5 mb-4">
+            Final Exemption Summary
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold">
+            <div className="bg-white/60 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/50 dark:border-white/[0.02]">
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Estimated Savings</span>
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">{formatINR(savingsAmount)}</span>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/50 dark:border-white/[0.02]">
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Tax Regime</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{recommendedRegime === 'NEW' ? 'New Regime' : 'Old Regime'}</span>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/50 dark:border-white/[0.02]">
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Filing Status</span>
+              <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Ready for Filing</span>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/50 dark:border-white/[0.02]">
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Compliance</span>
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Verified</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Submission Summary Card */}
-      <div className="max-w-md mx-auto bg-white/40 dark:bg-[#0E131B] border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-6 text-left space-y-4 shadow-sm dark:shadow-none">
-        <span className="text-[10px] font-bold text-slate-550 dark:text-slate-500 uppercase tracking-widest block border-b border-slate-200/50 dark:border-white/[0.02] pb-2">Final Exemption Summary</span>
-        <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600 dark:text-slate-400">
-          <div>
-            <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Estimated Savings</span>
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">{formatINR(savingsAmount)}</span>
-          </div>
-          <div>
-            <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Tax Regime</span>
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{recommendedRegime === 'NEW' ? 'New Regime' : 'Old Regime'}</span>
-          </div>
-          <div>
-            <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Filing Status</span>
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Ready for Filing</span>
-          </div>
-          <div>
-            <span className="text-[9px] text-slate-500 uppercase tracking-wider block mb-0.5">Compliance</span>
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-455">Verified</span>
-          </div>
-        </div>
-      </div>
-
-      {/* What Happens Next Timeline */}
-      <div className="max-w-xl mx-auto space-y-4 text-left">
-        <span className="text-[10px] font-bold text-slate-550 dark:text-slate-500 uppercase tracking-widest block pl-1">Filing Roadmap Checklist</span>
+      {/* Filing Roadmap Checklist */}
+      <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 text-left space-y-4 backdrop-blur-xl shadow-md">
+        <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block border-b border-slate-200/60 dark:border-white/[0.04] pb-2.5">
+          Filing Roadmap Checklist
+        </span>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {[
             { step: '1', title: 'Generate Return', desc: 'Build ledger' },
@@ -148,12 +121,12 @@ export const GenerateReturnCard: React.FC<GenerateReturnCardProps> = React.memo(
             { step: '3', title: 'Final Preview', desc: 'Double-check XML' },
             { step: '4', title: 'Portal Submit', desc: 'Secure upload' }
           ].map((item, idx) => (
-            <div key={item.title} className="bg-white/40 dark:bg-slate-900/10 border border-slate-200/50 dark:border-white/[0.03] p-4.5 rounded-2xl space-y-2 relative shadow-sm dark:shadow-none">
-              <div className="w-6 h-6 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] rounded-lg flex items-center justify-center text-[10px] font-black text-slate-500 dark:text-slate-400">
+            <div key={item.title} className="bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.04] p-4 rounded-2xl space-y-2 relative shadow-sm">
+              <div className="w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/[0.06] rounded-lg flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-300">
                 {item.step}
               </div>
-              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{item.title}</div>
-              <div className="text-[10px] text-slate-500">{item.desc}</div>
+              <div className="text-[11.5px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{item.title}</div>
+              <div className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">{item.desc}</div>
               {idx < 3 && (
                 <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 -right-3.5 z-10 items-center justify-center select-none pointer-events-none">
                   <ArrowRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600" />
@@ -165,10 +138,10 @@ export const GenerateReturnCard: React.FC<GenerateReturnCardProps> = React.memo(
       </div>
 
       {/* Security Section (Trust Card) */}
-      <div className="max-w-xl mx-auto bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/[0.02] rounded-3xl p-5 flex items-start gap-3.5 text-left shadow-sm dark:shadow-none">
-        <Lock className="h-5 w-5 text-emerald-500 dark:text-emerald-450 shrink-0 mt-0.5" />
+      <div className="bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10 rounded-2xl p-4.5 flex items-start gap-3.5 text-left">
+        <Lock className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <span className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Zero-Knowledge Sandbox Guard</span>
+          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Zero-Knowledge Sandbox Guard</span>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
             Your information never leaves your secure local browser workspace. Generated filing logs remain heavily encrypted. Nothing is submitted automatically without your signature.
           </p>
@@ -176,147 +149,34 @@ export const GenerateReturnCard: React.FC<GenerateReturnCardProps> = React.memo(
       </div>
 
       {/* Action Buttons */}
-      <div className="max-w-xl mx-auto pt-8 border-t border-slate-200 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="pt-6 border-t border-slate-200/80 dark:border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
         <button
           onClick={onBack}
-          className="h-12 px-6 border border-slate-300 dark:border-slate-850 hover:bg-slate-100/50 dark:hover:bg-white/[0.02] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+          className="h-12 px-6 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
         >
           Back to Review
         </button>
 
         <button
           onClick={triggerGenerate}
-          className="h-12 px-8 bg-emerald-500 hover:bg-emerald-455 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto group shadow-lg shadow-emerald-500/10 hover:-translate-y-0.5"
+          className="h-12 px-8 bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto group shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5"
         >
-          <ShieldCheck className="h-4 w-4 text-slate-950" />
+          <ShieldCheck className="h-4 w-4 text-white" />
           <span>Generate My Return</span>
         </button>
       </div>
 
-      {/* Success Generation Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 transition-opacity"
-            />
-
-            {/* Modal Box */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:max-w-md md:mx-auto bg-white/95 dark:bg-[#0A0D14] border border-slate-200 dark:border-white/[0.08] p-8 rounded-3xl z-50 shadow-2xl space-y-6 text-left backdrop-blur-md"
-            >
-              
-              {generationStep < 5 ? (
-                // LOADING / GENERATING PACKAGE STATE
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" />
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200 uppercase tracking-wider">Generating your filing package...</h3>
-                  </div>
-
-                  {/* Checklist Items */}
-                  <div className="space-y-3.5 font-medium text-xs text-slate-655 dark:text-slate-400">
-                    <div className="flex items-center gap-2.5">
-                      {generationStep >= 1 ? (
-                        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500 dark:text-emerald-450" />
-                      ) : (
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] font-bold">○</div>
-                      )}
-                      <span className={generationStep >= 1 ? 'text-slate-900 dark:text-slate-100' : ''}>Validating calculations</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      {generationStep >= 2 ? (
-                        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500 dark:text-emerald-455" />
-                      ) : (
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] font-bold">○</div>
-                      )}
-                      <span className={generationStep >= 2 ? 'text-slate-900 dark:text-slate-100' : ''}>Creating return</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      {generationStep >= 3 ? (
-                        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500 dark:text-emerald-455" />
-                      ) : (
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] font-bold">○</div>
-                      )}
-                      <span className={generationStep >= 3 ? 'text-slate-900 dark:text-slate-100' : ''}>Checking compliance</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      {generationStep >= 4 ? (
-                        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500 dark:text-emerald-455" />
-                      ) : (
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] font-bold">○</div>
-                      )}
-                      <span className={generationStep >= 4 ? 'text-slate-900 dark:text-slate-100' : ''}>Preparing filing workspace</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      {generationStep >= 4 ? (
-                        <div className="w-4.5 h-4.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" />
-                      ) : (
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] font-bold">○</div>
-                      )}
-                      <span className={generationStep >= 4 ? 'text-slate-900 dark:text-slate-100' : ''}>Generating PDF...</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // COMPLETED SUCCESS CELEBRATION STATE
-                <div className="space-y-6 text-center">
-                  <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 select-none">
-                    <CheckCircle2 className="h-6 w-6" />
-                  </div>
-
-                  <div className="space-y-1">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Your filing workspace is ready.</h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-450 leading-relaxed font-semibold">Everything has been generated successfully.</p>
-                  </div>
-
-                  <div className="pt-2 flex flex-col gap-2.5 select-none">
-                    <button
-                      onClick={() => {
-                        setIsModalOpen(false);
-                        onContinue(); // Transitions to stage 6 / final workspace
-                      }}
-                      className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <span>Open Filing Workspace</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => alert("Downloading return PDF...")}
-                      className="w-full h-11 border border-slate-300 dark:border-slate-850 hover:bg-slate-100/50 dark:hover:bg-white/[0.02] text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      <span>Download Return</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="w-full h-10 text-slate-500 hover:text-slate-700 dark:hover:text-slate-400 text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer transition-all"
-                    >
-                      View Summary
-                    </button>
-                  </div>
-                </div>
-              )}
-
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Premium AI Operating System Workspace Modal */}
+      <AIFilingWorkspaceModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onContinue={() => {
+          setIsModalOpen(false);
+          onContinue();
+        }}
+        savingsAmount={savingsAmount}
+        recommendedRegime={recommendedRegime}
+      />
 
     </div>
   );

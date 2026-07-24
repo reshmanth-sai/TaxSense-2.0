@@ -194,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {!isMobile && (
         <motion.div
           className="hidden md:block shrink-0"
-          animate={{ width: sidebarBehavior === 'pinned' ? 228 : 68 }}
+          animate={{ width: sidebarBehavior === 'pinned' ? 228 : 60 }}
           transition={{ type: 'spring', stiffness: 220, damping: 26 }}
         />
       )}
@@ -216,9 +216,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <motion.aside
         initial={false}
         animate={{
-          width: isExpandedVisual ? 216 : 56,
+          width: isExpandedVisual ? 220 : 60,
           // Slide completely off-screen on mobile when collapsed
-          x: isMobile && isCollapsed ? -216 : 0
+          x: isMobile && isCollapsed ? -220 : 0
         }}
         transition={{ type: 'spring', stiffness: 220, damping: 26 }}
         onMouseEnter={handleMouseEnter}
@@ -233,7 +233,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Collapsible Groups & Navigation */}
           <div 
             onKeyDown={handleNavKeyDown} 
-            className={`flex-1 ${isExpandedVisual ? 'overflow-y-auto' : 'overflow-hidden'} overflow-x-hidden p-2.5 space-y-4 sidebar-nav-container scrollbar-none`}
+            className={`flex-1 ${isExpandedVisual ? 'overflow-y-auto' : 'overflow-hidden'} overflow-x-hidden p-2.5 space-y-3 sidebar-nav-container scrollbar-none`}
           >
             <nav aria-label="Primary navigation" className="space-y-1">
               <motion.span
@@ -271,7 +271,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
             </nav>
 
-            <div className="mx-2 h-px bg-slate-200 dark:bg-white/[0.045]" />
+            {isExpandedVisual ? (
+              <div className="mx-2 h-px bg-slate-200 dark:bg-white/[0.045]" />
+            ) : (
+              <div className="w-6 h-px bg-slate-200/60 dark:bg-white/[0.06] mx-auto my-1" />
+            )}
 
             <nav aria-label="Tools" className="space-y-1">
               <motion.span
@@ -314,25 +318,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Guest Session Status Widget */}
           {authMode === 'GUEST' && (
             isCollapsed && !isExpandedVisual ? (
-              <div className="relative group/guest-item flex justify-center py-1">
+              <div className="relative group/guest-item flex justify-center">
                 <button
                   onClick={onGoogleSignIn}
-                  className="w-8 h-8 flex items-center justify-center bg-slate-100/30 dark:bg-white/[0.01] border border-slate-200 dark:border-white/[0.03] hover:bg-slate-200/40 dark:hover:bg-white/[0.05] rounded-xl text-slate-550 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-9 h-9 flex items-center justify-center bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25 hover:bg-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500/50 shadow-xs"
                 >
-                  <AlertCircle className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                  <AlertCircle className="w-4 h-4 text-amber-500 animate-pulse" />
                 </button>
                 <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.08] backdrop-blur-md text-slate-900 dark:text-slate-100 text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-2xl opacity-0 scale-95 group-hover/guest-item:opacity-100 group-hover/guest-item:scale-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
                   Guest Session - Click to Sign In
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2.5 rounded-xl border border-slate-205 dark:border-white/[0.04] bg-slate-100/30 dark:bg-white/[0.015] px-2.5 py-2.5 text-left">
+              <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 dark:border-white/[0.04] bg-slate-100/30 dark:bg-white/[0.015] px-2.5 py-2.5 text-left">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-[8.5px] font-bold text-slate-500 dark:text-slate-400/80 uppercase tracking-widest leading-none">
                     Guest Session
                   </div>
-                  <div className="mt-1 text-[9px] text-slate-600 dark:text-slate-505/80 font-semibold leading-none">
+                  <div className="mt-1 text-[9px] text-slate-600 dark:text-slate-400 font-semibold leading-none">
                     Expires in <span className="font-mono text-slate-700 dark:text-slate-400 font-bold">{Math.floor(sessionTimeLeft / 60)}:{(sessionTimeLeft % 60).toString().padStart(2, '0')}</span>
                   </div>
                 </div>
@@ -353,7 +357,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               initial={false}
               animate={{ opacity: isExpandedVisual ? 1 : 0, height: isExpandedVisual ? 'auto' : 0 }}
               transition={{ duration: 0.15 }}
-              className="text-[8.5px] text-slate-500 dark:text-slate-550 font-bold uppercase tracking-[0.15em] block px-3 mb-1.5 select-none overflow-hidden whitespace-nowrap"
+              className="text-[8.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.15em] block px-3 mb-1.5 select-none overflow-hidden whitespace-nowrap"
             >
               System
             </motion.span>
@@ -375,9 +379,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               transition={{ duration: 0.15 }}
               className="overflow-hidden"
             >
-              <div className="flex items-center justify-between px-3 py-2.5 mt-1.5 bg-slate-100/30 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/[0.015] rounded-xl text-[10px] text-slate-650 dark:text-slate-450 select-none">
+              <div className="flex items-center justify-between px-3 py-2.5 mt-1.5 bg-slate-100/30 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/[0.015] rounded-xl text-[10px] text-slate-600 dark:text-slate-400 select-none">
                 <span className="font-semibold">Interface Theme</span>
-                <div className="flex items-center gap-1 bg-slate-200/50 dark:bg-slate-905/40 p-0.5 border border-slate-300/50 dark:border-white/[0.03] rounded-lg">
+                <div className="flex items-center gap-1 bg-slate-200/50 dark:bg-slate-900/40 p-0.5 border border-slate-300/50 dark:border-white/[0.03] rounded-lg">
                   {(['light', 'dark', 'system'] as SidebarTheme[]).map((t) => {
                     const isSelected = theme === t;
                     const Icon = t === 'light' ? Sun : t === 'dark' ? Moon : Laptop;
@@ -388,7 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         title={`Select ${t} theme`}
                         className={`p-1 rounded cursor-pointer transition-all duration-155 focus:outline-none ${isSelected
                             ? 'bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-500/15'
-                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-355'
+                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                           }`}
                       >
                         <Icon className="w-3 h-3" />
@@ -401,7 +405,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-slate-250 dark:bg-white/[0.015] mx-0.5" />
+          {isExpandedVisual ? (
+            <div className="h-px bg-slate-200 dark:bg-white/[0.045] mx-0.5" />
+          ) : (
+            <div className="w-6 h-px bg-slate-200/60 dark:bg-white/[0.06] mx-auto" />
+          )}
 
           {/* User profile section */}
           <UserProfile

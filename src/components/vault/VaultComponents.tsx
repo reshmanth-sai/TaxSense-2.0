@@ -112,65 +112,65 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
       onDrop={handleDrop}
-      className={`relative rounded-[24px] p-8 md:p-12 border border-dashed backdrop-blur-md transition-all duration-300 overflow-hidden text-center group ${dragActive
-          ? 'border-blue-500 bg-blue-500/[0.03] shadow-[0_0_32px_rgba(59,130,246,0.15)] scale-[1.01]'
-          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0f172a]/20 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)] hover:border-blue-500/20 hover:bg-slate-100/50 dark:hover:bg-[#0f172a]/30'
-        }`}
+      className={`relative rounded-[32px] p-8 md:p-12 border backdrop-blur-xl transition-all duration-300 overflow-hidden text-center group shadow-xl ${
+        dragActive
+          ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_40px_rgba(59,130,246,0.25)] scale-[1.01]'
+          : 'border-slate-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-[#060A10]/70 hover:border-blue-500/30'
+      }`}
     >
-      {/* Subtle background glow */}
-      <div className="absolute inset-0 bg-radial-at-c from-blue-500/[0.01] to-transparent pointer-events-none" />
+      {/* Subtle background gradient glow */}
+      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-48 bg-gradient-radial from-blue-500/10 via-purple-500/5 to-transparent pointer-events-none blur-3xl" />
 
       {errorMessage && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 p-4 bg-red-950/20 border border-red-500/25 rounded-xl flex items-start gap-3 text-left"
+          className="mb-8 p-4 bg-red-500/10 border border-red-500/25 rounded-2xl flex items-start gap-3 text-left"
         >
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <p className="text-xs font-bold text-red-200">Ingestion Alert</p>
-            <p className="text-[11px] text-red-300 leading-relaxed font-medium">{errorMessage}</p>
+            <p className="text-xs font-bold text-red-700 dark:text-red-200">Ingestion Alert</p>
+            <p className="text-[11px] text-red-600 dark:text-red-300 leading-relaxed font-medium">{errorMessage}</p>
           </div>
         </motion.div>
       )}
 
       {dragActive ? (
         <div className="space-y-6 py-6 animate-pulse">
-          <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/5">
-            <UploadCloud className="w-8 h-8 text-blue-400 animate-bounce" />
+          <div className="w-16 h-16 bg-blue-500/15 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+            <UploadCloud className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-bounce" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-base font-bold text-blue-400">Drop your Form 16</h3>
-            <p className="text-xs text-slate-400 font-semibold">Release to begin secure verification</p>
+            <h3 className="text-lg font-bold text-blue-600 dark:text-blue-400">Drop your Form 16 here</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Release to begin secure client verification</p>
           </div>
         </div>
       ) : (
-        <div className="space-y-8 py-4">
-          {/* Animated upload icon layout */}
-          <div className="w-24 h-24 mx-auto relative flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-            <div className="absolute w-20 h-20 bg-blue-500/[0.02] blur-xl rounded-full pointer-events-none" />
-            <div className="absolute top-4 w-16 h-[1px] bg-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.3)] animate-pulse pointer-events-none" />
+        <div className="space-y-8 py-2 relative z-10">
+          {/* Custom Volumetric AI Document Icon with Halo */}
+          <div className="w-24 h-24 mx-auto relative flex items-center justify-center group-hover:scale-105 transition-transform duration-500 select-none">
+            <div className="absolute w-20 h-20 bg-blue-500/15 blur-2xl rounded-full pointer-events-none animate-pulse" />
 
-            <div className="absolute -translate-x-3 -translate-y-2 w-11 h-15 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.04] rounded-lg shadow-2xl opacity-40 transition-transform duration-300 group-hover:-translate-x-4" />
-            <div className="absolute translate-x-3 translate-y-2 w-11 h-15 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.04] rounded-lg shadow-2xl opacity-40 transition-transform duration-300 group-hover:translate-x-4" />
+            <div className="absolute -translate-x-3 -translate-y-2 w-12 h-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.08] rounded-xl shadow-xl opacity-40 transition-transform duration-300 group-hover:-translate-x-4" />
+            <div className="absolute translate-x-3 translate-y-2 w-12 h-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.08] rounded-xl shadow-xl opacity-40 transition-transform duration-300 group-hover:translate-x-4" />
 
-            <div className="absolute w-12 h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/[0.08] rounded-lg shadow-2xl flex flex-col justify-between p-2 transform -rotate-3 transition-transform duration-300 group-hover:rotate-0">
-              <div className="space-y-1">
-                <div className="w-8 h-0.5 bg-slate-300 dark:bg-slate-700 rounded-full" />
-                <div className="w-6 h-0.5 bg-slate-400 dark:bg-slate-800 rounded-full" />
-                <div className="w-7 h-0.5 bg-slate-400 dark:bg-slate-800 rounded-full" />
+            <div className="absolute w-14 h-18 bg-white dark:bg-slate-950 border border-slate-200/90 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col justify-between p-3 transform -rotate-3 transition-transform duration-300 group-hover:rotate-0">
+              <div className="space-y-1.5">
+                <div className="w-8 h-1 bg-blue-500 rounded-full" />
+                <div className="w-6 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
+                <div className="w-7 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
               </div>
-              <div className="flex items-center justify-between">
-                <div className="w-4 h-0.5 bg-blue-500/40 rounded-full" />
-                <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-450" />
+              <div className="flex items-center justify-between pt-1">
+                <div className="w-4 h-1 bg-emerald-400 rounded-full" />
+                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <Sparkles className="w-5 h-5 text-purple-500 dark:text-purple-400 absolute -top-1 -right-1 animate-pulse" />
+            <Sparkles className="w-6 h-6 text-purple-500 dark:text-purple-400 absolute -top-1 -right-1 animate-pulse" />
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Drag & Drop your Form 16</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-455 max-w-sm mx-auto leading-relaxed">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Drag & Drop your Form 16</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed font-medium">
               Supports PDF, JPG and PNG • Maximum size: 20 MB<br />
               Average processing time: 15–30 seconds
             </p>
@@ -180,10 +180,10 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
             {/* Primary Blue Upload CTA */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full sm:flex-1 py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/10 active:scale-98 transition-all flex items-center justify-center gap-2 select-none hover:-translate-y-0.5 duration-200 cursor-pointer"
+              className="w-full sm:flex-1 h-12 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-500/20 active:scale-98 transition-all flex items-center justify-center gap-2 select-none hover:-translate-y-0.5 duration-200 cursor-pointer"
             >
               <span>Upload Form 16</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
             <input
               type="file"
@@ -196,20 +196,20 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
             {/* Secondary Paste CTA */}
             <button
               onClick={onPasteClick}
-              className="w-full sm:w-auto py-3 px-5 bg-slate-50 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/[0.05] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold text-xs rounded-xl cursor-pointer border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 active:scale-98 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto h-12 px-5 bg-slate-100/80 dark:bg-slate-900/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer border border-slate-200 dark:border-white/[0.06] active:scale-98 transition-all flex items-center justify-center gap-2"
             >
               <span>📋 Paste Raw Text</span>
             </button>
           </div>
 
           {/* Tertiary Sample trigger */}
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-900/50 flex justify-center">
+          <div className="pt-3 border-t border-slate-200/80 dark:border-white/[0.04] flex justify-center">
             <button
               onClick={onSampleClick}
-              className="text-[10px] font-bold text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-400 transition-colors flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-lg hover:bg-slate-100/50 dark:hover:bg-white/[0.01]"
+              className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-purple-500/10"
             >
               <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 animate-pulse" />
-              <span>Explore with Sample Form 16</span>
+              <span>Explore with Sample Form 16 (Demo)</span>
             </button>
           </div>
         </div>
@@ -747,12 +747,12 @@ export const MetricChip: React.FC<{
   const getColorClasses = () => {
     switch (type) {
       case 'success':
-        return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15';
+        return 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
       case 'info':
-        return 'text-blue-400 bg-blue-500/10 border-blue-500/15';
+        return 'text-blue-700 dark:text-blue-400 bg-blue-500/10 border-blue-500/20';
       case 'neutral':
       default:
-        return 'text-slate-300 bg-slate-950 border-white/[0.04]';
+        return 'text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-950 border-slate-200 dark:border-white/[0.04]';
     }
   };
 
@@ -769,7 +769,7 @@ export const MetricChip: React.FC<{
 // ----------------------------------------------------
 export const BreathingIllustration: React.FC<{ active: boolean }> = ({ active }) => {
   return (
-    <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+    <div className="relative w-28 h-28 mx-auto flex items-center justify-center select-none">
       {/* Background radial glow */}
       <motion.div
         animate={active ? {
@@ -793,9 +793,9 @@ export const BreathingIllustration: React.FC<{ active: boolean }> = ({ active })
           repeat: Infinity,
           ease: "easeInOut"
         }}
-        className="absolute w-20 h-20 rounded-3xl border border-blue-500/10 bg-slate-900/60 backdrop-blur-md flex items-center justify-center shadow-[0_0_50px_rgba(59,130,246,0.1)]"
+        className="absolute w-20 h-20 rounded-3xl border border-blue-500/20 bg-blue-500/10 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center shadow-lg shadow-blue-500/10"
       >
-        <Cpu className="w-8 h-8 text-blue-400" />
+        <Cpu className="w-8 h-8 text-blue-600 dark:text-blue-400" />
       </motion.div>
       {/* Pulsing outer accent circle */}
       <motion.div
@@ -1869,41 +1869,26 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
   setActiveStep
 }) => {
   const savingsVal = taxCalculationResult.savings;
+  const recommendedRegime = taxCalculationResult.recommendedRegime;
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
 
-  // Framer motion animation variants for staggered major card fade-ups (8px)
   const panelContainer = {
     animate: {
       transition: {
-        staggerChildren: 0.08 // Stagger major cards
+        staggerChildren: 0.08
       }
     }
   } as any;
 
   const panelItem = {
-    initial: { opacity: 0, y: 8 },
+    initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } }
   } as any;
 
-  // Framer motion animation variants for staggered progress nodes in the pipeline
-  const pipelineContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.12 // 120ms delay
-      }
-    }
-  } as any;
-
-  const pipelineNode = {
-    initial: { opacity: 0, y: 4 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }
-  } as any;
-
-  // Framer motion animation variants for sequential verification badge chips
   const chipContainer = {
     animate: {
       transition: {
-        staggerChildren: 0.06 // 60ms delay
+        staggerChildren: 0.06
       }
     }
   } as any;
@@ -1918,81 +1903,93 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
       variants={panelContainer}
       initial="initial"
       animate="animate"
-      className="space-y-[40px] font-sans relative overflow-hidden pb-24"
+      className="space-y-6 font-sans max-w-6xl mx-auto pb-20 relative text-left"
     >
-      <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-gradient-radial from-emerald-500/5 to-transparent pointer-events-none blur-3xl z-0" />
-      {/* 1. Streamlined Hero Section */}
+      {/* Background Volumetric Glow */}
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-radial from-blue-600/10 via-purple-600/5 to-transparent blur-3xl pointer-events-none z-0" />
+
+      {/* 1. Streamlined Hero Savings Section */}
       <motion.div
         variants={panelItem}
-        className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl py-6 px-8 text-center space-y-1 relative overflow-hidden backdrop-blur-md shadow-sm dark:shadow-none"
+        className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-8 lg:p-10 text-center space-y-3 relative overflow-hidden backdrop-blur-xl shadow-xl dark:shadow-2xl z-10"
       >
-        <div className="absolute inset-0 bg-emerald-500/[0.01] pointer-events-none" />
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
+            AY 2026–27 AI Strategy Verified
+          </span>
+        </div>
 
-        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider block select-none">
-          AI VERIFIED RECOMMENDATION
-        </span>
-        <h2 className="text-xs font-bold text-slate-700 dark:text-slate-350 tracking-wide uppercase select-none mb-1">
-          Your personalized tax strategy is ready.
+        <h2 className="text-sm md:text-base font-bold text-slate-700 dark:text-slate-300 tracking-wide uppercase select-none">
+          Your Optimal Tax Savings Calculation Is Ready
         </h2>
-        <p className="text-[10px] text-slate-655 dark:text-slate-400 max-w-lg mx-auto font-medium leading-relaxed pb-1.5 select-none">
-          We analyzed your Form 16 and employer records against AY 2026-27 rules to maximize your deductions.
-        </p>
 
-        {/* Savings Big Value (Fixed height to prevent CLS) */}
-        <div className="h-[96px] md:h-[120px] flex items-center justify-center select-all">
-          <div className="text-7xl md:text-[80px] font-black font-mono tracking-[-0.04em] leading-none py-1 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-500 dark:from-[#34D399] dark:to-blue-400">
+        {/* Big Savings Metric */}
+        <div className="py-2 flex items-center justify-center select-all">
+          <div className="text-6xl sm:text-7xl md:text-8xl lg:text-[90px] font-black font-mono tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-[#34D399] dark:via-emerald-400 dark:to-cyan-400 drop-shadow-sm">
             <HeroSavingsCounter value={savingsVal} />
           </div>
         </div>
 
-        <p className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block select-none">
-          Estimated tax savings
-        </p>
-        <p className="text-xs text-slate-655 dark:text-slate-400 font-semibold select-none">
-          Compared to your current filing: {formatINR(savingsVal)} saved
-        </p>
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Estimated Net Tax Savings
+          </p>
+          <p className="text-xs text-slate-600 dark:text-slate-350 font-medium">
+            By adopting the recommended strategy compared to your current filing.
+          </p>
+        </div>
       </motion.div>
 
-      {/* 2. Structured Decision Summary Card (4 columns) */}
+      {/* 2. Structured Decision KPI Card (4 Columns) */}
       <motion.div
         variants={panelItem}
-        className="grid gap-6 p-6 bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl relative overflow-hidden shadow-sm dark:shadow-none"
-        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl backdrop-blur-xl shadow-md z-10"
       >
-        <div className="space-y-1 text-left">
-          <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block">New Tax Liability</span>
-          <span className="font-mono text-slate-900 dark:text-slate-100 font-bold text-lg block">₹0</span>
-        </div>
-        <div className="space-y-1 text-left">
-          <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block">Time Required</span>
-          <span className="text-slate-800 dark:text-slate-200 text-sm font-bold block">Less than 1 minute</span>
-        </div>
-        <div className="space-y-1 text-left">
-          <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block">Recommendation</span>
-          <span className="text-slate-800 dark:text-slate-200 text-sm font-bold block">
-            Switch to {taxCalculationResult.recommendedRegime === 'NEW' ? 'New Tax Regime' : 'Old Tax Regime'}
+        <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.03]">
+          <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">New Tax Liability</span>
+          <span className="font-mono text-slate-900 dark:text-white font-extrabold text-xl block">
+            {formatINR(taxCalculationResult.newRegime.totalTaxPayable)}
           </span>
         </div>
-        <div className="space-y-1 text-left">
-          <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block">Expected Impact</span>
-          <span className="text-slate-800 dark:text-slate-200 text-sm font-bold block">Lowest projected tax liability</span>
-        </div>
-      </motion.div>
-      <motion.div
-        variants={panelItem}
-        className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-6 space-y-4 text-left shadow-sm dark:shadow-none"
-      >
-        <div className="flex items-center gap-2 border-b border-slate-200/50 dark:border-white/[0.02] pb-2.5">
-          <ShieldCheck className="h-4.5 w-4.5 text-emerald-500 dark:text-emerald-400" />
-          <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider">AI Verification Journey</span>
+
+        <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.03]">
+          <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Time Required</span>
+          <span className="text-slate-900 dark:text-white text-sm font-bold block pt-1">Less than 1 minute</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <div className="space-y-3.5 text-left border-slate-200 dark:border-slate-800/60 md:border-r border-b md:border-b-0 pb-4 md:pb-0 pr-6">
+        <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.03]">
+          <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Recommendation</span>
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 mt-0.5">
+            Switch to {recommendedRegime === 'NEW' ? 'New Regime' : 'Old Regime'}
+          </span>
+        </div>
+
+        <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/[0.03]">
+          <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Expected Impact</span>
+          <span className="text-slate-900 dark:text-white text-sm font-bold block pt-1">Lowest Tax Liability</span>
+        </div>
+      </motion.div>
+
+      {/* 3. AI Verification Journey (2 Columns Restored) */}
+      <motion.div
+        variants={panelItem}
+        className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 space-y-4 backdrop-blur-xl shadow-md z-10"
+      >
+        <div className="flex items-center gap-2 border-b border-slate-200/60 dark:border-white/[0.04] pb-3">
+          <ShieldCheck className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            AI Verification Journey
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start pt-1">
+          {/* Verification checklist */}
+          <div className="space-y-3 text-left border-slate-200 dark:border-slate-800/60 md:border-r border-b md:border-b-0 pb-4 md:pb-0 pr-6">
             <h4 className="text-xs font-black text-slate-850 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5">
               🛡 AI Verification Complete
             </h4>
-            <div className="space-y-2 text-xs text-slate-655 dark:text-slate-405 font-semibold leading-relaxed">
+            <div className="space-y-2 text-xs text-slate-600 dark:text-slate-350 font-semibold leading-relaxed">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span>All employer data verified</span>
@@ -2012,11 +2009,14 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
             </div>
           </div>
 
+          {/* Verified credentials chips */}
           <div className="space-y-2 select-none">
-            <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block">Verified credentials</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              Verified Credentials
+            </span>
             <motion.div
               variants={chipContainer}
-              className="flex flex-wrap gap-2"
+              className="flex flex-wrap gap-2 pt-1"
             >
               {[
                 'Form 16 Match',
@@ -2025,11 +2025,11 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                 'Employer Profile',
                 'AY 2026–27 Rules',
                 'Income Ledger'
-              ].map(chip => (
+              ].map((chip) => (
                 <motion.div
                   key={chip}
                   variants={chipItem}
-                  className="flex items-center gap-1.5 bg-blue-600/10 dark:bg-blue-600/5 border border-blue-200 dark:border-blue-500/10 px-3 py-1 rounded-lg text-[9.5px] text-blue-600 dark:text-blue-400 font-bold animate-pulse-subtle"
+                  className="flex items-center gap-1.5 bg-blue-600/10 dark:bg-blue-600/5 border border-blue-200 dark:border-blue-500/10 px-3 py-1.5 rounded-lg text-[10px] text-blue-600 dark:text-blue-400 font-bold"
                 >
                   <Check className="h-3 w-3 text-blue-600 dark:text-blue-400" />
                   <span>{chip}</span>
@@ -2040,61 +2040,52 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         </div>
       </motion.div>
 
-      {/* 4. Compared to Current Filing (Visual block - gray vs blue/white vs green) */}
+      {/* 4. Single Unified Regime Comparison Breakdown Card */}
       <motion.div
         variants={panelItem}
-        className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-6 space-y-4 text-left shadow-sm dark:shadow-none"
+        className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 space-y-4 backdrop-blur-xl shadow-md z-10"
       >
-        <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block">Compared to your current filing</span>
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+          Compared to your current filing
+        </span>
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 font-mono text-center select-none w-full">
-          {/* Current: Muted gray */}
-          <div className="flex-1 w-full md:w-auto p-4 bg-slate-100/55 dark:bg-slate-900/20 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-white/[0.01] rounded-2xl">
-            <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block mb-1">Current Filing</span>
-            <span className="text-sm font-bold">{formatINR(taxCalculationResult.oldRegime.totalTaxPayable)}</span>
+        {/* 3-Column Comparison Flow */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono select-none">
+          {/* Current Filing */}
+          <div className="p-4 rounded-2xl bg-slate-100/60 dark:bg-slate-900/40 border border-slate-200/60 dark:border-white/[0.04] space-y-1">
+            <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block">Current Filing (Old Regime)</span>
+            <span className="text-lg font-bold text-slate-700 dark:text-slate-300 block">
+              {formatINR(taxCalculationResult.oldRegime.totalTaxPayable)}
+            </span>
           </div>
 
-          <div className="text-slate-400 dark:text-slate-700 font-sans text-lg font-bold shrink-0">
-            <span className="hidden md:inline">→</span>
-            <span className="inline md:hidden">↓</span>
+          {/* Recommended Filing */}
+          <div className="p-4 rounded-2xl bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/25 space-y-1">
+            <span className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block">Recommended (New Regime)</span>
+            <span className="text-lg font-bold text-blue-700 dark:text-blue-300 block">
+              {formatINR(taxCalculationResult.newRegime.totalTaxPayable)}
+            </span>
           </div>
 
-          {/* Recommended: Neutral blue/white */}
-          <div className="flex-1 w-full md:w-auto p-4 bg-slate-100/80 dark:bg-slate-900/30 text-slate-850 dark:text-slate-200 border border-slate-200 dark:border-white/[0.03] rounded-2xl">
-            <span className="text-sm font-medium text-slate-500 dark:text-[#9CA3AF] uppercase tracking-wider block mb-1">Recommended Filing</span>
-            <span className="text-sm font-bold">{formatINR(taxCalculationResult.newRegime.totalTaxPayable)}</span>
-          </div>
-
-          <div className="text-slate-400 dark:text-slate-700 font-sans text-lg font-bold shrink-0">
-            <span className="hidden md:inline">→</span>
-            <span className="inline md:hidden">↓</span>
-          </div>
-
-          {/* Savings: Emerald green glow */}
-          <div className="flex-1 w-full md:w-auto p-4 bg-emerald-500/[0.05] dark:bg-emerald-500/[0.02] border border-emerald-500/20 text-[#059669] dark:text-[#34D399] rounded-2xl shadow-lg shadow-emerald-500/[0.01]">
-            <span className="text-sm font-medium text-[#059669] dark:text-[#34D399] uppercase tracking-wider block mb-1">Estimated Savings</span>
-            <span className="text-base font-black">{formatINR(savingsVal)}</span>
+          {/* Net Savings */}
+          <div className="p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 space-y-1">
+            <span className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Estimated Savings</span>
+            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 block">
+              {formatINR(savingsVal)}
+            </span>
           </div>
         </div>
       </motion.div>
 
-      {/* 5. Upgraded CTA Action Section */}
+      {/* 5. Action CTA Bar */}
       <motion.div
         variants={panelItem}
-        className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-8 text-center space-y-4 shadow-sm dark:shadow-none"
+        className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 text-center space-y-4 backdrop-blur-xl shadow-md z-10"
       >
-        <div className="space-y-1.5 max-w-md mx-auto">
-          <span className="text-[9px] text-[#059669] dark:text-[#34D399] font-bold uppercase tracking-widest block">✓ Verification Complete</span>
-          <h3 className="text-base font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Strategy Verified.</h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold leading-relaxed">
-            Your personalized tax strategy has been verified against official AY 2026–27 rules. Continue whenever you're ready.
-          </p>
-        </div>
-
-        <div className="pt-2 select-none flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={() => setActiveStep(6)}
-            className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-500/10 hover:scale-102 hover:-translate-y-0.5 active:scale-98 flex items-center justify-center gap-1.5 w-full sm:w-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400"
+            className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-500/20 hover:scale-102 active:scale-98 flex items-center justify-center gap-2"
           >
             <span>Continue with AI Filing</span>
             <ArrowRight className="h-4 w-4" />
@@ -2102,38 +2093,32 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
           
           <button
             onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-            className="px-8 py-3.5 bg-transparent border border-slate-300 dark:border-slate-700 text-slate-750 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer hover:scale-102 hover:-translate-y-0.5 active:scale-98 flex items-center justify-center gap-1.5 w-full sm:w-auto hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400"
+            className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 border border-slate-200 dark:border-white/[0.08]"
           >
-            <span>{isDetailsOpen ? 'Hide Detailed AI Analysis' : 'View Detailed AI Analysis'}</span>
+            <span>{isDetailsOpen ? 'Hide Detailed Breakdown' : 'View Detailed Breakdown'}</span>
           </button>
         </div>
 
-        <p className="text-[10px] text-slate-500 dark:text-slate-505 font-bold select-none">
-          Review every calculation before submission.
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+          You can review every calculation and deduction line-item before final submission.
         </p>
       </motion.div>
 
-      {/* 6. Collapsible Detailed AI Analysis (Low brightness/contrast to avoid visual competition) */}
-      <motion.div
-        variants={panelItem}
-        className="w-full text-center"
-      >
-        <AnimatePresence>
-          {isDetailsOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 0.9, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden mt-4 bg-white/20 dark:bg-[#0E131B]/20 border border-slate-250 dark:border-white/[0.02] rounded-3xl p-6 lg:p-8 text-left transition-all duration-300 opacity-90 contrast-[0.9] brightness-[0.95]"
-            >
-              <React.Suspense fallback={<div className="h-96 bg-slate-900/10 animate-pulse rounded-2xl" />}>
-                <RegimeComparison hideHero={true} />
-              </React.Suspense>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
+      {/* 6. Collapsible Detailed Tax Calculation */}
+      <AnimatePresence>
+        {isDetailsOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden bg-white/50 dark:bg-[#060A10]/50 border border-slate-200/60 dark:border-white/[0.04] rounded-3xl p-6 text-left"
+          >
+            <React.Suspense fallback={<div className="h-64 bg-slate-900/10 animate-pulse rounded-2xl" />}>
+              <RegimeComparison hideHero={true} />
+            </React.Suspense>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -2256,12 +2241,12 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
   };
 
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-6 font-sans max-w-6xl mx-auto pb-16 text-left">
       {/* Progress Pipeline */}
-      <div className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-6 shadow-sm dark:shadow-none">
+      <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 backdrop-blur-xl space-y-6 shadow-md z-10">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <ListTodo className="w-4.5 h-4.5 text-emerald-500" />
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <ListTodo className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
             ITR Filing Pipeline
           </h2>
           <span className="text-xs text-slate-500 dark:text-slate-400 font-bold font-mono">
@@ -2272,13 +2257,12 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
         {/* Progress Grid Container */}
         <div className="relative">
           {/* Connector Line Background */}
-          {/* First node center is at 10% (1/5th column center), last is at 90% */}
-          <div className="absolute left-[10%] right-[10%] top-4 h-[2px] bg-slate-200 dark:bg-slate-800 rounded-full z-0" />
+          <div className="absolute left-[10%] right-[10%] top-4 h-[2px] bg-slate-200 dark:bg-slate-800/80 rounded-full z-0" />
 
-          {/* Connector Line Fill (Animate smoothly left to right) */}
+          {/* Connector Line Fill */}
           <div className="absolute left-[10%] right-[10%] top-4 h-[2px] rounded-full z-0 overflow-hidden">
             <motion.div
-              className="h-full bg-blue-500 rounded-full"
+              className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${((guidedFilingStep - 1) / (steps.length - 1)) * 100}%` }}
               transition={{ duration: 0.45, ease: "easeOut" }}
@@ -2299,12 +2283,13 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
                   className="flex flex-col items-center group cursor-pointer focus:outline-none bg-transparent border-none p-0 w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400 rounded-xl"
                 >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${isCompleted
-                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
+                    className={`w-8.5 h-8.5 rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
+                      isCompleted
+                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
                         : isActive
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-4 ring-blue-500/20 shadow-[0_0_12px_rgba(59,130,246,0.5)] scale-105'
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-4 ring-blue-500/20 scale-105'
                           : 'bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] text-slate-500'
-                      }`}
+                    }`}
                   >
                     {isCompleted ? (
                       <motion.div
@@ -2312,22 +2297,23 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
                         animate={{ scale: [1, 1.15, 1] }}
                         transition={{ duration: 0.4 }}
                       >
-                        <Check className="w-3.5 h-3.5 stroke-[3] text-slate-950" />
+                        <Check className="w-4 h-4 stroke-[3] text-slate-950" />
                       </motion.div>
                     ) : (
-                      <StepIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors" />
+                      <StepIcon className="w-4 h-4 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors" />
                     )}
                   </div>
 
-                  {/* Step Label (Wrapped to two centered lines for multi-word text) */}
+                  {/* Step Label */}
                   <div className="mt-3 text-center px-1">
                     <span
-                      className={`text-[9.5px] uppercase tracking-widest font-extrabold transition-all duration-200 block leading-tight ${isActive
+                      className={`text-[9.5px] uppercase tracking-widest font-extrabold transition-all duration-200 block leading-tight ${
+                        isActive
                           ? 'text-slate-900 dark:text-white font-black'
                           : isCompleted
-                            ? 'text-emerald-600 dark:text-emerald-450 hover:text-emerald-500'
+                            ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-500'
                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-400'
-                        }`}
+                      }`}
                     >
                       {s.label.split(' ').map((word, wIdx) => (
                         <span key={wIdx} className="block">
@@ -2375,21 +2361,21 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* Left Side: Form Content Card */}
-          <div className="lg:col-span-8 bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-6 backdrop-blur-md space-y-8 relative shadow-sm dark:shadow-none">
+          <div className="lg:col-span-8 bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-7 backdrop-blur-xl space-y-8 relative shadow-md">
 
             {/* Reassurance Auto-save Badge */}
-            <div className="absolute top-6 right-6 flex items-center gap-1.5 text-[9px] text-emerald-600 dark:text-emerald-455 font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full select-none">
+            <div className="absolute top-7 right-7 flex items-center gap-1.5 text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full select-none">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               All changes saved
             </div>
 
             {/* Form Header */}
             <div className="space-y-1 text-left">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200 uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                 {guidedFilingStep === 1 && "Personal Information"}
                 {guidedFilingStep === 2 && "Income Summary"}
               </h3>
-              <p className="text-[11px] text-slate-600 dark:text-slate-450 font-medium">
+              <p className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
                 {guidedFilingStep === 1 && "Verify your personal profile particulars extracted from Form 16."}
                 {guidedFilingStep === 2 && "Configure and confirm ledger details of your gross taxable income."}
               </p>
@@ -2400,64 +2386,64 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
               {guidedFilingStep === 1 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Full Name</label>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Full Name</label>
                     <div className="relative">
                       <input
                         type="text"
                         value={incomeProfile?.employeeName || 'Mohit Kumar'}
                         readOnly
-                        className="w-full bg-slate-100/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 text-xs text-slate-800 dark:text-slate-200 cursor-not-allowed focus:outline-none"
+                        className="w-full bg-slate-100/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.06] rounded-2xl py-3 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-not-allowed focus:outline-none"
                       />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 select-none">
-                        <Check className="w-2.5 h-2.5" />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9.5px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg flex items-center gap-1 select-none">
+                        <Check className="w-3 h-3 text-emerald-500" />
                         Verified
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Permanent Account Number (PAN)</label>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Permanent Account Number (PAN)</label>
                     <div className="relative">
                       <input
                         type="text"
                         value={incomeProfile?.pan || 'MK*****32F'}
                         readOnly
-                        className="w-full bg-slate-100/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 text-xs text-slate-800 dark:text-slate-200 cursor-not-allowed focus:outline-none"
+                        className="w-full bg-slate-100/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.06] rounded-2xl py-3 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-not-allowed focus:outline-none"
                       />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 select-none">
-                        <Check className="w-2.5 h-2.5" />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9.5px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg flex items-center gap-1 select-none">
+                        <Check className="w-3 h-3 text-emerald-500" />
                         Verified
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Employer Category</label>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Employer Category</label>
                     <div className="relative">
                       <input
                         type="text"
                         defaultValue="Private Sector Co."
                         disabled
-                        className="w-full bg-slate-100/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 text-xs text-slate-800 dark:text-slate-200 cursor-not-allowed focus:outline-none"
+                        className="w-full bg-slate-100/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.06] rounded-2xl py-3 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-not-allowed focus:outline-none"
                       />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 select-none">
-                        <Check className="w-2.5 h-2.5" />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9.5px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg flex items-center gap-1 select-none">
+                        <Check className="w-3 h-3 text-emerald-500" />
                         Verified
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Residential Status</label>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Residential Status</label>
                     <div className="relative">
                       <input
                         type="text"
                         defaultValue="Resident Individual"
                         disabled
-                        className="w-full bg-slate-100/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 text-xs text-slate-800 dark:text-slate-200 cursor-not-allowed focus:outline-none"
+                        className="w-full bg-slate-100/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.06] rounded-2xl py-3 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-not-allowed focus:outline-none"
                       />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 select-none">
-                        <Check className="w-2.5 h-2.5" />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9.5px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg flex items-center gap-1 select-none">
+                        <Check className="w-3 h-3 text-emerald-500" />
                         Verified
                       </span>
                     </div>
@@ -2486,20 +2472,20 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
             </div>
 
             {/* Bottom Navigation buttons */}
-            <div className="pt-6 border-t border-slate-200 dark:border-slate-800/60 flex justify-between">
+            <div className="pt-6 border-t border-slate-200/80 dark:border-white/[0.06] flex justify-between">
               <button
                 onClick={() => setGuidedFilingStep(prev => Math.max(1, prev - 1))}
                 disabled={guidedFilingStep === 1}
-                className="px-5 py-2.5 border border-slate-300 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-white/[0.02] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer disabled:opacity-30 disabled:pointer-events-none select-none active:scale-95 transition-all"
+                className="px-6 py-3 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer disabled:opacity-30 disabled:pointer-events-none select-none active:scale-95 transition-all"
               >
                 {getBackLabel()}
               </button>
               <button
                 onClick={() => setGuidedFilingStep(prev => Math.min(5, prev + 1))}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center gap-1 group"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20 group"
               >
                 <span>{getContinueLabel()}</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
               </button>
             </div>
 
@@ -2507,10 +2493,10 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
 
           {/* Right Side: Contextual Assistant Advice (4 columns) */}
           <div className="lg:col-span-4 space-y-6 text-left">
-            <div className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-5 backdrop-blur-md space-y-4 shadow-sm dark:shadow-none relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-blue-500/5 via-transparent to-transparent pointer-events-none blur-xl z-0" />
+            <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 backdrop-blur-xl space-y-4 shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-blue-500/10 via-transparent to-transparent pointer-events-none blur-xl z-0" />
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 relative z-10">
-                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <Sparkles className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
                 <span className="text-xs font-bold uppercase tracking-wider">Advisor Guidance</span>
               </div>
 
@@ -2521,42 +2507,42 @@ export const FilingWorkspacePanel: React.FC<FilingWorkspacePanelProps> = ({
                 {guidedFilingStep === 5 && "Final verification before return ledger generation. This step logs your optimization history inside your local secure browser storage."}
               </p>
 
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800/60 space-y-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider relative z-10">
+              <div className="pt-3 border-t border-slate-200/80 dark:border-white/[0.06] space-y-2.5 text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider relative z-10">
                 <div className="flex items-center gap-2">
-                  <Lock className="w-3.5 h-3.5 text-slate-600" />
+                  <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                   <span>Your data stays securely on your device</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500/60" />
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                   <span>Checked against official AY 2026-27 tax rules</span>
                 </div>
               </div>
             </div>
 
             {/* Checklist Status */}
-            <div className="bg-white/40 dark:bg-slate-900/35 border border-slate-200/50 dark:border-white/[0.04] rounded-3xl p-5 backdrop-blur-md shadow-sm dark:shadow-none relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-emerald-500/5 via-transparent to-transparent pointer-events-none blur-xl z-0" />
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2 relative z-10">Filing Progress</h4>
-              <div className="space-y-2 text-xs">
+            <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 backdrop-blur-xl shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-emerald-500/10 via-transparent to-transparent pointer-events-none blur-xl z-0" />
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3 relative z-10">Filing Progress</h4>
+              <div className="space-y-2.5 text-xs">
                 <div className={`flex justify-between items-center ${guidedFilingStep === 1 ? 'text-slate-900 dark:text-white font-bold' : 'opacity-60 text-slate-400'}`}>
                   <span>1. Personal Details</span>
-                  <span className="text-emerald-600 dark:text-emerald-450 font-bold font-mono">✓ Verified</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono">✓ Verified</span>
                 </div>
                 <div className={`flex justify-between items-center ${guidedFilingStep === 2 ? 'text-slate-900 dark:text-white font-bold' : guidedFilingStep > 2 ? 'opacity-60 text-slate-400' : 'opacity-40 text-slate-500'}`}>
                   <span>2. Income</span>
-                  <span className={guidedFilingStep > 2 ? "text-emerald-600 dark:text-emerald-450 font-bold font-mono" : "font-mono"}>
+                  <span className={guidedFilingStep > 2 ? "text-emerald-600 dark:text-emerald-400 font-bold font-mono" : "font-mono"}>
                     {guidedFilingStep > 2 ? "✓ Verified" : guidedFilingStep === 2 ? "• Active" : "Pending"}
                   </span>
                 </div>
                 <div className={`flex justify-between items-center ${guidedFilingStep === 3 ? 'text-slate-900 dark:text-white font-bold' : guidedFilingStep > 3 ? 'opacity-60 text-slate-400' : 'opacity-40 text-slate-500'}`}>
                   <span>3. Deductions</span>
-                  <span className={guidedFilingStep > 3 ? "text-emerald-600 dark:text-emerald-450 font-bold font-mono" : "font-mono"}>
+                  <span className={guidedFilingStep > 3 ? "text-emerald-600 dark:text-emerald-400 font-bold font-mono" : "font-mono"}>
                     {guidedFilingStep > 3 ? "✓ Verified" : guidedFilingStep === 3 ? "• Active" : "Pending"}
                   </span>
                 </div>
                 <div className={`flex justify-between items-center ${guidedFilingStep === 4 ? 'text-slate-900 dark:text-white font-bold' : guidedFilingStep > 4 ? 'opacity-60 text-slate-400' : 'opacity-40 text-slate-500'}`}>
                   <span>4. Review</span>
-                  <span className={guidedFilingStep > 4 ? "text-emerald-600 dark:text-emerald-450 font-bold font-mono" : "font-mono"}>
+                  <span className={guidedFilingStep > 4 ? "text-emerald-600 dark:text-emerald-400 font-bold font-mono" : "font-mono"}>
                     {guidedFilingStep > 4 ? "✓ Verified" : guidedFilingStep === 4 ? "• Active" : "Pending"}
                   </span>
                 </div>

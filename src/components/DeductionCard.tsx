@@ -183,14 +183,14 @@ const RecommendationCard: React.FC<RecommendationCardProps> = React.memo(({
       
       {/* Header */}
       <div className="space-y-2 text-left">
-        <div className="flex items-baseline justify-between gap-2.5 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            {isOpportunity && <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 group-hover:animate-pulse" />}
-            <span className="font-bold text-slate-800 dark:text-slate-200 tracking-wider text-[11px] uppercase">
+        <div className="flex items-center justify-between gap-2.5 flex-nowrap shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {isOpportunity && <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 group-hover:animate-pulse shrink-0" />}
+            <span className="font-bold text-slate-800 dark:text-slate-200 tracking-wider text-[11px] uppercase truncate">
               {isOpportunity ? 'Opportunity Found' : title}
             </span>
           </div>
-          <span className={`text-[8.5px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border align-middle transition-colors ${
+          <span className={`text-[8.5px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border align-middle transition-colors shrink-0 ${
             isOpportunity 
               ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' 
               : badge.includes('Auto') 

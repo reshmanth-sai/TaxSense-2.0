@@ -203,6 +203,7 @@ export default function App() {
   const [isCopilotExpanded, setIsCopilotExpanded] = useState(false);
   const [activePreviewDoc, setActivePreviewDoc] = useState<any>(null);
   const [isGuestSessionExpanded, setIsGuestSessionExpanded] = useState(false);
+  const [showSaveProgressModal, setShowSaveProgressModal] = useState(false);
   const [guidedFilingStep, setGuidedFilingStep] = useState(1);
   const [showCelebration, setShowCelebration] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
@@ -1029,49 +1030,18 @@ export default function App() {
                               {/* Guest Session warning relocation */}
                               {authMode === 'GUEST' && (
                                 <div className="transition-all duration-300 w-full">
-                                  {!isGuestSessionExpanded ? (
-                                    <div className="p-3 bg-slate-100/50 dark:bg-slate-900/30 border border-slate-200 dark:border-white/[0.04] rounded-xl flex items-center justify-between gap-3 text-xs w-full">
-                                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                        <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                                        <span className="text-[10.5px]">Guest Session • Progress is not saved permanently.</span>
-                                      </div>
-                                      <button
-                                        onClick={() => setIsGuestSessionExpanded(true)}
-                                        className="text-[10px] text-primary-action hover:text-primary-action/80 font-bold uppercase tracking-wider cursor-pointer focus:outline-none"
-                                      >
-                                        Save Session ↓
-                                      </button>
+                                  <div className="p-3 bg-slate-100/60 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/[0.05] rounded-xl flex items-center justify-between gap-3 text-xs w-full">
+                                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                      <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                      <span className="text-[10.5px]">Guest Session • Progress is stored temporarily in your browser session.</span>
                                     </div>
-                                  ) : (
-                                    <div className="p-4 bg-white/60 dark:bg-slate-900/40 border border-slate-200/60 dark:border-white/[0.06] rounded-xl space-y-2.5 text-xs w-full">
-                                      <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/[0.04] pb-2">
-                                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                                          <Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                                          <span className="font-semibold text-[10.5px]">Save Filing Progress</span>
-                                        </div>
-                                        <button
-                                          onClick={() => setIsGuestSessionExpanded(false)}
-                                          className="text-[10px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-350 cursor-pointer focus:outline-none"
-                                        >
-                                          Collapse ✕
-                                        </button>
-                                      </div>
-                                      <p className="text-slate-600 dark:text-slate-400 font-normal text-left text-[11px] leading-relaxed">
-                                        Save your filing history, uploaded documents, and AI conversations by signing in.
-                                      </p>
-                                      <div className="flex justify-end pt-0.5">
-                                        <button
-                                          onClick={() => {
-                                            (window as any)._migrationRedirectStep = 11;
-                                            setActiveStep(2);
-                                          }}
-                                          className="px-3 py-1.5 bg-primary-action/10 border border-primary-action/20 hover:bg-primary-action/20 text-primary-action font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer shrink-0"
-                                        >
-                                          Save Progress
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
+                                    <button
+                                      onClick={() => setShowSaveProgressModal(true)}
+                                      className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/25 text-[10.5px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 focus:outline-none"
+                                    >
+                                      <span>SAVE SESSION ↓</span>
+                                    </button>
+                                  </div>
                                 </div>
                               )}
 
@@ -1460,9 +1430,10 @@ export default function App() {
               {!isFloatingAIChatOpen && activeStep !== 5 && (
                 <button
                   onClick={() => setIsFloatingAIChatOpen(true)}
-                  className="absolute right-6 bottom-6 z-40 p-3.5 bg-gradient-to-br from-emerald-400 to-blue-600 hover:from-emerald-500 hover:to-blue-700 text-white font-bold rounded-full shadow-[0_4px_12px_rgba(16,185,129,0.2)] hover:shadow-[0_4px_18px_rgba(37,99,235,0.45)] cursor-pointer transition-all hover:scale-108 duration-300 active:scale-95 flex items-center justify-center group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400"
+                  title="Open TaxSense AI Copilot"
+                  className="fixed right-6 bottom-6 z-40 p-3.5 bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold rounded-full shadow-[0_4px_20px_rgba(139,92,246,0.4)] dark:shadow-[0_6px_25px_rgba(139,92,246,0.6)] cursor-pointer transition-all hover:scale-110 duration-300 active:scale-95 flex items-center justify-center group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500 border border-purple-400/30 ring-2 ring-purple-500/20"
                 >
-                  <Sparkles className="w-5 h-5 text-white transition-transform group-hover:rotate-12 duration-300" />
+                  <Sparkles className="w-5.5 h-5.5 text-white transition-transform group-hover:rotate-12 duration-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]" />
                 </button>
               )}
 
@@ -1684,24 +1655,24 @@ export default function App() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 dark:bg-black/80 backdrop-blur-md select-none"
                   >
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.25 }}
-                      className="text-center space-y-6 max-w-md w-full p-8 bg-slate-900 border border-slate-800 rounded-3xl relative overflow-hidden shadow-2xl"
+                      className="text-center space-y-6 max-w-md w-full p-8 bg-white/95 dark:bg-[#0B1020]/95 border border-slate-200/80 dark:border-white/10 rounded-3xl relative overflow-hidden shadow-2xl backdrop-blur-2xl text-slate-900 dark:text-white"
                     >
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none" />
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-                      <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-455 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2 animate-bounce">
-                        <CheckCircle className="w-9 h-9 text-emerald-400" />
+                      <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2 animate-bounce shadow-inner">
+                        <CheckCircle className="w-9 h-9 text-emerald-600 dark:text-emerald-400" />
                       </div>
 
                       <div className="space-y-2 z-10 relative">
-                        <h2 className="text-xl font-bold tracking-tight text-white">ITR Return Logged Successfully!</h2>
-                        <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">ITR Return Logged Successfully!</h2>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                           Your filing draft has been compiled, audited against AY 2026-27 rules, and logged to your local sandbox archives database.
                         </p>
                       </div>
@@ -1712,7 +1683,7 @@ export default function App() {
                           setGuidedFilingStep(1);
                           setActiveStep(10); // Route directly to Timeline Archives (Stage 10)
                         }}
-                        className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 select-none active:scale-95 block z-10 relative"
+                        className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 select-none active:scale-95 block z-10 relative"
                       >
                         View Timeline history
                       </button>
@@ -1751,6 +1722,83 @@ export default function App() {
         onClose={() => setActivePreviewDoc(null)}
         document={activePreviewDoc || {}}
       />
+
+      {/* Save Progress Confirmation Modal */}
+      <AnimatePresence>
+        {showSaveProgressModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.08] rounded-3xl p-6 shadow-2xl space-y-5 text-left relative overflow-hidden"
+            >
+              {/* Glow Background Accent */}
+              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[60px] rounded-full pointer-events-none" />
+
+              <div className="flex items-start justify-between">
+                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                  <ShieldCheck className="w-5.5 h-5.5" />
+                </div>
+                <button
+                  onClick={() => setShowSaveProgressModal(false)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                  Save Your Tax Filing Progress?
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  You are currently analyzing taxes in a temporary Guest Session. Sign in with Google to save your session, document extractions, and AI chat history permanently across all devices.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-100/60 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.04] space-y-1 text-[11px] text-slate-600 dark:text-slate-400">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                  <Lock className="w-3 h-3 text-slate-500" />
+                  <span>Zero Access Policy</span>
+                </div>
+                <p className="text-[10.5px]">TaxSense only verifies your identity via Google. We never access your Gmail, Google Drive, or personal files.</p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setShowSaveProgressModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Continue as Guest
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSaveProgressModal(false);
+                    handleGoogleSignIn();
+                  }}
+                  disabled={googleGsiState === 'loading'}
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                  <span>Sign In with Google</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

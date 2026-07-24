@@ -167,40 +167,42 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
   }, []);
 
   return (
-    <div className="space-y-8 max-w-[1000px] mx-auto text-slate-800 dark:text-slate-100 py-4">
+    <div className="space-y-6 max-w-6xl mx-auto text-slate-800 dark:text-slate-100 py-2">
       
       {/* Centered Review Hero */}
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider mb-2">
-          <Sparkles className="h-3 w-3" />
+      <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-8 backdrop-blur-xl space-y-3 text-center shadow-md relative overflow-hidden">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-96 h-32 bg-gradient-radial from-blue-500/10 via-transparent to-transparent pointer-events-none blur-2xl" />
+        
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-[10.5px] font-bold uppercase tracking-wider mb-1">
+          <Sparkles className="h-3.5 w-3.5" />
           <span>Filing Audited & Verified</span>
         </div>
-        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Everything looks ready.</h1>
+        
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Everything looks ready.</h1>
         <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed font-medium">
           We've reviewed your salary, deductions, exemptions and filing profile. Everything has been verified against AY 2026–27 rules.
         </p>
-      </div>
 
-      {/* Estimated Savings Card with soft glow */}
-      <div className="relative max-w-lg mx-auto bg-slate-50 dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.04] rounded-3xl p-8 text-center shadow-sm dark:shadow-xl overflow-hidden group">
-        <div className="absolute inset-0 bg-emerald-500/[0.02] pointer-events-none" />
-        <div className="absolute -top-12 -left-12 w-24 h-24 rounded-full bg-emerald-500/5 blur-2xl pointer-events-none" />
-        
-        <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">Estimated Tax Savings</span>
-        <div className="my-3">
-          <span className="text-3xl md:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-            <AnimatedCounter value={savingsAmount} />
+        {/* Estimated Savings Inner Card */}
+        <div className="mt-6 max-w-lg mx-auto bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-6 text-center shadow-inner relative overflow-hidden">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold block">Estimated Tax Savings</span>
+          <div className="my-2">
+            <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 dark:from-[#34D399] dark:via-emerald-400 dark:to-cyan-400 font-mono tracking-tight">
+              <AnimatedCounter value={savingsAmount} />
+            </span>
+          </div>
+          <span className="inline-block text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-0.5 rounded-full font-bold uppercase tracking-wider">
+            Compared to filing without optimization
           </span>
         </div>
-        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-          Compared to filing without optimization
-        </span>
       </div>
 
-      {/* Verification Shield (Individual Chips) */}
-      <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-200 dark:border-white/[0.03] rounded-3xl p-6 text-left max-w-2xl mx-auto space-y-3 shadow-sm">
-        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wider block">Exemption Verification Shield</span>
-        <div className="flex flex-wrap gap-2.5">
+      {/* Verification Shield (Individual Chips in 3 columns) */}
+      <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 text-left space-y-4 backdrop-blur-xl shadow-md">
+        <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block border-b border-slate-200/60 dark:border-white/[0.04] pb-2.5">
+          Exemption Verification Shield
+        </span>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[
             'Form 16 Verified',
             'PAN Matched',
@@ -209,16 +211,16 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
             'Deductions Validated',
             'AY 2026–27 Rules Applied'
           ].map((chip) => (
-            <span key={chip} className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wider bg-white dark:bg-[#0E131B] border border-slate-200 dark:border-white/[0.04] px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 shadow-sm dark:shadow-none">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-455 shrink-0" />
+            <div key={chip} className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-wider bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/[0.04] px-3.5 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 select-none">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
               <span>{chip}</span>
-            </span>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Filing Summary Checklist */}
-      <div className="max-w-2xl mx-auto bg-white dark:bg-[#0A0D14] border border-slate-200 dark:border-white/[0.04] rounded-3xl p-6 space-y-1 shadow-sm">
+      <div className="bg-white/70 dark:bg-[#060A10]/70 border border-slate-200/80 dark:border-white/[0.06] rounded-3xl p-6 space-y-1 backdrop-blur-xl shadow-md">
         <ChecklistRow 
           label="Personal Information" 
           valueText="Verified" 
@@ -264,11 +266,11 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
       </div>
 
       {/* Compliance Success Banner */}
-      <div className="max-w-2xl mx-auto bg-emerald-500/5 dark:bg-emerald-500/[0.02] border border-emerald-500/20 dark:border-emerald-500/10 rounded-2xl p-4 flex items-start gap-3 text-left">
-        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-455 shrink-0 mt-0.5" />
-        <div className="space-y-0.5 text-xs text-slate-600 dark:text-slate-400 font-semibold">
-          <p className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-[9.5px]">Filing Compliance Status</p>
-          <p className="leading-relaxed text-[11px] pt-0.5">Your filing complies with current Income Tax rules. No issues detected.</p>
+      <div className="bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10 rounded-2xl p-4 flex items-start gap-3 text-left">
+        <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+        <div className="space-y-0.5 text-xs text-slate-600 dark:text-slate-300 font-semibold">
+          <p className="text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Filing Compliance Status</p>
+          <p className="leading-relaxed text-[11.5px] pt-0.5">Your filing complies with current Income Tax rules. No issues detected.</p>
         </div>
       </div>
 
@@ -276,24 +278,24 @@ export const FilingReviewCard: React.FC<FilingReviewCardProps> = React.memo(({ o
       <div className="text-center pt-2">
         <button
           onClick={() => setIsDrawerOpen(true)}
-          className="text-xs font-bold uppercase tracking-wider text-blue-600 hover:text-blue-750 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer border border-slate-200 dark:border-white/[0.04] bg-white dark:bg-[#0E131B] px-5 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900"
+          className="text-xs font-bold uppercase tracking-wider text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer border border-slate-200 dark:border-white/[0.08] bg-white/70 dark:bg-[#060A10]/70 px-6 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05]"
         >
           Review Calculation Details
         </button>
       </div>
 
       {/* Bottom CTA Actions */}
-      <div className="max-w-2xl mx-auto pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="pt-6 border-t border-slate-200/80 dark:border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
         <button
           onClick={onBack}
-          className="h-12 px-6 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
+          className="h-12 px-6 border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all w-full sm:w-auto"
         >
           Back to Deductions
         </button>
 
         <button
           onClick={onContinue}
-          className="h-12 px-8 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-1.5 w-full sm:w-auto group shadow-lg shadow-blue-500/10"
+          className="h-12 px-8 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl cursor-pointer select-none active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto group shadow-lg shadow-blue-500/20"
         >
           <span>Continue to Generate Return</span>
           <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />

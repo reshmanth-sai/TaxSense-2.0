@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Sparkles, CheckCircle2, Lock, ArrowRight, ArrowDown, HelpCircle, 
-  MessageSquare, BookOpen, Send, CheckCircle, Info, ChevronDown, ChevronRight, AlertCircle
+  MessageSquare, BookOpen, Send, CheckCircle, Info, ChevronDown, ChevronRight, AlertCircle,
+  Copy, Check
 } from 'lucide-react';
 
 interface AIReasoningDrawerProps {
@@ -46,8 +47,18 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
   const [isChatTyping, setIsChatTyping] = useState(false);
   const [showOpportunity, setShowOpportunity] = useState(true);
   const [activeTooltip, setActiveTooltip] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [isChatExpanded, setIsChatExpanded] = useState<boolean>(true);
 
   const drawerRef = useRef<HTMLDivElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll to bottom when chat updates
+  useEffect(() => {
+    if (chatHistory.length > 0 || isChatTyping) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatHistory, isChatTyping]);
 
   // Formatting currency helper
   const formatINR = (val: number) => {
@@ -176,6 +187,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
     if (!chatMessage.trim()) return;
 
     const userText = chatMessage;
+    setIsChatExpanded(true);
     setChatHistory(prev => [...prev, { sender: 'user', text: userText }]);
     setChatMessage('');
     setIsChatTyping(true);
@@ -202,8 +214,8 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
 
   const quickPrompts = [
     "Why New Regime?",
+    "How to claim Corporate NPS?",
     "How is 80C calculated?",
-    "Can I save more?",
     "Why didn't HRA apply?"
   ];
 
@@ -213,7 +225,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Custom Backdrop: rgba(0,0,0,.28), minimal blur, recognizable background */}
+          {/* Custom Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -222,7 +234,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
             className="fixed inset-0 bg-black/28 backdrop-blur-[2px] z-[200] transition-opacity duration-200"
           />
 
-          {/* Slide-over floating panel: Width 520px (min 460px, max 560px), background #0B1020, rounded-l-3xl */}
+          {/* Slide-over floating panel */}
           <motion.div
             ref={drawerRef}
             initial={{ x: '100%', opacity: 0 }}
@@ -241,12 +253,15 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                   <span>🧠 Why this recommendation?</span>
                 </h2>
                 <p className="text-[12px] text-slate-500 dark:text-slate-400 font-medium leading-normal">
-                  Generated from Form 16, employer records, salary structure, AY 2026–27 rules & active Income Tax Act.
+                  {toggleState === 'PROFESSIONAL' 
+                    ? "Generated from Form 16, employer records, salary structure, AY 2026–27 rules & active Income Tax Act."
+                    : "Plain-English breakdown of your tax savings and simple optimization recommendations."
+                  }
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
-                {/* Verified badge with custom tooltip trigger */}
+                {/* Verified badge */}
                 <div className="relative tooltip-trigger">
                   <button
                     onMouseEnter={() => setActiveTooltip(true)}
@@ -273,7 +288,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
 
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-450"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
                   aria-label="Close explanation report"
                 >
                   <X className="w-4.5 h-4.5" />
@@ -284,15 +299,15 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 relative z-10 scrollbar-thin">
               
-              {/* Segmented Control - Top Right inside layout */}
-              <div className="flex justify-between items-center bg-slate-100 dark:bg-[#0E1527] border border-slate-200 dark:border-white/[0.04] p-1 rounded-xl">
+              {/* Segmented Control - Explanation Style Switcher */}
+              <div className="flex justify-between items-center bg-slate-100 dark:bg-[#0E1527] border border-slate-200 dark:border-white/[0.04] p-1.5 rounded-xl shadow-inner">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold pl-2">Explanation style</span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => setToggleState('PROFESSIONAL')}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                       toggleState === 'PROFESSIONAL' 
-                        ? 'bg-blue-600 text-white shadow-md' 
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
                         : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-transparent'
                     }`}
                   >
@@ -302,7 +317,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                     onClick={() => setToggleState('SIMPLE')}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                       toggleState === 'SIMPLE' 
-                        ? 'bg-blue-600 text-white shadow-md' 
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
                         : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-transparent'
                     }`}
                   >
@@ -312,7 +327,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
               </div>
 
               {isAiLoading ? (
-                /* INTELLIGENT CHECKLIST LOADER (No simple spinner) */
+                /* INTELLIGENT CHECKLIST LOADER */
                 <div className="py-20 flex flex-col justify-center space-y-5">
                   <div className="flex flex-col items-center justify-center space-y-2 mb-6">
                     <Sparkles className="w-8 h-8 text-blue-500 animate-spin" />
@@ -356,11 +371,15 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                     </div>
                     <div className="space-y-2">
                       <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                        Based on your salary records, eligible exemptions, and statutory rules, the <strong className="text-blue-600 dark:text-blue-400">New Regime Slabs</strong> optimize your structure to yield the lowest tax liability.
+                        {toggleState === 'PROFESSIONAL' ? (
+                          <>Based on your salary records, eligible exemptions, and statutory rules, the <strong className="text-blue-600 dark:text-blue-400">New Regime Slabs</strong> optimize your structure to yield the lowest tax liability.</>
+                        ) : (
+                          <>We analyzed your salary and tax options. The <strong className="text-blue-600 dark:text-blue-400">New Tax Regime</strong> is the smartest choice for you—it leaves the maximum cash in your pocket without requiring extra investment proofs.</>
+                        )}
                       </p>
                       <div className="flex justify-between items-baseline pt-2">
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Estimated Savings</span>
-                        <span className="text-xl font-black text-emerald-605 dark:text-emerald-400 font-mono tracking-tight">{formatINR(savings)}</span>
+                        <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">{formatINR(savings)}</span>
                       </div>
                     </div>
                   </div>
@@ -372,8 +391,10 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                     <div className="flex flex-col items-center space-y-2">
                       {/* Gross Salary node */}
                       <div className="w-full bg-white dark:bg-[#12192D] border border-slate-200 dark:border-white/[0.04] p-3 rounded-xl flex justify-between items-center hover:border-slate-300 dark:hover:border-blue-500/30 transition-colors">
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Gross Salary</span>
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-205 font-mono">{formatINR(grossSalary)}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                          {toggleState === 'PROFESSIONAL' ? "Gross Salary (Sec 17(1))" : "Total Annual Salary"}
+                        </span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 font-mono">{formatINR(grossSalary)}</span>
                       </div>
 
                       <ArrowDown className="w-3.5 h-3.5 text-blue-500/40 animate-pulse" />
@@ -381,8 +402,12 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                       {/* Deduction node */}
                       <div className="w-full bg-white dark:bg-[#12192D] border border-slate-200 dark:border-white/[0.04] p-3 rounded-xl flex justify-between items-center hover:border-slate-300 dark:hover:border-red-500/20 transition-colors">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Standard Deduction</span>
-                          <span className="text-[9px] font-bold bg-slate-105 dark:bg-slate-800 text-slate-600 dark:text-slate-405 px-1.5 py-0.2 rounded font-mono">Sec 16(ia)</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                            {toggleState === 'PROFESSIONAL' ? "Standard Deduction" : "Built-in Tax Discount"}
+                          </span>
+                          <span className="text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded font-mono">
+                            {toggleState === 'PROFESSIONAL' ? "Sec 16(ia)" : "Automatic"}
+                          </span>
                         </div>
                         <span className="text-xs font-bold text-red-600 dark:text-red-400 font-mono">-{formatINR(75000)}</span>
                       </div>
@@ -391,8 +416,10 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
 
                       {/* Taxable base node */}
                       <div className="w-full bg-white dark:bg-[#12192D] border border-slate-200 dark:border-white/[0.04] p-3 rounded-xl flex justify-between items-center">
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Taxable Income</span>
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-205 font-mono">{formatINR(grossSalary - 75000)}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                          {toggleState === 'PROFESSIONAL' ? "Taxable Income" : "Final Income Subject to Tax"}
+                        </span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 font-mono">{formatINR(grossSalary - 75000)}</span>
                       </div>
 
                       <ArrowDown className="w-3.5 h-3.5 text-blue-500/40 animate-pulse" />
@@ -400,10 +427,14 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                       {/* Final Net Tax */}
                       <div className="w-full bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl flex justify-between items-center">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Estimated Net Tax</span>
-                          <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 rounded font-semibold uppercase">New Regime</span>
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                            {toggleState === 'PROFESSIONAL' ? "Estimated Net Tax" : "Final Tax Payable"}
+                          </span>
+                          <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 rounded font-semibold uppercase">
+                            {toggleState === 'PROFESSIONAL' ? "New Regime" : "New System: ₹0"}
+                          </span>
                         </div>
-                        <span className="text-xs font-black text-emerald-650 dark:text-emerald-400 font-mono">₹0</span>
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">₹0</span>
                       </div>
                     </div>
                   </div>
@@ -414,17 +445,59 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                     
                     <div className="relative border-l border-slate-200 dark:border-white/[0.06] ml-3 pl-5 space-y-5 text-left">
                       {[
-                        { id: 1, label: "Reading Form 16 payload", desc: "Digital Form 16 OCR scan completed with 99% accuracy.", section: "OCR Parser", amount: null },
-                        { id: 2, label: "Mapping salary structure", desc: "Basic Pay and HRA allowances parsed from Part B records.", section: "Structure Ledger", amount: null },
-                        { id: 3, label: "Applying Standard Deduction", desc: activeContent.professional, section: activeContent.section, amount: 75000, details: activeContent },
-                        { id: 4, label: "Evaluating Section 80C investments", desc: "Provident Fund (EPF) of ₹1,50,000 processed.", section: "Section 80C", amount: 150000 },
-                        { id: 5, label: "Checking Corporate NPS provisions", desc: "Employer pension mapping analysed under Sec 80CCD(2).", section: "Section 80CCD(2)", amount: 0 },
-                        { id: 6, label: "Comparing Old vs New Regime slabs", desc: "Calculated old regime liability (₹77,896) vs new regime (₹0).", section: "Section 115BAC", amount: savings }
-                      ].map((step, idx) => {
+                        { 
+                          id: 1, 
+                          label: toggleState === 'PROFESSIONAL' ? "Reading Form 16 payload" : "Reading your Form 16 document", 
+                          descProf: "Digital Form 16 OCR scan completed with 99% accuracy.", 
+                          descSimple: "Scanned your Form 16 document cleanly with 99% accuracy.", 
+                          section: "OCR Parser", 
+                          amount: null 
+                        },
+                        { 
+                          id: 2, 
+                          label: toggleState === 'PROFESSIONAL' ? "Mapping salary structure" : "Analyzing basic pay & allowances", 
+                          descProf: "Basic Pay and HRA allowances parsed from Part B records.", 
+                          descSimple: "Checked your basic salary, HRA, and tax-free allowance breakdowns.", 
+                          section: "Structure Ledger", 
+                          amount: null 
+                        },
+                        { 
+                          id: 3, 
+                          label: toggleState === 'PROFESSIONAL' ? "Applying Standard Deduction" : "Applying automatic ₹75,000 discount", 
+                          descProf: activeContent.professional, 
+                          descSimple: activeContent.simple, 
+                          section: activeContent.section, 
+                          amount: 75000 
+                        },
+                        { 
+                          id: 4, 
+                          label: toggleState === 'PROFESSIONAL' ? "Evaluating Section 80C investments" : "Checking Provident Fund (EPF) claims", 
+                          descProf: "Provident Fund (EPF) of ₹1,50,000 processed under Section 80C.", 
+                          descSimple: "Checked your Provident Fund (EPF) savings of ₹1,50,000.", 
+                          section: "Section 80C", 
+                          amount: 150000 
+                        },
+                        { 
+                          id: 5, 
+                          label: toggleState === 'PROFESSIONAL' ? "Checking Corporate NPS provisions" : "Checking company pension tax-breaks", 
+                          descProf: "Employer pension mapping analysed under Sec 80CCD(2).", 
+                          descSimple: "Checked if your employer contributes to Corporate NPS pension.", 
+                          section: "Section 80CCD(2)", 
+                          amount: 0 
+                        },
+                        { 
+                          id: 6, 
+                          label: toggleState === 'PROFESSIONAL' ? "Comparing Old vs New Regime slabs" : "Comparing Old vs New tax systems", 
+                          descProf: "Calculated old regime liability (₹77,896) vs new regime (₹0).", 
+                          descSimple: "Compared both systems to find your maximum savings of ₹77,896.", 
+                          section: "Section 115BAC", 
+                          amount: savings 
+                        }
+                      ].map((step) => {
                         const isExpanded = expandedStep === step.id;
                         return (
                           <div key={step.id} className="relative group">
-                            {/* Glow connector line on hover */}
+                            {/* Glow connector line */}
                             <div className={`absolute -left-[21px] top-1.5 w-2 h-2 rounded-full border transition-all z-10 ${
                               isExpanded 
                                 ? 'bg-blue-500 border-blue-500 shadow-[0_0_8px_rgba(37,99,235,0.8)] scale-125' 
@@ -455,25 +528,25 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                                     className="overflow-hidden"
                                   >
                                     <div className="pt-2 pb-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium space-y-3 border-t border-slate-200 dark:border-white/[0.02] mt-1">
-                                      <p>{toggleState === 'PROFESSIONAL' ? step.desc : (step.id === 3 ? activeContent.simple : step.desc)}</p>
+                                      <p>{toggleState === 'PROFESSIONAL' ? step.descProf : step.descSimple}</p>
                                       
                                       {/* Expanded step details card */}
                                       {step.id === 3 && (
                                         <div className="grid grid-cols-2 gap-2 bg-white dark:bg-[#12192D] border border-slate-200 dark:border-white/[0.04] p-3.5 rounded-xl text-[11px]">
                                           <div>
-                                            <span className="text-[9px] text-slate-500 dark:text-slate-505 uppercase block font-bold">Section</span>
+                                            <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase block font-bold">Section</span>
                                             <span className="font-mono text-slate-800 dark:text-slate-300 font-bold">{activeContent.section}</span>
                                           </div>
                                           <div>
-                                            <span className="text-[9px] text-slate-500 dark:text-slate-550 uppercase block font-bold">Status</span>
-                                            <span className="text-emerald-600 dark:text-emerald-450 font-bold">{activeContent.status}</span>
+                                            <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase block font-bold">Status</span>
+                                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{activeContent.status}</span>
                                           </div>
                                           <div className="pt-1.5 border-t border-slate-200 dark:border-white/[0.02] mt-1.5">
-                                            <span className="text-[9px] text-slate-505 uppercase block font-bold">Source Mapped</span>
+                                            <span className="text-[9px] text-slate-500 uppercase block font-bold">Source Mapped</span>
                                             <span className="text-slate-600 dark:text-slate-300 font-semibold">{activeContent.source}</span>
                                           </div>
                                           <div className="pt-1.5 border-t border-slate-200 dark:border-white/[0.02] mt-1.5">
-                                            <span className="text-[9px] text-slate-505 uppercase block font-bold">Action Required</span>
+                                            <span className="text-[9px] text-slate-500 uppercase block font-bold">Action Required</span>
                                             <span className="text-slate-500 dark:text-slate-400 font-semibold">{activeContent.action}</span>
                                           </div>
                                         </div>
@@ -490,10 +563,10 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                   </div>
 
                   {/* REASONING DEDUCTION DETAIL CARDS */}
-                  <div className="bg-slate-50 dark:bg-[#0E1527] border border-slate-205 dark:border-white/[0.04] p-5 rounded-2xl space-y-4">
+                  <div className="bg-slate-50 dark:bg-[#0E1527] border border-slate-200 dark:border-white/[0.04] p-5 rounded-2xl space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Exemption Explanations</span>
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-505 uppercase font-mono">Citations Available</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">Citations Available</span>
                     </div>
 
                     <div className="space-y-3.5">
@@ -501,7 +574,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                       <div className="bg-white dark:bg-[#12192D] border border-slate-200 dark:border-white/[0.04] p-4.5 rounded-xl space-y-3 text-xs">
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-slate-800 dark:text-slate-200">Standard Deduction</span>
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-450 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-550/20 dark:border-emerald-500/20 font-mono">Applied</span>
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-mono">Applied</span>
                         </div>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                           {toggleState === 'PROFESSIONAL' 
@@ -526,7 +599,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="mt-2.5 p-3 bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-white/[0.02] rounded-lg space-y-1.5 text-[10.5px] leading-relaxed text-slate-600 dark:text-slate-350"
+                                className="mt-2.5 p-3 bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-white/[0.02] rounded-lg space-y-1.5 text-[10.5px] leading-relaxed text-slate-600 dark:text-slate-300"
                               >
                                 <div className="flex justify-between">
                                   <span>Gross Salary Mapped:</span>
@@ -570,7 +643,11 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                         <div className="space-y-2 text-xs">
                           <h4 className="font-bold text-slate-800 dark:text-slate-200">Corporate NPS Structuring</h4>
                           <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                            Your employer currently does not contribute under Section 80CCD(2). If your company restructures your CTC to contribute to NPS, you could save an additional ₹2,475.
+                            {toggleState === 'PROFESSIONAL' ? (
+                              <>Your employer currently does not contribute under Section 80CCD(2). If your company restructures your CTC to contribute to NPS, you could save an additional ₹2,475.</>
+                            ) : (
+                              <>If your company deposits part of your salary into Corporate NPS pension directly, you can save an extra ₹2,475 tax-free every year!</>
+                            )}
                           </p>
                           <div className="flex gap-2 pt-2 justify-end">
                             <button
@@ -588,7 +665,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                                   setIsChatTyping(false);
                                 }, 850);
                               }}
-                              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition-all shadow-md"
+                              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition-all"
                             >
                               Learn More
                             </button>
@@ -606,7 +683,7 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
                     </div>
 
                     {/* Custom graphic progress bar */}
-                    <div className="h-2 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-300/50 dark:border-white/[0.02]">
+                    <div className="h-2 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-300/50 dark:border-white/[0.02] relative">
                       <div className="h-full bg-emerald-500 rounded-full w-[99%] shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                     </div>
 
@@ -654,73 +731,150 @@ export const AIReasoningDrawer: React.FC<AIReasoningDrawerProps> = ({
               )}
             </div>
 
-            {/* AI CHAT AND FOOTER (INTEGRAL CHAT ASSISTANT) */}
-            <div className="border-t border-slate-200 dark:border-white/[0.04] bg-slate-50 dark:bg-[#0E1527] p-5 shrink-0 relative z-10 space-y-4">
+            {/* AI CHAT AND FOOTER (COLLAPSIBLE CHAT ASSISTANT) */}
+            <div className="border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/90 dark:bg-[#0E1527]/90 backdrop-blur-md p-4 shrink-0 relative z-10 space-y-3 shadow-lg">
               
-              {/* Chat history logs */}
-              {chatHistory.length > 0 && (
-                <div className="max-h-32 overflow-y-auto space-y-2.5 pb-2 pr-1 scrollbar-thin text-xs text-left">
-                  {chatHistory.map((item, idx) => (
-                    <div key={idx} className={`p-3 rounded-xl leading-relaxed font-medium ${
-                      item.sender === 'user' 
-                        ? 'bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/10 text-blue-750 dark:text-blue-300 ml-8' 
-                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.02] text-slate-700 dark:text-slate-300 mr-8'
-                    }`}>
-                      <div className="text-[9px] uppercase tracking-wider font-extrabold text-slate-500 dark:text-slate-505 mb-1">
-                        {item.sender === 'user' ? 'You' : 'AI Advisor'}
-                      </div>
-                      <p>{item.text}</p>
-                    </div>
-                  ))}
-                  {isChatTyping && (
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.02] p-3 rounded-xl text-slate-500 dark:text-slate-300 mr-8 flex items-center gap-2">
-                      <Sparkles className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                      <span className="animate-pulse font-bold">AI is formulating explanation...</span>
-                    </div>
+              {/* Collapsible Header Bar */}
+              <div 
+                onClick={() => setIsChatExpanded(!isChatExpanded)}
+                className="flex items-center justify-between cursor-pointer select-none group"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wide uppercase">
+                    Ask AI Assistant
+                  </span>
+                  {chatHistory.length > 0 && (
+                    <span className="text-[9.5px] font-extrabold font-mono bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                      {chatHistory.length} {chatHistory.length === 1 ? 'message' : 'messages'}
+                    </span>
                   )}
                 </div>
-              )}
 
-              <div className="space-y-2 text-left">
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Still have questions?</span>
-                
-                {/* Chat Suggestion prompts */}
-                {chatHistory.length === 0 && (
-                  <div className="flex flex-wrap gap-1.5 pb-1">
-                    {quickPrompts.map(p => (
-                      <button
-                        key={p}
-                        onClick={() => {
-                          setChatMessage(p);
-                        }}
-                        className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-205 dark:border-white/[0.04] hover:bg-slate-50 dark:hover:bg-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-405 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg cursor-pointer transition-colors"
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <form onSubmit={handleChatSubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    placeholder="Ask anything about this recommendation..."
-                    className="flex-1 bg-white dark:bg-[#12192D] border border-slate-200 dark:border-white/[0.04] rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors font-medium"
-                  />
-                  <button
-                    type="submit"
-                    className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-blue-600/10"
-                    aria-label="Send query"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </form>
+                <div className="flex items-center gap-1.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                    {isChatExpanded ? 'Minimize' : 'Expand Chat'}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isChatExpanded ? 'rotate-180' : ''}`} />
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-505 font-bold uppercase tracking-wider text-left pt-2 border-t border-slate-200 dark:border-white/[0.02]">
-                <Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-650" />
+              {/* Collapsible Chat Body */}
+              <AnimatePresence initial={false}>
+                {isChatExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                    className="space-y-3 overflow-hidden"
+                  >
+                    {/* Chat history logs */}
+                    {chatHistory.length > 0 && (
+                      <div className="max-h-56 md:max-h-64 overflow-y-auto space-y-3 pb-2 pr-1 scrollbar-thin text-xs text-left border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-3.5 bg-slate-100/50 dark:bg-slate-900/50">
+                        {chatHistory.map((item, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`p-3.5 rounded-2xl leading-relaxed font-medium transition-all ${
+                              item.sender === 'user' 
+                                ? 'bg-blue-500/10 border border-blue-500/20 text-blue-900 dark:text-blue-200 ml-6 shadow-sm' 
+                                : 'bg-purple-500/10 dark:bg-purple-500/[0.08] border border-purple-500/20 text-slate-800 dark:text-slate-200 mr-4 shadow-sm relative group'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                {item.sender === 'ai' ? (
+                                  <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-purple-600 dark:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <Sparkles className="w-2.5 h-2.5 text-purple-500" />
+                                    AI Tax Advisor
+                                  </span>
+                                ) : (
+                                  <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
+                                    You
+                                  </span>
+                                )}
+                              </div>
+
+                              {item.sender === 'ai' && (
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(item.text);
+                                    setCopiedIndex(idx);
+                                    setTimeout(() => setCopiedIndex(null), 2000);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-purple-500/20 rounded transition-all text-purple-600 dark:text-purple-400 cursor-pointer"
+                                  title="Copy response"
+                                >
+                                  {copiedIndex === idx ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                </button>
+                              )}
+                            </div>
+
+                            <p className="text-xs leading-relaxed font-medium whitespace-pre-line">{item.text}</p>
+                          </div>
+                        ))}
+
+                        {isChatTyping && (
+                          <div className="bg-purple-500/10 dark:bg-purple-500/[0.08] border border-purple-500/20 p-3.5 rounded-2xl text-purple-600 dark:text-purple-300 mr-4 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 animate-spin text-purple-500 shrink-0" />
+                            <span className="font-semibold text-xs">AI Tax Advisor is generating explanation</span>
+                            <span className="flex gap-1 items-center ml-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </span>
+                          </div>
+                        )}
+
+                        <div ref={chatEndRef} />
+                      </div>
+                    )}
+
+                    <div className="space-y-2 text-left">
+                      {/* Chat Suggestion prompts */}
+                      {chatHistory.length === 0 && (
+                        <div className="flex flex-wrap gap-1.5 pb-1">
+                          {quickPrompts.map(p => (
+                            <button
+                              key={p}
+                              onClick={() => {
+                                setChatMessage(p);
+                                setIsChatExpanded(true);
+                              }}
+                              className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.06] hover:bg-slate-50 dark:hover:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg cursor-pointer transition-colors"
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <form onSubmit={handleChatSubmit} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={chatMessage}
+                          onChange={(e) => setChatMessage(e.target.value)}
+                          onFocus={() => setIsChatExpanded(true)}
+                          placeholder="Ask anything about this recommendation..."
+                          className="flex-1 bg-white dark:bg-[#12192D] border border-slate-200 dark:border-white/[0.06] rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/50 transition-colors font-medium outline-none focus-visible:outline-none"
+                        />
+                        <button
+                          type="submit"
+                          className="p-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0"
+                          aria-label="Send query"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                      </form>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-left pt-1 border-t border-slate-200 dark:border-white/[0.04]">
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
                 <span>Exemption verified using AY 2026-27 rules</span>
               </div>
             </div>

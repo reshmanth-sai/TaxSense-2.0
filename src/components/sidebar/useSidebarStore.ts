@@ -38,7 +38,7 @@ export const useSidebarStore = create<SidebarState>()(
       collapsedGroups: {},
       favorites: [],
       recentlyVisited: [],
-      activeWorkspace: 'TaxSense-2.0',
+      activeWorkspace: 'TaxSense',
       theme: 'dark',
       isSearchOpen: false,
 
